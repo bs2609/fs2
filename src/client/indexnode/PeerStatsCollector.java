@@ -55,7 +55,8 @@ import common.Util.FileSize;
 public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	
 	private static final long serialVersionUID = 1909020075940063080L;
-
+	
+	@SuppressWarnings("unused")
 	private class PeerStats implements Serializable {
 		private static final long serialVersionUID = -5035853080520439295L;
 		//The number of bytes transfered with this peer:

@@ -53,8 +53,7 @@ public class Relauncher {
 	@SuppressWarnings({ "unchecked" })
 	private static boolean relaunch(URL newJar) {
 		Logger.log("Attempting to start a newer version of FS2... ("+newJar+")");
-		URLClassLoader loader = new URLClassLoader(new URL[] { newJar }, null);
-		try {
+		try (URLClassLoader loader = new URLClassLoader(new URL[] { newJar }, null)) {
 			//                    __/-This is used so that automatic refactoring might work in future if the entry point is changed.
 			@SuppressWarnings("rawtypes")
 			Class ce = loader.loadClass(ClientExecutor.class.getName());
