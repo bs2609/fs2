@@ -10,7 +10,7 @@ FS2 is not designed to be secure or facilitate internet piracy.
 It is to allow the easy transfer of files (such as steam backups) at LAN parties where Windows file sharing and other programs like DC++ simply don't do searching and browsing well enough.
 
 The goal for FS2 is to be as easy as possible -zero configuration in most cases- and to be the best possible program for LAN party file sharing.
-Indeed, FS2 was developed for the FragSoc (University of York LAN gaming society) and has been used for nearly three years now, transferring hundreds of terabytes in that time.
+Indeed, FS2 was developed for the FragSoc (University of York LAN gaming society) and has been used for several years now, transferring hundreds of terabytes in that time.
 
 Getting Started
 ===============
