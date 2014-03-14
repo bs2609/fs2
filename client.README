@@ -12,7 +12,7 @@ Contents:
 -Dheadless          Indicates FS2 should not start a GUI. Normally FS2 would quit if it tries to run with a GUI and the gui fails to start.
                     You may always send a SIGUSR1 to FS2 to cause it to refresh its shares. This is very useful in headless mode!
 -Dplatform={path}   Forces FS2 to use the {path} given to store the configuration file and code updates. This must be read-write!
--Dupdate={url}      Recommends FS2 to update itself from the given HTTP repository URL (without confirmation), after updating it will launch the new version. This is primarily for convinience of console-mode users.
+-Dupdate={url}      Recommends FS2 to update itself from the given HTTP repository URL (without confirmation), after updating it will launch the new version. This is primarily for convenience of console-mode users.
                     You may leave {url} empty to just try the default/configured HTTP sources.
                     This update is triggered before the FS2 communication subsystem is started so will not attempt to update from the indexnode.
 
