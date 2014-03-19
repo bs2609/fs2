@@ -58,7 +58,7 @@ public abstract class Logger {
 			}
 			
 		} catch (IOException e) {
-			Logger.warn("A fresh log file could not be created: "+e);
+			Logger.warn("A fresh log file could not be created: " + e);
 			e.printStackTrace();
 		}
 	}
@@ -100,28 +100,30 @@ public abstract class Logger {
 	 * @param message - The string message. If this message is throwable then the stacktrace will be written instead.
 	 */
 	private synchronized static void log (Level level, Object message) {
-		if (loggingEnabled) {
-			
-			if (level == lastLevel && message.equals(lastMessage)) {
-				//Duplicate message, so supress it:
-				
-				if (suppressCount == 0) {
-					//This is the first of the suppressed messages, so output a line:
-					logOut(level, message+" (message is being repeated, suppressed)");
-				}
-				suppressCount+=1;
-				
-				return;
-			} else {
-				if (suppressCount > 1) {
-					logOut(Level.INFO, "Last message repeated "+suppressCount+" times");
-				}
-				suppressCount = 0;
-			}
-			lastLevel = level;
-			lastMessage = message;
-			logOut(level, message);
+		
+		if (!loggingEnabled) {
+			return;
 		}
+		
+		if (level == lastLevel && message.equals(lastMessage)) {
+			// Duplicate message, so suppress it:
+			if (suppressCount == 0) {
+				// This is the first of the suppressed messages, so output a line:
+				logOut(level, message + " (message is being repeated, suppressed)");
+			}
+			suppressCount++;
+			return;
+		}
+		
+		if (suppressCount > 1) {
+			logOut(Level.INFO, "Last message repeated " + suppressCount + " times");
+		}
+		
+		suppressCount = 0;
+		lastLevel = level;
+		lastMessage = message;
+		
+		logOut(level, message);
 	}
 	
 	private static void logOut(Level level, Object message) {
