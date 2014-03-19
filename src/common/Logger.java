@@ -84,7 +84,7 @@ public abstract class Logger {
 	}
 	
 	// Records to the access log file (if logging to disk is enabled) with the message specified.
-	public static void access(Object message) {
+	public synchronized static void access(Object message) {
 		if (accessFile == null) return;
 		accessFileStream.println(dateFormat.format(new Date()) + " " + message);
 	}
@@ -174,7 +174,7 @@ public abstract class Logger {
 		return registeredModules.add(listener);
 	}
 	
-	public synchronized static boolean isLoggingEnabled() {
+	public static boolean isLoggingEnabled() {
 		return loggingEnabled;
 	}
 	
@@ -190,15 +190,15 @@ public abstract class Logger {
 		return minFileLoggingLevel;
 	}
 	
-	public static void setLoggingEnabled(boolean loggingEnabled) {
+	public synchronized static void setLoggingEnabled(boolean loggingEnabled) {
 		Logger.loggingEnabled = loggingEnabled;
 	}
 	
-	public static void setMinLoggingLevel(Level minLoggingLevel) {
+	public synchronized static void setMinLoggingLevel(Level minLoggingLevel) {
 		Logger.minLoggingLevel = minLoggingLevel;
 	}
 	
-	public static void setMinFileLoggingLevel(Level minFileLoggingLevel) {
+	public synchronized static void setMinFileLoggingLevel(Level minFileLoggingLevel) {
 		Logger.minFileLoggingLevel = minFileLoggingLevel;
 	}
 	
