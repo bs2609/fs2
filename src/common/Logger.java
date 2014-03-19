@@ -154,8 +154,8 @@ public abstract class Logger {
 	
 	private static void appendLog (Level level, Object logMessage) {
 		// Use STDERR if the message indicates something catastrophic.
-		PrintStream out = (level.intValue() < Level.SEVERE.intValue()) ? System.out : System.err;
-		out.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
+		boolean severe = level.intValue() >= Level.SEVERE.intValue();
+		(severe ? System.err : System.out).println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
 	}
 	
 	private static void appendFileLog (Level level, Object logMessage) {
