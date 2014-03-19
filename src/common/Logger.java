@@ -22,8 +22,7 @@ public abstract class Logger {
 	private static boolean loggingEnabled = false;
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 	private static File logFile;
-	//the access log
-	private static File accessFile;
+	private static File accessFile; // the access log
 	private static PrintStream logFileStream;
 	private static PrintStream accessFileStream;
 	private static Level minLoggingLevel = Level.INFO;
@@ -39,27 +38,28 @@ public abstract class Logger {
 	 * @throws IOException if operation was unsuccessful
 	 */
 	public synchronized static void setLogFileName (String logFileName) {
-		File file = new File(logFileName+".log");
-		File aFile = new File(logFileName+".access.log");
-		if (file.exists()) {
-			if (file.canWrite() == false) {
-				Logger.warn("Log file "+logFileName
-						+" exists, but cannot be written to.");
-			} else {
+		
+		File file = new File(logFileName + ".log");
+		File aFile = new File(logFileName + ".access.log");
+		
+		try {
+			if (file.createNewFile() || file.canWrite()) {
 				logFile = file;
+				logFileStream = new PrintStream(new FileOutputStream(logFile, true), true);
+			} else {
+				Logger.warn("Log file " + logFileName + ".log" + " exists, but cannot be written to.");
+			}
+			
+			if (aFile.createNewFile() || aFile.canWrite()) {
 				accessFile = aFile;
+				accessFileStream = new PrintStream(new FileOutputStream(accessFile, true), true);
+			} else {
+				Logger.warn("Access log file " + logFileName + ".access.log" + " exists, but cannot be written to.");
 			}
-		} else {
-			try {
-				if (file.createNewFile()) {
-					logFile = file;
-					accessFile = aFile;
-					aFile.createNewFile();
-				}
-			} catch (IOException e) {
-				Logger.warn("A fresh log file could not be created: "+e);
-				e.printStackTrace();
-			}
+			
+		} catch (IOException e) {
+			Logger.warn("A fresh log file could not be created: "+e);
+			e.printStackTrace();
 		}
 	}
 	
@@ -83,19 +83,10 @@ public abstract class Logger {
 		log(Level.SEVERE, message);
 	}
 	
-	//Records to the access log file (if logging to disk is enabled) with the message specified.
+	// Records to the access log file (if logging to disk is enabled) with the message specified.
 	public static void access(Object message) {
-		if (accessFile==null) return;
-		try {
-			if (accessFileStream==null) {
-				accessFileStream = new PrintStream(new FileOutputStream(accessFile, true),true);
-			}
-
-			accessFileStream.println(dateFormat.format(new Date()) + message);
-
-		} catch(IOException ex) {
-			ex.printStackTrace();
-		}
+		if (accessFile == null) return;
+		accessFileStream.println(dateFormat.format(new Date()) + " " + message);
 	}
 	
 	/**
@@ -160,26 +151,13 @@ public abstract class Logger {
 	}
 	
 	private static void appendLog (Level level, Object logMessage) {
-		PrintStream out = System.out;
-		if (level.intValue()>=Level.SEVERE.intValue()) {
-			out = System.err;	//Use STDERR if the message indicates something catastrophic.
-		}
-		out.println(dateFormat.format(new Date()) + " "
-				+ level.getName() + ": " + logMessage);
+		// Use STDERR if the message indicates something catastrophic.
+		PrintStream out = (level.intValue() < Level.SEVERE.intValue()) ? System.out : System.err;
+		out.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
 	}
 	
 	private static void appendFileLog (Level level, Object logMessage) {
-		try {
-			if (logFileStream==null) {
-				logFileStream = new PrintStream(new FileOutputStream(logFile, true),true);
-			}
-
-			logFileStream.println(dateFormat.format(new Date()) + " "
-									+ level.getName() + ": " + logMessage);
-
-		} catch(IOException ex) {
-			ex.printStackTrace();
-		}
+		logFileStream.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
 	}
 	
 	public interface LogListener {
@@ -199,12 +177,15 @@ public abstract class Logger {
 	public synchronized static boolean isLoggingEnabled() {
 		return loggingEnabled;
 	}
+	
 	public static File getLogFile() {
 		return logFile;
 	}
+	
 	public static Level getMinLoggingLevel() {
 		return minLoggingLevel;
 	}
+	
 	public static Level getMinFileLoggingLevel() {
 		return minFileLoggingLevel;
 	}
@@ -212,9 +193,11 @@ public abstract class Logger {
 	public static void setLoggingEnabled(boolean loggingEnabled) {
 		Logger.loggingEnabled = loggingEnabled;
 	}
+	
 	public static void setMinLoggingLevel(Level minLoggingLevel) {
 		Logger.minLoggingLevel = minLoggingLevel;
 	}
+	
 	public static void setMinFileLoggingLevel(Level minFileLoggingLevel) {
 		Logger.minFileLoggingLevel = minFileLoggingLevel;
 	}

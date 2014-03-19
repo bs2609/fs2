@@ -145,55 +145,55 @@ public class HttpUtil {
 				String requestRange = exchange.getRequestHeaders().getFirst("Range");
 				//Logger.log("range: "+requestRange);
 				Pattern pattern = Pattern.compile("bytes=([0-9]*)-([0-9]*)");
-			    Matcher matcher = pattern.matcher(requestRange);
-			    if (matcher.matches()) {
-			    	try {
-			    		long rangeStart = -1;
-			    		if (!matcher.group(1).equals("")) rangeStart = Long.parseLong(matcher.group(1));
-			    		long rangeEnd = -1;
-			    		if (!matcher.group(2).equals("")) rangeEnd = Long.parseLong(matcher.group(2));
-			    		
-			    		long newPosition = 0;
-			    		long newRemaining = 0;
-			    		long length = fileToSend.length();
-			    		
-			    		//There are three different valid simple ways the user can request ranges.
-			    		//(We do NOT support multiple range requests.)
-			    		
-			    		//1) Just a start point: (this is the number of bytes to skip at the start of the file)
-			    		if (rangeStart > -1 && rangeEnd == -1) {
-			    			newPosition = rangeStart;
-			    			newRemaining = length-rangeStart;
-			    		}
-			    		//2) Just an end point: (this is how many bytes to return from the end of the file)
-			    		else if (rangeStart == -1 && rangeEnd > -1) {
-			    			newPosition = length-rangeEnd;
-			    			newRemaining = rangeEnd+1;
-			    		}
-			    		//3) Both are specified: (this is a proper range!)
-			    		else if (rangeStart > -1 && rangeEnd > -1) {
-			    			newPosition = rangeStart;
-			    			newRemaining = (rangeEnd+1)-rangeStart;
-			    		}
-			    		
-			    		//Now sanity check, if it is ok, then setup the partial transfer.
-			    		if (newPosition > length ||
-			    			newPosition + newRemaining > length) {
-			    			Logger.log("Too much data was requested. Sending a normal (not partial) response.");
-			    		} else {
-			    			info.setPosition(newPosition);
-			    			info.setRemaining(newRemaining);
-			    			responseLength = newRemaining;
-			    			String crh = "bytes "+newPosition+"-"+((newRemaining+newPosition)-1)+"/"+newRemaining;
-			    			h.add("Content-Range", crh);
-			    			//Logger.log("content-range: "+crh);
-			    			responseCode = 206;
-			    		}
-			    		
-			    	} catch (Exception e) {
-			    		Logger.log("Couldn't service range request: "+requestRange+" - "+e.toString());
-			    	}
-			    }
+				Matcher matcher = pattern.matcher(requestRange);
+				if (matcher.matches()) {
+					try {
+						long rangeStart = -1;
+						if (!matcher.group(1).equals("")) rangeStart = Long.parseLong(matcher.group(1));
+						long rangeEnd = -1;
+						if (!matcher.group(2).equals("")) rangeEnd = Long.parseLong(matcher.group(2));
+						
+						long newPosition = 0;
+						long newRemaining = 0;
+						long length = fileToSend.length();
+						
+						//There are three different valid simple ways the user can request ranges.
+						//(We do NOT support multiple range requests.)
+						
+						//1) Just a start point: (this is the number of bytes to skip at the start of the file)
+						if (rangeStart > -1 && rangeEnd == -1) {
+							newPosition = rangeStart;
+							newRemaining = length-rangeStart;
+						}
+						//2) Just an end point: (this is how many bytes to return from the end of the file)
+						else if (rangeStart == -1 && rangeEnd > -1) {
+							newPosition = length-rangeEnd;
+							newRemaining = rangeEnd+1;
+						}
+						//3) Both are specified: (this is a proper range!)
+						else if (rangeStart > -1 && rangeEnd > -1) {
+							newPosition = rangeStart;
+							newRemaining = (rangeEnd+1)-rangeStart;
+						}
+						
+						//Now sanity check, if it is ok, then setup the partial transfer.
+						if (newPosition > length ||
+							newPosition + newRemaining > length) {
+							Logger.log("Too much data was requested. Sending a normal (not partial) response.");
+						} else {
+							info.setPosition(newPosition);
+							info.setRemaining(newRemaining);
+							responseLength = newRemaining;
+							String crh = "bytes "+newPosition+"-"+((newRemaining+newPosition)-1)+"/"+newRemaining;
+							h.add("Content-Range", crh);
+							//Logger.log("content-range: "+crh);
+							responseCode = 206;
+						}
+						
+					} catch (Exception e) {
+						Logger.log("Couldn't service range request: "+requestRange+" - "+e.toString());
+					}
+				}
 			}
 			info.setupTracker();
 			h.add("Accept-Ranges", "bytes");
@@ -201,7 +201,7 @@ public class HttpUtil {
 			h.add("Content-Transfer-Encoding","binary");
 			h.add("Content-Length", Long.toString(responseLength));
 			h.add("Content-Type", "application/octet-stream");
-			Logger.access(info.getAlias()+": "+fileToSend.getPath()+"["+info.getPosition()+","+((info.getRemaining()+info.getPosition())-1)+")");
+			Logger.access(info.getAlias()+": "+fileToSend.getPath()+" ["+info.getPosition()+","+(info.getRemaining()+info.getPosition()-1)+")");
 			
 			exchange.sendResponseHeaders(responseCode, responseLength);
 			OutputStream response = exchange.getResponseBody();
