@@ -19,8 +19,9 @@ import java.util.logging.Level;
  * @author Andy Raines & Gary Plumbridge
  */
 public abstract class Logger {
+	
 	private static boolean loggingEnabled = false;
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	private static File logFile;
 	private static File accessFile; // the access log
 	private static PrintStream logFileStream;
@@ -85,8 +86,9 @@ public abstract class Logger {
 	
 	// Records to the access log file (if logging to disk is enabled) with the message specified.
 	public synchronized static void access(Object message) {
-		if (accessFile == null) return;
-		accessFileStream.println(dateFormat.format(new Date()) + " " + message);
+		if (accessFileStream != null) {
+			accessFileStream.println(dateFormat.format(new Date()) + " " + message);
+		}
 	}
 	
 	/**
@@ -128,7 +130,7 @@ public abstract class Logger {
 	
 	private static void logOut(Level level, Object message) {
 		
-		//If it's a throwable as a message, print the stack trace instead
+		// If it's a throwable as a message, print the stack trace instead
 		if (message instanceof Throwable) {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			PrintStream ps = new PrintStream(bos);
@@ -142,7 +144,7 @@ public abstract class Logger {
 			appendLog(level, message);
 		}
 		
-		if (level.intValue() >= minFileLoggingLevel.intValue() && logFile!=null) {
+		if (level.intValue() >= minFileLoggingLevel.intValue()) {
 			appendFileLog(level, message);
 		}
 		
@@ -152,18 +154,20 @@ public abstract class Logger {
 		}
 	}
 	
-	private static void appendLog (Level level, Object logMessage) {
+	private static void appendLog (Level level, Object message) {
 		// Use STDERR if the message indicates something catastrophic.
 		boolean severe = level.intValue() >= Level.SEVERE.intValue();
-		(severe ? System.err : System.out).println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
+		(severe ? System.err : System.out).println(dateFormat.format(new Date()) + " " + level.getName() + ": " + message);
 	}
 	
-	private static void appendFileLog (Level level, Object logMessage) {
-		logFileStream.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + logMessage);
+	private static void appendFileLog (Level level, Object message) {
+		if (logFileStream != null) {
+			logFileStream.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + message);
+		}
 	}
 	
 	public interface LogListener {
-		void messageLogged (Level level, Object logMessage);
+		void messageLogged (Level level, Object message);
 	}
 	
 	/**
@@ -205,13 +209,16 @@ public abstract class Logger {
 	}
 	
 	public synchronized static void shutdown() {
-		if (logFileStream!=null) {
+		if (logFileStream != null) {
 			logFileStream.close();
-			logFile=null;
+			logFileStream = null;
 		}
-		if (accessFileStream!=null) {
+		logFile = null;
+		
+		if (accessFileStream != null) {
 			accessFileStream.close();
-			accessFile=null;
+			accessFileStream = null;
 		}
+		accessFile = null;
 	}
 }
