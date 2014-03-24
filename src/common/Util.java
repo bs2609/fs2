@@ -94,11 +94,11 @@ public abstract class Util {
 	 * @return
 	 */
 	public static String join(Object[] items, String delim) {
-	    if (items.length==0) return "";
-	    StringBuffer buffer = new StringBuffer(items[0].toString());
-	    int onItem = 1;
-	    while (onItem != items.length) buffer.append(delim).append(items[onItem++].toString());
-	    return buffer.toString();
+		if (items.length==0) return "";
+		StringBuffer buffer = new StringBuffer(items[0].toString());
+		int onItem = 1;
+		while (onItem != items.length) buffer.append(delim).append(items[onItem++].toString());
+		return buffer.toString();
 	}
 	
 	/**
@@ -413,7 +413,7 @@ public abstract class Util {
 	 * and /home/gary/Desktop/test.jpg isWithin: /, /home, /home/gary, /home/gary/Desktop, and /home/gary/Desktop/test.jpg
 	 */
 	public static boolean isWithin(File item, File container) throws IOException {
-		return (item.getCanonicalPath().indexOf(container.getCanonicalPath()) == 0);
+		return item.getCanonicalFile().toPath().startsWith(container.getCanonicalFile().toPath());
 	}
 	
 	/**
