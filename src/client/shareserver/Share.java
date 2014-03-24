@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -190,13 +191,7 @@ public class Share {
 		}
 		
 		private boolean isSymlink(File file) {
-			try {
-				return !file.getAbsolutePath().equals(file.getCanonicalPath());
-			} catch (IOException e) {
-				Logger.severe("Symlink detection failed!:"+e);
-				Logger.log(e);
-				return false;
-			}
+			return Files.isSymbolicLink(file.toPath());
 		}
 	
 		/***
