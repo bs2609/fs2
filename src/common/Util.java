@@ -413,7 +413,7 @@ public abstract class Util {
 	 * and /home/gary/Desktop/test.jpg isWithin: /, /home, /home/gary, /home/gary/Desktop, and /home/gary/Desktop/test.jpg
 	 */
 	public static boolean isWithin(File item, File container) throws IOException {
-		return item.getCanonicalFile().toPath().startsWith(container.getCanonicalFile().toPath());
+		return item.toPath().toRealPath().startsWith(container.toPath().toRealPath());
 	}
 	
 	/**
