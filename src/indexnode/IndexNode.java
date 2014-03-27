@@ -644,6 +644,8 @@ public class IndexNode {
 				case FILELIST:
 					importFileList(); break;
 				}
+				listed = true;
+				Logger.log("Refresh complete (share "+name+" on "+owner.getAlias()+")");
 			} catch (FileNotFoundException e) {
 				Logger.warn("Filelist not found: "+e);
 				pendingRevision = revision; // Rollback revision so we can retry again later.
@@ -655,9 +657,6 @@ public class IndexNode {
 				Logger.warn("Exception refreshing share "+name+"... "+e.toString());
 				Logger.log(e); // Do not bother to rollback. Something more serious is wrong so retrying will just damage our QOS.
 			}
-			
-			listed = true;
-			Logger.log("Refresh complete (share "+name+" on "+owner.getAlias()+")");
 		}
 		
 		private void importFileList() throws IOException {
