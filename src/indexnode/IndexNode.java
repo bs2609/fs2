@@ -640,9 +640,9 @@ public class IndexNode {
 			try {
 				switch (type) {
 				case XML:
-					importXML();
+					importXML(); break;
 				case FILELIST:
-					importFileList();
+					importFileList(); break;
 				}
 			} catch (FileNotFoundException e) {
 				Logger.warn("Filelist not found: "+e);
