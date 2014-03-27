@@ -142,7 +142,7 @@ public class FS2Constants {
 	public static final int CLIENT_BROWSETREE_COLLAPSE_INTERVAL = 60*1000;
 
 	/**The anonymous diffie-hellman cipher suite used for encrypting communication between clients and clients-indexnodes.*/
-	public static final String DH_ANON_CIPHER_SUITE_USED = "TLS_DH_anon_WITH_AES_128_CBC_SHA256";
+	public static final String DH_ANON_CIPHER_SUITE_USED = "TLS_DH_anon_WITH_AES_128_CBC_SHA";
 	
 	/** This salt is used on fs2 passwords to prevent malicious indexnode admins from using common md5-reversers to find a n00b's passwords.*/
 	public static final String FS2_USER_PASSWORD_SALT = "fs2user:";
