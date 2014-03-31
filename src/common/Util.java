@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -94,11 +95,11 @@ public abstract class Util {
 	 * @return
 	 */
 	public static String join(Object[] items, String delim) {
-		if (items.length==0) return "";
-		StringBuffer buffer = new StringBuffer(items[0].toString());
+		if (items.length == 0) return "";
+		StringBuilder sb = new StringBuilder(items[0].toString());
 		int onItem = 1;
-		while (onItem != items.length) buffer.append(delim).append(items[onItem++].toString());
-		return buffer.toString();
+		while (onItem != items.length) sb.append(delim).append(items[onItem++].toString());
+		return sb.toString();
 	}
 	
 	/**
@@ -116,15 +117,7 @@ public abstract class Util {
 	}
 	
 	public static String bytesToHexString(byte[] inBytes) {
-		StringBuilder sb = new StringBuilder();
-		
-		char[] hexChars = "0123456789abcdef".toCharArray();
-		for (byte b : inBytes) {
-			sb.append(hexChars[(b & 0xF0)>>4]);
-			sb.append(hexChars[(b & 0x0F)]);
-		}
-		
-		return sb.toString();
+		return new BigInteger(inBytes).toString(0x10);
 	}
 	
 	public static void copyFile(File a, File b) throws IOException {
