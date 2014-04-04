@@ -430,25 +430,21 @@ public abstract class Util {
 	}
 	
 	/**
-	 * Returns the next line from the inputstream. This is all the bytes up until and including the next LF byte (0x0A or '\n')
-	 * @param is An inputstream to read from. This is read byte-at-a-time so this should certainly be a buffered implementation!
+	 * Returns the next line from the InputStream. This is all the bytes up until and including the next LF byte (0x0A or '\n')
+	 * @param is An InputStream to read from. This is read byte-at-a-time so this should certainly be a buffered implementation!
 	 * @return The line, as a byte array.
-	 * @throws IOException if the underlying inputstream does.
+	 * @throws IOException if the underlying InputStream does.
 	 */
 	public static byte[] readLine(InputStream is) throws IOException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		
-		byte next;
+		int next;
 		do {
-			next = (byte) is.read();
-			if (next>=0) {
-				bos.write(next);
-			} else {
-				return bos.toByteArray();
-			}
+			next = is.read();
+			if (next < 0) break;
+			bos.write(next);
 			
-		} while (next!='\n');
-		
+		} while (next != '\n');
 		
 		return bos.toByteArray();
 	}
