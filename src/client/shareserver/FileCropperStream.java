@@ -12,7 +12,6 @@ import java.io.IOException;
  * It depends on being able to skip a fileinputstream reliably!
  * 
  * @author gary
- *
  */
 public class FileCropperStream extends FileInputStream {
 	long cropAt; //the start of the section to be discarded.
@@ -45,18 +44,17 @@ public class FileCropperStream extends FileInputStream {
 			cropPosition+=skipped;
 		} else {
 			//The crop is approaching, so do a skip-by parts:
-		    skipped = super.skip(rb);
-		    cropPosition+=skipped;
-		    if (skipped==rb) {
-		    	//successfull first skip:
-		    	doCrop(); //Move past the cropped section
-		    	rb = n-rb; //Still have stuff remaining to skip
-		    	long skipped2 = super.skip(rb);
-		    	skipped+=skipped2;
-		    	cropPosition+=skipped2;
-		    }
+			skipped = super.skip(rb);
+			cropPosition+=skipped;
+			if (skipped==rb) {
+				//successfull first skip:
+				doCrop(); //Move past the cropped section
+				rb = n-rb; //Still have stuff remaining to skip
+				long skipped2 = super.skip(rb);
+				skipped+=skipped2;
+				cropPosition+=skipped2;
+			}
 		}
-
 		return skipped;
 	}
 	
@@ -73,36 +71,34 @@ public class FileCropperStream extends FileInputStream {
 	
 	@Override
 	public int read(byte[] b) throws IOException {
-		return read(b,0,b.length);
+		return read(b, 0, b.length);
 	}
 	
 	@Override
-	//Follows the same idiom as skip:
+	// Follows the same idiom as skip:
 	public int read(byte[] b, int off, int len) throws IOException {
-		int rb = (int)byteRequest(len);
+		int rb = (int) byteRequest(len);
 		int bytesRead;
-		if (rb==len) {
-			bytesRead = super.read(b,off,rb);
-			cropPosition+=bytesRead;
+		if (rb == len) {
+			bytesRead = super.read(b, off, len);
+			cropPosition += bytesRead;
 		} else {
-			//The crop is approaching, so do a skip-by parts:
-			bytesRead = super.read(b,0,rb);
-		    cropPosition+=bytesRead;
-		    if (bytesRead==rb) {
-		    	//successfull first skip:
-		    	doCrop(); //Move past the cropped section
-		    	rb = len-rb; //Still have stuff remaining to skip
-		    	int bytesRead2 = super.read(b,0,rb);
-		    	bytesRead+=bytesRead2;
-		    	cropPosition+=bytesRead2;
-		    }
+			// The crop is approaching, so do a read-by parts:
+			bytesRead = super.read(b, off, rb);
+			cropPosition += bytesRead;
+			if (bytesRead == rb) {
+				// Successful first read:
+				doCrop(); // Move past the cropped section
+				// Still have stuff remaining to read
+				int bytesRead2 = super.read(b, off + rb, len - rb);
+				bytesRead += bytesRead2;
+				cropPosition += bytesRead2;
+			}
 		}
-
 		return bytesRead;
 	}
 	
-	
-	//On skipping/reading this calculates how much may be done safely.
+	// On skipping/reading this calculates how much may be done safely.
 	// (after the crop has been done this is just the requested amount)
 	private long byteRequest(long request) {
 		if (cropPosition+request > cropAt && cropLength > 0) {
