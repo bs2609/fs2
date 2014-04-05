@@ -101,15 +101,18 @@ public class FileCropperStream extends FileInputStream {
 	// On skipping/reading this calculates how much may be done safely.
 	// (after the crop has been done this is just the requested amount)
 	private long byteRequest(long request) {
-		if (cropPosition+request > cropAt && cropLength > 0) {
-			return cropAt-cropPosition;
+		if (cropPosition + request > cropAt && cropLength > 0) {
+			return cropAt - cropPosition;
 		} else {
 			return request;
 		}
 	}
 	
 	private void doCrop() throws IOException {
-		while (cropLength > 0) cropLength-=super.skip(cropLength);
-		cropPosition+=cropLength;
+		while (cropLength > 0) {
+			long cropped = super.skip(cropLength);
+			cropLength -= cropped;
+			cropPosition += cropped;
+		}
 	}
 }
