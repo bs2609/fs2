@@ -48,19 +48,19 @@ public abstract class Logger {
 				logFile = file;
 				logFileStream = new PrintStream(new FileOutputStream(logFile, true), true);
 			} else {
-				Logger.warn("Log file " + logFileName + ".log" + " exists, but cannot be written to.");
+				warn("Log file " + logFileName + ".log" + " exists, but cannot be written to.");
 			}
 			
 			if (aFile.createNewFile() || aFile.canWrite()) {
 				accessFile = aFile;
 				accessFileStream = new PrintStream(new FileOutputStream(accessFile, true), true);
 			} else {
-				Logger.warn("Access log file " + logFileName + ".access.log" + " exists, but cannot be written to.");
+				warn("Access log file " + logFileName + ".access.log" + " exists, but cannot be written to.");
 			}
 			
 		} catch (IOException e) {
-			Logger.warn("A fresh log file could not be created: " + e);
-			e.printStackTrace();
+			warn("A fresh log file could not be created: " + e);
+			log(e);
 		}
 	}
 	
