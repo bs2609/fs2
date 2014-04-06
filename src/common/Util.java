@@ -94,11 +94,11 @@ public abstract class Util {
 	 * @return
 	 */
 	public static String join(Object[] items, String delim) {
-		if (items.length==0) return "";
-		StringBuffer buffer = new StringBuffer(items[0].toString());
-		int onItem = 1;
-		while (onItem != items.length) buffer.append(delim).append(items[onItem++].toString());
-		return buffer.toString();
+		if (items.length == 0) return "";
+		StringBuilder sb = new StringBuilder(items[0].toString());
+		int i = 1;
+		while (i != items.length) sb.append(delim).append(items[i++].toString());
+		return sb.toString();
 	}
 	
 	/**
