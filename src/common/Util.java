@@ -220,9 +220,8 @@ public abstract class Util {
 	}
 	
 	public static String oneDecimalPlace(double val) {
-		return Float.toString(((float)Math.round(val*10)/(float)10.0));
+		return Float.toString(Math.round(val * 10.0) / 10.0f);
 	}
-
 	
 	public static class FileSize implements Comparable<FileSize> {
 		private final Long size;
@@ -402,8 +401,8 @@ public abstract class Util {
 		return sb.toString();
 	}
 	
-	public static int roundTo(int value, float roundTo, boolean trunc) {
-		return (int) ((Math.round( value+(!trunc ? roundTo/2f : 0f ) )/(int)roundTo)*(int)roundTo);
+	public static int roundTo(int value, int roundTo, boolean trunc) {
+		return (int) ((value + (trunc ? 0.0 : 0.5) * roundTo) / roundTo) * roundTo;
 	}
 	
 	/**
