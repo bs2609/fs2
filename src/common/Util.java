@@ -220,14 +220,15 @@ public abstract class Util {
 	}
 	
 	public static String oneDecimalPlace(double val) {
-		return Float.toString(Math.round(val * 10.0) / 10.0f);
+		return Double.toString(Math.round(val * 10.0) / 10.0);
 	}
 	
 	public static class FileSize implements Comparable<FileSize> {
+		
 		private final Long size;
 		private final boolean speed;
 		
-		public synchronized long getSize() {
+		public long getSize() {
 			return size;
 		}
 
@@ -237,7 +238,7 @@ public abstract class Util {
 		}
 		
 		/**
-		 * Set speed to true and the toString() of this class with append a "/s"
+		 * Set speed to true and the toString() of this class will append a "/s"
 		 * @param size
 		 * @param speed
 		 */
@@ -253,24 +254,23 @@ public abstract class Util {
 		
 		@Override
 		public String toString() {
-			return niceSize(size)+(speed ? "/s" : "");
+			return niceSize(size) + (speed ? "/s" : "");
 		}
 	}
 	
 	/**
-	 * A class for printing magnitudes with Si-prefixed suffixes.
+	 * A class for printing magnitudes with SI-prefixed suffixes.
 	 * 
-	 * This importantly differs from NiceSize in that it uses Si orders of magnitude and does not say "b" for x10^0
+	 * This importantly differs from NiceSize in that it uses SI orders of magnitude and does not say "b" for x10^0
 	 * 
 	 * @author gp
-	 *
 	 */
 	public static class NiceMagnitude implements Comparable<NiceMagnitude> {
 
 		private final Long magnitude;
 		private final String suffix;
 		
-		public NiceMagnitude(Long magnitude, String suffix) {
+		public NiceMagnitude(long magnitude, String suffix) {
 			this.magnitude = magnitude;
 			this.suffix = suffix;
 		}
@@ -279,19 +279,18 @@ public abstract class Util {
 		public String toString() {
 			double working = magnitude;
 			int order = 0;
-			//Keep increasing the order until we run out of known orders of bytes.
-			while (working > 1000 && order < (sizeSuffix.length-1)) {
+			// Keep increasing the order until we run out of known orders.
+			while (working > 1000 && order < sizeSuffix.length - 1) {
 				working /= 1000;
 				order++;
 			}
-			return (order>=1 ? oneDecimalPlace(working) : (int)working)+ (order>=1 ? "_KMGTPE".substring(order, order+1) : "") + suffix;
+			return (order > 0 ? oneDecimalPlace(working) : (int) working) + (order > 0 ? ("_KMGTPE").substring(order, order + 1) : "") + suffix;
 		}
 		
 		@Override
 		public int compareTo(NiceMagnitude o) {
 			return magnitude.compareTo(o.magnitude);
 		}
-		
 	}
 	
 	private static WeakHashMap<Deferrable, Long> executeNeverFasterTable = new WeakHashMap<Deferrable, Long>();
