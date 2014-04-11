@@ -1,6 +1,7 @@
 package client;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import client.gui.Gui;
@@ -54,7 +55,7 @@ public class ClientExecutor {
 			shutdowner = new ShutdownHandler();
 			Runtime.getRuntime().addShutdownHook(shutdowner);
 			
-	    	Logger.log("Starting "+Version.FS2_CLIENT_NAME+" version " + Version.FS2_CLIENT_VERSION()+ " with "+Util.niceSize(Runtime.getRuntime().maxMemory())+" heap.");
+			Logger.log("Starting "+Version.FS2_CLIENT_NAME+" version " + Version.FS2_CLIENT_VERSION()+ " with "+Util.niceSize(Runtime.getRuntime().maxMemory())+" heap.");
 			Logger.log("Using platform directory at: "+Platform.getPlatformRoot().getAbsolutePath());
 			
 			//Check to see if we need to hand over to a newer version of FS2:
@@ -136,7 +137,7 @@ public class ClientExecutor {
 	
 	private static void setupLogging() {
 		if (Boolean.parseBoolean(conf.getString(CK.LOG_MESSAGES_TO_DISK))) {
-			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath()+File.separator+(new Date()).toString().replace(':','-'));
+			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath()+File.separator+new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date()));
 			Logger.log("Log messages are now being saved to: "+Logger.getLogFile());
 		}
 	}

@@ -330,7 +330,7 @@ public class AdvancedSettings extends SettingsPanel {
 		
 		String[] options = {"Automatically update (Recommended)", "Ask when updates are available", "Never update"};
 		
-		final JComboBox choice = new JComboBox(options);
+		final JComboBox<String> choice = new JComboBox<String>(options);
 		
 		if (frame.getGui().getConf().getString(CK.UPDATE_POLICY).equals("none")) {
 			choice.setSelectedIndex(2);

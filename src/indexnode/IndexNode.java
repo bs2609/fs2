@@ -537,14 +537,9 @@ public class IndexNode {
 		 * (must exist, be a newer revision)
 		 */
 		private void refreshShare(Share thisShare, int newRevision) {
-			if (thisShare != null) {
-				if (newRevision > thisShare.getRevision()) {
-					//Set the revision to the new one even though we haven't actually refreshed yet.
-					//This is to ensure we don't keep filling the queue with many refreshes for the same revision.
-					//This isn't perfect, (as if a refresh fails then we still think we're up to date) but it's a tradeoff.
-					thisShare.setRevision(newRevision);
-					refreshSharesPool.submit(thisShare);
-				}
+			if (thisShare != null && newRevision > thisShare.getPendingRevision()) {
+				thisShare.setPendingRevision(newRevision);
+				refreshSharesPool.submit(thisShare);
 			}
 		}
 		
@@ -580,12 +575,10 @@ public class IndexNode {
 		private String name;
 		private Client owner;
 		private int revision = 0;
+		private int pendingRevision = 0;
 		private int shareUID; //In the database, filesystem objects with this ID belong to this share.
-		public int getShareUID() {
-			return shareUID;
-		}
+		
 		private boolean listed = false;
-
 		//Once delisted this share is defunct and may not be refreshed.
 		private boolean delisted = false;
 		
@@ -600,6 +593,10 @@ public class IndexNode {
 			Logger.log("Share "+name+" on "+owner.alias+" has been created and now must be refreshed...");
 		}
 		
+		public int getShareUID() {
+			return shareUID;
+		}
+		
 		public String getName() {
 			return name;
 		}
@@ -608,9 +605,10 @@ public class IndexNode {
 			return owner;
 		}
 		
-		/*
+		/**
 		 * Executes refreshShare. This is to allow a share to be added to a threadpool for execution.
 		 */
+		@Override
 		public void run() {
 			try {
 				refreshShare();
@@ -640,24 +638,25 @@ public class IndexNode {
 			 * 5) done!
 			 */
 			try {
-				if (type==ShareType.XML) {
-					importXML();
-				} else if (type==ShareType.FILELIST) {
-					importFileList();
+				switch (type) {
+				case XML:
+					importXML(); break;
+				case FILELIST:
+					importFileList(); break;
 				}
 				listed = true;
-			} catch (FileNotFoundException e) { 
+				Logger.log("Refresh complete (share "+name+" on "+owner.getAlias()+")");
+			} catch (FileNotFoundException e) {
 				Logger.warn("Filelist not found: "+e);
-				this.revision = errorRevision; //rollback revision so we can retry again later.
+				pendingRevision = revision; // Rollback revision so we can retry again later.
 			} catch (IOException e) {
 				Logger.warn("IOException refreshing share: "+name+"... "+e.toString());
-				this.revision = errorRevision; //rollback as it was probably just a network problem.
+				pendingRevision = revision; // Rollback as it was probably just a network problem.
 				Logger.log(e);
 			} catch (Exception e) {
 				Logger.warn("Exception refreshing share "+name+"... "+e.toString());
-				Logger.log(e); //do not bother to rollback. Something more serious is wrong so retrying will just damage our QOS.
+				Logger.log(e); // Do not bother to rollback. Something more serious is wrong so retrying will just damage our QOS.
 			}
-			Logger.log("Refresh complete (share "+name+" on "+owner.getAlias()+")");
 		}
 		
 		private void importFileList() throws IOException {
@@ -672,6 +671,8 @@ public class IndexNode {
 				FileList list = FileList.reconstruct(is);
 				//Logger.log("Rx'd filelist: "+list);
 				if (list==null) throw new IllegalArgumentException("A FileList object couldn't be reconstructed.");
+				revision = list.revision;
+				if (revision > pendingRevision) pendingRevision = revision;
 				if (listed) fs.delistShare(this);
 				fs.importShare(list.root, this);
 			} finally {
@@ -684,8 +685,7 @@ public class IndexNode {
 			}
 		}
 
-		private void importXML() throws SXMLException,
-				IOException {
+		private void importXML() throws SXMLException, IOException {
 			URL filelistURL = new URL("http://"+owner.getURLAddress()+"/filelists/"+HttpUtil.urlEncode(name)+".xml");
 			if (owner.isSecure())filelistURL = FS2Filter.getFS2SecureURL(filelistURL);
 			
@@ -698,6 +698,7 @@ public class IndexNode {
 				flXML = new Sxml(is);
 				Element flElement = (Element)flXML.getDocument().getElementsByTagName("filelist").item(0);
 				revision = Integer.parseInt(flElement.getAttribute("revision"));
+				if (revision > pendingRevision) pendingRevision = revision;
 				//Mmmm it's easy now.
 				if (listed) fs.delistShare(this);
 				fs.importShare(flElement, this);
@@ -711,7 +712,7 @@ public class IndexNode {
 			}
 		}
 		
-		//Removes all trace of this share from the database
+		/** Removes all trace of this share from the database. */
 		public synchronized void delistShare() {
 			delisted = true;
 			try {
@@ -726,11 +727,16 @@ public class IndexNode {
 		public int getRevision() {
 			return revision;
 		}
-
-		int errorRevision; //if share refreshing fails we'll revert to this saved revision.
-		public void setRevision(int revision) {
-			errorRevision = this.revision;
-			this.revision = revision;
+		
+		/** Specifies the target revision for this share.
+		 *  This should be used when a share refresh is queued. */
+		public void setPendingRevision(int revision) {
+			pendingRevision = revision;
+		}
+		
+		/** Gets latest revision that is queued for update. */
+		public int getPendingRevision() {
+			return pendingRevision;
 		}
 
 		public long getSize() {

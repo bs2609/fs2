@@ -21,11 +21,11 @@ public class Platform {
 	static String productName = Version.FS2_CLIENT_NAME;
 	
 	//Is this OS X? OS X needs a lot of hacks to make it work acceptably.
-    public static boolean OS_X = (System.getProperty("os.name").toLowerCase().startsWith("mac os x"));
-    public static boolean WINDOWS = (System.getProperty("os.name").toLowerCase().startsWith("win"));
-    public static boolean LINUX = (System.getProperty("os.name").toLowerCase().contains("linux"));
-    
-    public static boolean OS_X_DOCK_ACTIVE = false;
+	public static boolean OS_X = (System.getProperty("os.name").toLowerCase().startsWith("mac os x"));
+	public static boolean WINDOWS = (System.getProperty("os.name").toLowerCase().startsWith("win"));
+	public static boolean LINUX = (System.getProperty("os.name").toLowerCase().contains("linux"));
+	
+	public static boolean OS_X_DOCK_ACTIVE = false;
 	
 	public static void performStartupOSHacks() {
 		if (OS_X) {
@@ -33,9 +33,6 @@ public class Platform {
 			System.setProperty("com.apple.mrj.application.apple.menu.about.name","FS2");
 			OSXAdapter.setDockIcon(new Utilities().getImage("trayicon").getImage());
 			OSXAdapter.setAboutHandler(null, null); //disable the about menu item.
-		}
-		if (LINUX) {
-			Logger.severe("When running FS2 on linux you should not launch with 'java -jar {jarname}'  but as 'java -cp {jarname} client.ClientExecutor'\nThis is because the splash-screen will break drag-and-drop support and cause X11 to lockup: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6397447");
 		}
 	}
 	

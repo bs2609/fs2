@@ -11,8 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.net.ssl.SSLContext;
 import javax.swing.event.TableModelEvent;
@@ -284,7 +285,7 @@ public class ShareServer implements TableModel {
 	private List<Share> shares = Collections.synchronizedList(new ArrayList<Share>());
 	private Timer shareRefreshTimer;
 	private Config conf;
-	private ThreadPoolExecutor shareRefreshPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1, new NamedThreadFactory(true, "Share refresh thread."));
+	private ExecutorService shareRefreshPool = Executors.newFixedThreadPool(1, new NamedThreadFactory(true, "Share refresh thread."));
 	private HttpEventsImpl httpEvents = new HttpEventsImpl();
 	private PeerStatsCollector peerstats;
 	private Notifications notify;
@@ -478,6 +479,8 @@ public class ShareServer implements TableModel {
 		//shutdown the refresh timer:
 		shareRefreshTimer.cancel();
 		
+		shareRefreshPool.shutdown();
+		
 		//) shutdown each share as they might be refreshing:
 		synchronized (shares) {
 			for (Share s : shares) {
@@ -623,7 +626,7 @@ public class ShareServer implements TableModel {
 		communicator.sharesChanged();
 	}
 	
-	ThreadPoolExecutor getShareRefreshPool() {
+	Executor getShareRefreshPool() {
 		return shareRefreshPool;
 	}
 	

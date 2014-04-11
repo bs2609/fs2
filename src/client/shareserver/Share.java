@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -69,7 +70,6 @@ public class Share {
 				Logger.log(changed>0 ? "Share '"+getName()+"' is now at revision "+list.revision : "Share '"+getName()+"' is unchanged at revision " + list.revision);
 				refreshComplete();
 				
-				
 			} catch (Exception e) {
 				Logger.severe("Exception during share refresh: "+e);
 				Logger.log(e);
@@ -95,6 +95,7 @@ public class Share {
 					
 					if (f.getPath().endsWith(".incomplete")) continue; //don't share incomplete files as they can hash collide! (this effectively pollutes FS2 networks of large files :S)
 					if (f.isDirectory() && isSymlink(f)) continue; //forbid linked directories to avoid infinite loops.
+					if (f.isHidden() && !f.isDirectory()) continue; // skip hidden files
 					
 					try {
 						if (f.isFile() && !Util.isWithin(f, canonicalLocation)) {
@@ -190,13 +191,7 @@ public class Share {
 		}
 		
 		private boolean isSymlink(File file) {
-			try {
-				return !file.getAbsolutePath().equals(file.getCanonicalPath());
-			} catch (IOException e) {
-				Logger.severe("Symlink detection failed!:"+e);
-				Logger.log(e);
-				return false;
-			}
+			return Files.isSymbolicLink(file.toPath());
 		}
 	
 		/***
@@ -243,6 +238,7 @@ public class Share {
 						
 						if (f.getPath().endsWith(".incomplete")) continue; // we don't share incomplete files
 						if (f.isDirectory() && isSymlink(f)) continue; // forbid linked directories to avoid infinite loops.
+						if (f.isHidden() && !f.isDirectory()) continue; // skip hidden files
 						
 						try {
 							if (f.isFile() && !Util.isWithin(f, canonicalLocation)) {
@@ -390,7 +386,7 @@ public class Share {
 		context.getFilters().add(ssvr.getSecureFilter());
 		context.getFilters().add(ssvr.getFS2Filter());
 		context.getFilters().add(ssvr.getQueueFilter());
-	    context.getFilters().add(ssvr.getThrottleFilter());
+		context.getFilters().add(ssvr.getThrottleFilter());
 		
 		//If we just created a new filelist then it must be built for the first time, else refreshed.
 		if (list.revision==0) {
@@ -430,7 +426,7 @@ public class Share {
 		
 		list.setRefreshedNow();
 		if (saveList()) {
-			setStatus(Status.ACTIVE);	
+			setStatus(Status.ACTIVE);
 		}
 
 		ssvr.getIndexNodeCommunicator().sharesChanged(); //does not return immediately.
