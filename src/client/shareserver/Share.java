@@ -1,204 +1,226 @@
 package client.shareserver;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import common.httpserver.HttpContext;
+import java.util.Set;
 
 import client.platform.Platform;
-
 import common.FS2Constants;
 import common.FileList;
+import common.FileList.Item;
 import common.HttpFileHandler;
 import common.HttpUtil;
 import common.Logger;
 import common.ProgressTracker;
 import common.Util;
-import common.FileList.Item;
 import common.Util.Deferrable;
 import common.Util.NiceMagnitude;
+import common.httpserver.HttpContext;
 
 public class Share {
 	
 	private class Refresher implements Runnable {
 		
 		volatile boolean shouldStop = false;
-		ProgressTracker tracker = new ProgressTracker();
+		volatile FileCounter fileCounter = null;
 		long changed = 0;
 		long buildSizeSoFar = 0;
-		FileCounter fileCounter = null;
+		ProgressTracker tracker = new ProgressTracker();
 		
-		public void shutdown() {
-			shouldStop = true;
+		final DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+
+			@Override
+			public boolean accept(Path entry) throws IOException {
+				
+				if (entry.getFileName().toString().endsWith(".incomplete")) return false;
+				if (Files.isSymbolicLink(entry) && (Files.isDirectory(entry) || !entry.toRealPath().startsWith(canonicalLocation))) return false;
+				if (Files.isHidden(entry) && !Files.isDirectory(entry)) return false;
+				
+				return true;
+			}
+		};
+		
+		public synchronized void shutdown() {
 			if (fileCounter != null) {
 				fileCounter.shutdown();
+				fileCounter = null;
 			}
+			shouldStop = true;
 		}
 		
 		@Override
 		public void run() {
 			try {
 				tracker.setExpectedMaximum(list.root.fileCount);
-				if (list.root.fileCount == 0l) {
-					// We don't have a clue, so set off a counter worker to find out
+				
+				if (list.root.fileCount == 0L) {
+					// We don't have a clue, so set off a counter worker to find out.
 					fileCounter = new FileCounter(tracker);
 					Thread fct = new Thread(fileCounter);
 					fct.setDaemon(true);
-					fct.setName("Filecounter for share: "+getName());
+					fct.setName("Filecounter for share: " + getName());
+					fct.setPriority(Thread.NORM_PRIORITY + 1);
 					fct.start();
 				}
 				refreshActive = true;
+				
 				if (!location.exists()) {
 					setStatus(Status.ERROR);
 					cause = ErrorCause.NOTFOUND;
-					Logger.warn("Share "+getName()+" ("+location+") doesn't exist on disk!");
+					Logger.warn("Share " + getName() + " (" + location.getName() + ") doesn't exist on disk!");
 					return;
 				}
-				//Always start on a canonical file so that symlink detection works.
+				// Start on a canonical file.
 				refreshDirectory(canonicalLocation, list.root);
 				if (shouldStop) return;
 				
-				if (changed>0) list.revision++;
-				Logger.log(changed>0 ? "Share '"+getName()+"' is now at revision "+list.revision : "Share '"+getName()+"' is unchanged at revision " + list.revision);
+				Logger.log("Share '" + getName() + "' is " + (changed > 0 ? "now at revision " + ++list.revision : "unchanged at revision " + list.revision));
 				refreshComplete();
 				
 			} catch (Exception e) {
-				Logger.severe("Exception during share refresh: "+e);
+				Logger.severe("Exception during share refresh: " + e);
 				Logger.log(e);
 				causeOtherDescription = e.toString();
 				setStatus(Status.ERROR);
 				cause = ErrorCause.OTHER;
+				
 			} finally {
-				//heh:
-				activeRefresh = null;
 				refreshActive = false;
+				activeRefresh = null;
 			}
 		}
 		
-		void refreshDirectory(File directory, Item directoryItem) {
-			HashSet<String> existing = new HashSet<String>(directoryItem.children.keySet());
+		void refreshDirectory(final Path directory, Item directoryItem) {
+		
+			Set<String> existingItems = new HashSet<String>(directoryItem.children.keySet());
 			
-			File[] dirChildren = directory.listFiles();
-			if (dirChildren!=null) {
-				for (final File f : dirChildren) {
-					//Here is the 'main' loop, items place here will happen before each file is considered.
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, filter)) {
+				for (final Path entry : stream) {
+				
 					if (shouldStop) return;
 					Util.executeNeverFasterThan(FS2Constants.CLIENT_EVENT_MIN_INTERVAL, notifyShareServer);
+					String entryName = entry.getFileName().toString();
 					
-					if (f.getPath().endsWith(".incomplete")) continue; //don't share incomplete files as they can hash collide! (this effectively pollutes FS2 networks of large files :S)
-					if (f.isDirectory() && isSymlink(f)) continue; //forbid linked directories to avoid infinite loops.
-					if (f.isHidden() && !f.isDirectory()) continue; // skip hidden files
-					
-					try {
-						if (f.isFile() && !Util.isWithin(f, canonicalLocation)) {
-							Logger.warn("Ignoring '"+f.getAbsolutePath()+"' while building share '"+getName()+"' as it is a link to outside of the share root.");
-							continue; //ignore symlinks to outside of the share as these cannot be downloaded.
-						}
-					} catch (IOException e) {
-						Logger.warn("Unable to check for canonical containment while building filelist: "+e);
-						Logger.log(e);
-						continue;
-					} 
-					
-					if (existing.remove(f.getName())) {
-						//We already have this item so update it:
-						Item exists = directoryItem.children.get(f.getName());
-						long csize = exists.size;
-						long ccount = exists.fileCount;
+					if (existingItems.remove(entryName)) {
+						// We already have this item so update it:
+						Item existingItem = directoryItem.children.get(entryName);
+						long existingSize = existingItem.size;
+						long existingFileCount = existingItem.fileCount;
 						
-						updateItem(f, exists);
+						updateItem(entry, existingItem);
 						
-						directoryItem.size-=csize;
-						directoryItem.size+=exists.size;
-						directoryItem.fileCount-=ccount;
-						directoryItem.fileCount+=exists.fileCount;
+						directoryItem.size -= existingSize;
+						directoryItem.size += existingItem.size;
+						directoryItem.fileCount -= existingFileCount;
+						directoryItem.fileCount += existingItem.fileCount;
+						
 					} else {
 						changed++;
-						//brand new file or directory.
-						Item newitem = new Item();
-						newitem.name = f.getName();
-						directoryItem.children.put(newitem.name, newitem);
-						if (!updateItem(f, newitem)) {
-							directoryItem.children.remove(newitem.name);
-							changed-=2; //Item couldn't be updated (probably no permission) so this change didn't count.
-							            //Nor did the change incurred by the rehash that failed.
+						// Brand new file or directory.
+						Item newItem = new Item();
+						newItem.name = entryName;
+						directoryItem.children.put(newItem.name, newItem);
+						
+						if (!updateItem(entry, newItem)) {
+							directoryItem.children.remove(newItem.name);
+							changed -= 2; // Item couldn't be updated (probably no permission) so this change didn't count.
+							              // Nor did the change incurred by the rehash that failed.
 						} else {
-							directoryItem.size+=newitem.size;
-							directoryItem.fileCount+=newitem.fileCount;
-							if (!newitem.isDirectory()) buildSizeSoFar+=newitem.size;
+							directoryItem.size += newItem.size;
+							directoryItem.fileCount += newItem.fileCount;
+							if (!newItem.isDirectory()) buildSizeSoFar += newItem.size;
 						}
 					}
-					if (f.isFile()) {
-						tracker.progress(1); //one more item done.
+					
+					if (Files.isRegularFile(entry)) {
+						tracker.progress(1); // One more item done.
 					}
 				}
+				
+			} catch (DirectoryIteratorException e) {
+				Logger.warn("Failed to refresh directory " + directory + " due to " + e.getCause());
+				
+			} catch (IOException e) {
+				Logger.warn("Failed to refresh directory " + directory + " due to " + e);
 			}
 			
-			//Remove files/directories from the list that are still in the 'existing' set,
-			//as they are clearly not in the filesystem.
-			for (String fn : existing) {
-				changed++; //This must be a change if there are items to remove.
-				directoryItem.size-=directoryItem.children.get(fn).size;
-				directoryItem.fileCount-=directoryItem.children.get(fn).fileCount; //this .fileCount should always be one for files.
-				directoryItem.children.remove(fn);
+			// Remove files/directories from the list that are still in the 'existing' set,
+			// as they are clearly not in the filesystem.
+			for (String name : existingItems) {
+				changed++; // This must be a change if there are items to remove.
+				directoryItem.size -= directoryItem.children.get(name).size;
+				directoryItem.fileCount -= directoryItem.children.get(name).fileCount; // this .fileCount should always be one for files.
+				directoryItem.children.remove(name);
 			}
 		}
 		
-		boolean updateItem(final File f, Item i) {
-			if (f.isDirectory()) {
-				if (i.children==null) i.children = new HashMap<String, Item>();
-				refreshDirectory(f, i);
-				return true;
-			} else {
-				i.fileCount=1;
-				boolean hash = false;
-				if (i.size!=f.length()) {
-					hash = true;
-					i.size=f.length();
-				}
-				if (i.lastModified!=f.lastModified()) {
-					hash = true;
-					i.lastModified = f.lastModified();
-				}
-				if (i.hashVersion!=FS2Constants.FILE_DIGEST_VERSION_INT) {
-					hash = true;
-					i.hashVersion = FS2Constants.FILE_DIGEST_VERSION_INT;
-				}
-				if (hash || i.hash.equals("")) {
-					changed++;
-					return calculateHash(f, i);
-				}
-				return true;
-			}
-		}
-		
-		boolean calculateHash(File f, Item i) {
+		boolean updateItem(final Path p, Item i) {
 			try {
-				i.hash = ThrottledFileDigester.fs2DigestFile(f, null);
+				BasicFileAttributes attrs = Files.readAttributes(p, BasicFileAttributes.class);
+				
+				if (attrs.isDirectory()) {
+					if (i.children == null) i.children = new HashMap<String, Item>();
+					refreshDirectory(p, i);
+					return true;
+					
+				} else if (attrs.isRegularFile()) {
+					boolean shouldHash = false;
+					i.fileCount = 1;
+					if (i.size != attrs.size()) {
+						shouldHash = true;
+						i.size = attrs.size();
+					}
+					if (i.lastModified != attrs.lastModifiedTime().toMillis()) {
+						shouldHash = true;
+						i.lastModified = attrs.lastModifiedTime().toMillis();
+					}
+					if (i.hashVersion != FS2Constants.FILE_DIGEST_VERSION_INT) {
+						shouldHash = true;
+						i.hashVersion = FS2Constants.FILE_DIGEST_VERSION_INT;
+					}
+					if (shouldHash || i.hash.equals("")) {
+						changed++;
+						return calculateHash(p, i);
+					}
+					return true;
+				}
+				
+			} catch (IOException e) {
+				Logger.warn("Failed to update details for " + p.getFileName() + ": " + e);
+				return false;
+			}
+			return false;
+		}
+		
+		boolean calculateHash(final Path p, Item i) {
+			try {
+				i.hash = ThrottledFileDigester.fs2DigestFile(p, null);
 				return true;
+				
 			} catch (Exception e) {
-				Logger.warn("Failed to generate hash for "+f.getName()+", "+e.toString());
+				Logger.warn("Failed to generate hash for " + p.getFileName() + ", " + e);
+				Logger.log(e);
 				return false;
 			}
 		}
 		
-		private boolean isSymlink(File file) {
-			return Files.isSymbolicLink(file.toPath());
-		}
-	
-		/***
+		/**
 		 * A file counter which just recurses directories in order to find out how many
 		 * files are within it.
 		 * @author r4abigman
-		 *
 		 */
 		private class FileCounter implements Runnable {
 
@@ -210,58 +232,57 @@ public class Share {
 				this.tracker = tracker;
 			}
 			
-			public void shutdown() {
+			public synchronized void shutdown() {
 				shouldStop = true;
 			}
 			
 			@Override
 			public void run() {
 				try {
-					//Always start on a canonical file so that symlink detection works.
-					countDirectory(canonicalLocation);
 					if (shouldStop) return;
+					// Start on a canonical file.
+					countDirectory(canonicalLocation);
+					
 				} catch (Exception e) {
-					Logger.severe("Exception during file count: "+e);
+					Logger.severe("Exception during file count: " + e);
 					Logger.log(e);
-					// As something went wrong, just set the max expected to zero
+					// As something went wrong, just set the max expected to zero.
 					tracker.setExpectedMaximum(0);
+					
+				} finally {
+					fileCounter = null;
 				}
 			}
 			
-			void countDirectory(File directory) {
-				File[] dirChildren = directory.listFiles();
-				if (dirChildren!=null) {
-					for (final File f : dirChildren) {
-						// Here is the 'main' loop, items place here will happen before each file is considered.
-						if (shouldStop) return;
+			void countDirectory(final Path directory) {
+				
+				class FileCounterVisitor<T> extends SimpleFileVisitor<T> {
+					
+					@Override
+					public FileVisitResult visitFile(T file, BasicFileAttributes attrs) throws IOException {
+						if (shouldStop) return FileVisitResult.TERMINATE;
 						Util.executeNeverFasterThan(FS2Constants.CLIENT_EVENT_MIN_INTERVAL, notifyShareServer);
-						
-						if (f.getPath().endsWith(".incomplete")) continue; // we don't share incomplete files
-						if (f.isDirectory() && isSymlink(f)) continue; // forbid linked directories to avoid infinite loops.
-						if (f.isHidden() && !f.isDirectory()) continue; // skip hidden files
-						
-						try {
-							if (f.isFile() && !Util.isWithin(f, canonicalLocation)) {
-								continue; // ignore symlinks to outside of the share as these cannot be downloaded.
-							}
-						} catch (IOException e) {
-							Logger.warn("Unable to check for canonical containment while building filelist count: "+e);
-							Logger.log(e);
-							continue;
-						}
-						
-						if (f.isDirectory()) {
-							countDirectory(f);
-						} else if (f.isFile()) {
-							fileCount++;
-						}
+						fileCount++;
+						return FileVisitResult.CONTINUE;
 					}
-					// Update the expected maximum of the tracker
-					tracker.setExpectedMaximum(fileCount);
+					
+					@Override
+					public FileVisitResult postVisitDirectory(T dir, IOException exc) throws IOException {
+						tracker.setExpectedMaximum(fileCount);
+						return FileVisitResult.CONTINUE;
+					}
+				}
+				
+				try {
+					Files.walkFileTree(directory, new FileCounterVisitor<Path>());
+					
+				} catch (IOException e) {
+					Logger.warn("Unable to count all files in " + directory + ": " + e);
 				}
 			}
 			
 		}
+		
 	}
 	
 	public enum Status {ACTIVE, REFRESHING, BUILDING, ERROR, SHUTDOWN, SAVING};
@@ -270,43 +291,91 @@ public class Share {
 	ErrorCause cause = ErrorCause.OTHER;
 	String causeOtherDescription;
 	private File location;
-	File canonicalLocation;
-	FileList list; //The structure that holds the list of files.
-	File listFile;
+	Path canonicalLocation;
+	FileList list; // The structure that holds the list of files.
+	Path listFile;
 	ShareServer ssvr;
 	HttpContext context;
 	
 	volatile Refresher activeRefresh;
 	volatile boolean refreshActive = false;
 	
+	private class NotifyShareServer implements Deferrable {
+		
+		@Override
+		public void run() {
+			ssvr.notifyShareChanged(Share.this);
+		}
+	}
+	
+	private NotifyShareServer notifyShareServer = new NotifyShareServer();
+	
+	public Share(ShareServer ssvr, String name, File location) throws IOException {
+		
+		this.location = location;
+		this.canonicalLocation = location.toPath().toRealPath();
+		this.ssvr = ssvr;
+		listFile = Platform.getPlatformFile("filelists" + File.separator + name + ".FileList").toPath();
+		
+		if (Files.exists(listFile)) {
+			InputStream is = new BufferedInputStream(Files.newInputStream(listFile));
+			list = FileList.reconstruct(is);
+			is.close();
+		}
+		
+		// The user might (for some reason) have changed the case of the share name, so update the filelist now:
+		if (list != null && !list.getName().equals(name)) {
+			Logger.log("Share name doesn't match FileList's internal name... updating.");
+			list.root.name = name;
+			saveList();
+		}
+		
+		if (list == null) {
+			// Create a new list from scratch.
+			list = FileList.newFileList(name);
+		}
+		
+		context = ssvr.getHttpServer().createContext("/shares/" + HttpUtil.urlEncode(name),
+			new HttpFileHandler(location, ssvr.getHttpEventsHandler(), ssvr.getUploadTracker()));
+		
+		context.getFilters().add(ssvr.getSecureFilter());
+		context.getFilters().add(ssvr.getFS2Filter());
+		context.getFilters().add(ssvr.getQueueFilter());
+		context.getFilters().add(ssvr.getThrottleFilter());
+		
+		// If we just created a new filelist then the share must be built, else just refreshed.
+		if (list.revision == 0) {
+			Logger.log("Share '" + name + "' is being built for the first time.");
+			scheduleRefresh(true);
+		} else {
+			setStatus(Status.ACTIVE);
+		}
+	}
+	
 	/**
 	 * Returns the size of this share.
 	 * @return
 	 */
 	public long getSize() {
-		if (status==Status.BUILDING || status==Status.REFRESHING) {
-			try {
-				return Math.max(activeRefresh.buildSizeSoFar, list.root.size);
-			} catch (NullPointerException n) {
-				return list.root.size;
-			}
-		} else {
+		switch (status) {
+		case BUILDING:
+		case REFRESHING:
+			return Math.max(activeRefresh != null ? activeRefresh.buildSizeSoFar : 0L, list.root.size);
+		default:
 			return list.root.size;
 		}
 	}
 	
 	/**
-	 * Returns the number of files in this share
+	 * Returns the number of files in this share.
 	 * @return
 	 */
 	public long getFileCount() {
-		if (status==Status.BUILDING || status==Status.REFRESHING) {
-			try {
-				return Math.max(activeRefresh.tracker.getPosition(), list.root.fileCount);
-			} catch (NullPointerException n) {
-				return list.root.fileCount;
-			}
-		} else {
+		switch (status) {
+		case BUILDING:
+		case REFRESHING:
+			return Math.max(activeRefresh != null ? activeRefresh.tracker.getPosition() : 0L, list.root.fileCount);
+		default:
 			return list.root.fileCount;
 		}
 	}
@@ -314,26 +383,26 @@ public class Share {
 	public String describeStatus() {
 		switch (status) {
 		case BUILDING:
-			try {
+			if (activeRefresh != null) {
 				ProgressTracker tr = activeRefresh.tracker;
-				String msg = "building";
+				String msg = "Building";
 				if (!refreshActive) {
 					msg += " (queued)";
 				} else {
-					msg += " at " + new NiceMagnitude((long)activeRefresh.tracker.getSpeed(),"") + " files/s";
+					msg += " at " + new NiceMagnitude((long) tr.getSpeed(), "") + " files/s";
 					if (tr.getMaximum() > tr.getPosition()) {
-						// Maximum expected is actually set, meaning we must have scanned for file counts
+						// Maximum expected is actually set, meaning we must have scanned for file counts.
 						msg += ", ETR: " + tr.describeTimeRemaining();
 					}
 				}
 				return msg;
-			} catch (NullPointerException n) {};
+			}
 		case REFRESHING:
-			try {
+			if (activeRefresh != null) {
 				ProgressTracker tr = activeRefresh.tracker;
-				return tr.percentCompleteString()+" refreshed "+(refreshActive ? "at "+new NiceMagnitude((long)tr.getSpeed(),"")+" files/s, ETR: "+tr.describeTimeRemaining() : "(queued)");
-			} catch (NullPointerException n) {};
-			case ERROR:
+				return tr.percentCompleteString() + " refreshed " + (refreshActive ? "at " + new NiceMagnitude((long) tr.getSpeed(), "") + " files/s, ETR: " + tr.describeTimeRemaining() : "(queued)");
+			}
+		case ERROR:
 			return describeError();
 		case ACTIVE:
 			return "Active";
@@ -345,61 +414,14 @@ public class Share {
 	}
 	
 	public String describeError() {
-		if (cause==ErrorCause.NOTFOUND) {
-			return "error: not found on disk";
-		} else if (cause == ErrorCause.UNSAVEABLE) {
-			return "error: file list unsaveable: "+causeOtherDescription;
-		} else return "error: "+causeOtherDescription;
-	}
-	
-	public Share(ShareServer ssvr, String name, File location) throws IOException {
-		this.location = location;
-		this.canonicalLocation = location.getCanonicalFile();
-		this.ssvr = ssvr;
-		
-		listFile = Platform.getPlatformFile("filelists"+File.separator+name+".FileList");
-		
-		if (listFile.exists()) {
-			try {
-				InputStream is = new BufferedInputStream(new FileInputStream(listFile));
-				list = FileList.reconstruct(is);
-				is.close();
-				if (list==null) newFileList(name);
-				
-				//The user might (for some reason) have changed the case of the share name, so update the filelist now:
-				if (!list.getName().equals(name)) {
-					Logger.log("Share name doesn't match FileList's internal name... updating.");
-					list.root.name = name;
-					saveList();
-				}
-				
-			} catch (FileNotFoundException what) {
-				Logger.severe("File that exists couldn't be found!?: "+what);
-				Logger.log(what);
-			}
-		} else {
-			newFileList(name);
+		switch (cause) {
+		case NOTFOUND:
+			return "Error: not found on disk";
+		case UNSAVEABLE:
+			return "Error: file list unsaveable: " + causeOtherDescription;
+		default:
+			return "Error: " + causeOtherDescription;
 		}
-		
-		context = ssvr.getHttpServer().createContext("/shares/"+HttpUtil.urlEncode(name),
-				new HttpFileHandler(location, ssvr.getHttpEventsHandler(), ssvr.getUploadTracker()));
-		context.getFilters().add(ssvr.getSecureFilter());
-		context.getFilters().add(ssvr.getFS2Filter());
-		context.getFilters().add(ssvr.getQueueFilter());
-		context.getFilters().add(ssvr.getThrottleFilter());
-		
-		//If we just created a new filelist then it must be built for the first time, else refreshed.
-		if (list.revision==0) {
-			Logger.log("Share '"+name+"' is being built for the first time.");
-			scheduleRefresh(true);
-		} else {
-			setStatus(Status.ACTIVE);
-		}
-	}
-	
-	private void newFileList(String name) {
-		//Create a new list from scratch.
-		list = FileList.newFileList(name);
 	}
 	
 	/**
@@ -414,26 +436,28 @@ public class Share {
 	 * @param firstRefresh specify true iff this is the initial refresh.
 	 */
 	private synchronized void scheduleRefresh(boolean firstRefresh) {
-		synchronized (status) { if (status==Status.SHUTDOWN) return; } //can't refresh a shutdown share.
-		if (activeRefresh==null) {			 						   //Only do something if there is no active/scheduled refresher already.
-			if (!firstRefresh) setStatus(Status.REFRESHING);
-			activeRefresh = new Refresher();
-			ssvr.getShareRefreshPool().execute(activeRefresh);
-		}
+		// Can't refresh a shutdown share.
+		synchronized (status) { if (status == Status.SHUTDOWN) return; }
+		// Only do something if there is no active/scheduled refresher already.
+		if (activeRefresh != null) return;
+		
+		if (!firstRefresh) setStatus(Status.REFRESHING);
+		activeRefresh = new Refresher();
+		ssvr.getShareRefreshPool().execute(activeRefresh);
 	}
 	
 	private void refreshComplete() {
-		
 		list.setRefreshedNow();
-		if (saveList()) {
-			setStatus(Status.ACTIVE);
-		}
-
-		ssvr.getIndexNodeCommunicator().sharesChanged(); //does not return immediately.
+		if (saveList()) setStatus(Status.ACTIVE);
+		// Does not return immediately.
+		ssvr.getIndexNodeCommunicator().sharesChanged();
 	}
 	
 	public synchronized void shutdown() {
-		if (activeRefresh!=null) activeRefresh.shutdown();
+		if (activeRefresh != null) {
+			activeRefresh.shutdown();
+			activeRefresh = null;
+		}
 		ssvr.getHttpServer().removeContext(context);
 		setStatus(Status.SHUTDOWN);
 	}
@@ -441,22 +465,19 @@ public class Share {
 	private boolean saveList() {
 		try {
 			setStatus(Status.SAVING);
-			File partial = new File(listFile.getAbsoluteFile()+".working");
+			Path partial = listFile.resolveSibling(listFile.getFileName() + ".working");
+			Files.deleteIfExists(partial);
 			
-			if (partial.exists()) partial.delete();
+			OutputStream os = new BufferedOutputStream(Files.newOutputStream(partial));
+			list.deconstruct(os);
+			os.close();
 			
-			FileOutputStream fos = new FileOutputStream(partial);
-			list.deconstruct(fos);
-			fos.close();
-			
-			if (listFile.exists()) listFile.delete();
-			
-			if (!partial.renameTo(listFile)) {
-				throw new IllegalStateException("Couldn't rename the working filelist for share '"+getName()+"'");
-			}
+			Files.deleteIfExists(listFile);
+			Files.move(partial, listFile);
 			return true;
-		} catch (Exception e) {
-			Logger.severe("Share filelist couldn't be saved: "+e.toString());
+			
+		} catch (IOException e) {
+			Logger.severe("Share filelist couldn't be saved: " + e);
 			Logger.log(e);
 			causeOtherDescription = e.toString();
 			cause = ErrorCause.UNSAVEABLE;
@@ -475,31 +496,21 @@ public class Share {
 	
 	private void setStatus(Status newStatus) {
 		synchronized (status) {
-			if (status!=newStatus) {
-				status = newStatus;
-				Logger.log("Share '"+getName()+"' became "+getStatus());
-				if (status!=Status.SHUTDOWN) ssvr.notifyShareChanged(this);
-			}
-		}
-	}
-	
-	private NotifyShareServer notifyShareServer = new NotifyShareServer();
-	private class NotifyShareServer implements Deferrable {
-		@Override
-		public void run() {
-			ssvr.notifyShareChanged(Share.this);
+			if (status == newStatus) return;
+			status = newStatus;
+			Logger.log("Share '" + getName() + "' became " + status);
+			if (status != Status.SHUTDOWN) ssvr.notifyShareChanged(this);
 		}
 	}
 	
 	public Status getStatus() {
 		return status;
 	}
-
-	public void setPath(File path) throws IOException {
-		this.location = path;
-		this.canonicalLocation = location.getCanonicalFile();
-		this.refresh();
 	
+	public void setPath(File path) throws IOException {
+		location = path;
+		canonicalLocation = path.toPath().toRealPath();
+		refresh();
 	}
 	
 	/**
@@ -509,7 +520,7 @@ public class Share {
 	public long getLastRefreshed() {
 		return list.getLastRefreshed();
 	}
-
+	
 	/**
 	 * Returns the path that this shares.
 	 * @return
