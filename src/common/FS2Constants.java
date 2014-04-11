@@ -57,8 +57,8 @@ public class FS2Constants {
 	/** The hash version we are using for fs2, so we know to not
 	 *  accept incompatible hashes in the indexnode and clients know to
 	 *  recreate hashes if they are obsolete. */
-	public static final String FILE_DIGEST_VERSION_XML = "MD5-v4";
-	public static final int FILE_DIGEST_VERSION_INT = 4;
+	public static final String FILE_DIGEST_VERSION_XML = "MD5-v5";
+	public static final int FILE_DIGEST_VERSION_INT = 5;
 	
 	/**How much of the start and end of files should be digested? */
 	public static final int FILE_DIGEST_HEAD_FOOT_LENGTH = 64*1024; //64KiB
