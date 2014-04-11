@@ -10,12 +10,12 @@ FS2 is not designed to be secure or facilitate internet piracy.
 It is to allow the easy transfer of files (such as steam backups) at LAN parties where Windows file sharing and other programs like DC++ simply don't do searching and browsing well enough.
 
 The goal for FS2 is to be as easy as possible -zero configuration in most cases- and to be the best possible program for LAN party file sharing.
-Indeed, FS2 was developed for the FragSoc (University of York LAN gaming society) and has been used for nearly three years now, transferring hundreds of terrabytes in that time.
+Indeed, FS2 was developed for the FragSoc (University of York LAN gaming society) and has been used for several years now, transferring hundreds of terabytes in that time.
 
 Getting Started
 ===============
 
-FS2 requires Java 1.6 or above and will run on Windows, Linux and OS X. Just double click on the fs2client-X.X.X.jar, or run "java -jar fs2client-X.X.X.jar"
+FS2 requires Java 1.7 or above and will run on Windows, Linux and OS X. Just double click on the fs2client-X.X.X.jar, or run "java -jar fs2client-X.X.X.jar"
 
 **The latest build can always be found at ftp://empty.org.uk/fs2/ and the fs2 client will automatically update to the latest version available.** If autoupdates are not your thing, then you can disable them in the advanced settings.
 
