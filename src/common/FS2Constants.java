@@ -54,6 +54,9 @@ public class FS2Constants {
 	public static final String FILE_DIGEST_ALGORITHM = "MD5";
 	//Md5 currently as it's implementation is polished on desktop platforms and we don't need cryptographically strong hashes.
 	
+	/** How many bits should a file digest contain? */
+	public static final int FILE_DIGEST_BITS = 128;
+	
 	/** The hash version we are using for fs2, so we know to not
 	 *  accept incompatible hashes in the indexnode and clients know to
 	 *  recreate hashes if they are obsolete. */
