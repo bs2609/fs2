@@ -24,10 +24,13 @@ import javax.swing.table.TableModel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import common.Util.Deferrable;
-import common.Util.ImageResizeType;
-import common.httpserver.Filter;
-import common.httpserver.HttpContext;
+import client.gui.Utilities;
+import client.indexnode.downloadcontroller.DownloadSource;
+import client.indexnode.internal.InternalIndexnodeManager;
+import client.platform.ClientConfigDefaults.CK;
+import client.shareserver.Share;
+import client.shareserver.ShareServer;
+import client.shareserver.Share.Status;
 
 import common.Base64Coder;
 import common.Config;
@@ -36,13 +39,11 @@ import common.Logger;
 import common.NamedThreadFactory;
 import common.Sxml;
 import common.Util;
-import client.gui.Utilities;
-import client.indexnode.downloadcontroller.DownloadSource;
-import client.indexnode.internal.InternalIndexnodeManager;
-import client.platform.ClientConfigDefaults.CK;
-import client.shareserver.Share;
-import client.shareserver.ShareServer;
-import client.shareserver.Share.Status;
+import common.Util.ByteArray;
+import common.Util.Deferrable;
+import common.Util.ImageResizeType;
+import common.httpserver.Filter;
+import common.httpserver.HttpContext;
 
 /**
  * Communicates with the indexnode(s).
@@ -388,8 +389,8 @@ public class IndexNodeCommunicator implements TableModel {
 	 * @param hash the hash of the file to find sources for.
 	 * @return a set of distinct download sources, indexed by their peer aliases.
 	 */
-	public Map<String, DownloadSource>getSourcesForFile(String hash) {
-		HashMap<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
+	public Map<String, DownloadSource> getSourcesForFile(ByteArray hash) {
+		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
 		LinkedList<IndexNode> cachedNodeList = new LinkedList<IndexNode>();
 		synchronized (nodes) { //Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
 			cachedNodeList.addAll(nodes);

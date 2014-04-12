@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import common.httpserver.HttpExchange;
-import common.httpserver.HttpHandler;
-
 import common.FS2Constants;
 import common.HttpUtil;
 import common.Logger;
+import common.Util.ByteArray;
+import common.httpserver.HttpExchange;
+import common.httpserver.HttpHandler;
 
 /**
  * The search interface for the fs2 indexnode.
@@ -41,7 +41,7 @@ public class IndexSearch implements HttpHandler {
 				//now we skim off INDEXNODE_SEARCH_MAX_RESULTS results, but only keeping items if they are directories or non-identical files.
 				ArrayList<FilesystemEntry> results = new ArrayList<FilesystemEntry>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS);
 				
-				HashSet<String> alreadyHave = new HashSet<String>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS*2);
+				HashSet<ByteArray> alreadyHave = new HashSet<ByteArray>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS*2);
 				
 				int itemsCopied = 0;
 				for (FilesystemEntry item : res) {

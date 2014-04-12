@@ -24,16 +24,17 @@ import client.gui.Utilities;
 import client.indexnode.IndexNodeStats.IndexNodeClient;
 import client.indexnode.downloadcontroller.DownloadSource;
 import client.shareserver.ShareServer;
-
 import common.Sxml.SXMLException;
 import common.httpserver.HttpExchange;
-
 import common.ChatMessage;
 import common.FS2Constants;
 import common.FS2Filter;
 import common.HttpUtil;
 import common.Logger;
 import common.Sxml;
+import common.Util;
+import common.Util.ByteArray;
+
 /**
  * Abstracts communication with a single indexnode.
  * @author gp
@@ -869,7 +870,7 @@ public class IndexNode {
 				boolean isDirectory;
 				long size;
 				String name;
-				String hash = "";
+				ByteArray hash = ByteArray.empty();
 				int linkCount = 0;
 				String clientAlias = "";
 				String path = "";
@@ -885,7 +886,7 @@ public class IndexNode {
 					if (!isDirectory) {
 						//Hash is essential for files.
 						if (!cFile.hasAttribute("fs2-hash")) continue;
-						hash = cFile.getAttribute("fs2-hash");
+						hash = new ByteArray(Util.bytesFromHexString(cFile.getAttribute("fs2-hash")));
 						if (cFile.hasAttribute("fs2-clientalias")) clientAlias = cFile.getAttribute("fs2-clientalias");
 						if (cFile.hasAttribute("fs2-alternativescount")) alternativesCount = Integer.parseInt(cFile.getAttribute("fs2-alternativescount"));
 					} else {
@@ -916,8 +917,8 @@ public class IndexNode {
 	 * @param hash the hash of the file to get sources for.
 	 * @return a map of peer aliases-> download source objects.
 	 */
-	public Map<String, DownloadSource> getSources(String hash) {
-		HashMap<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
+	public Map<String, DownloadSource> getSources(ByteArray hash) {
+		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
 		
 		try {
 			Sxml xml = getXmlFromIndexnode(getAlternativesURL(hash));
@@ -982,11 +983,11 @@ public class IndexNode {
 		}
 	}
 	
-	URL getAlternativesURL(String hash) {
+	URL getAlternativesURL(ByteArray hash) {
 		try {
-			return new URL(getActiveLocation().toString()+"/alternatives/"+hash);
+			return new URL(getActiveLocation().toString()+"/alternatives/"+Util.bytesToHexString(hash.get()));
 		} catch (Exception e) {
-			Logger.severe("Cannot produce an alterntatives URL: "+e);
+			Logger.severe("Cannot produce an alternatatives URL: "+e);
 			Logger.log(e);
 			return null;
 		}

@@ -243,7 +243,7 @@ public class DownloadDispatcher {
 		try {
 			File onDisk = f.getFile();
 			if (!onDisk.isFile()) return false;
-			if (onDisk.length()!=f.size) return false;
+			if (onDisk.length() != f.size) return false;
 			if (!ThrottledFileDigester.fs2DigestFile(onDisk, null).equals(f.hash)) return false;
 		} catch (Exception e) {
 			Logger.warn("Couldn't test for file completion on disk: "+e);

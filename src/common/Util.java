@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyManagementException;
@@ -119,6 +120,47 @@ public abstract class Util {
 		return quoted.substring(1, quoted.length() - 1).replaceAll("\\\\\"", Matcher.quoteReplacement("\"")).replaceAll("\\\\\\\\", Matcher.quoteReplacement("\\"));
 	}
 	
+	/**
+	 * Wraps a byte array, in order to provide type-specific overrides of Object methods.
+	 * Generally, is to byte[] as Byte is to byte, though more limited. (No boxing!)
+	 * Delegates to java.util.Arrays for method implementations.
+	 */
+	public static class ByteArray implements Serializable {
+		
+		private static final long serialVersionUID = -6280850528719232401L;
+		
+		private static final ByteArray empty = new ByteArray(new byte[0]);
+		
+		private final byte[] array;
+		
+		public ByteArray(byte[] array) {
+			this.array = array;
+		}
+		
+		public byte[] get() {
+			return array;
+		}
+		
+		public static ByteArray empty() {
+			return empty;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return obj instanceof byte[] && Arrays.equals(array, (byte[]) obj) || obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array);
+		}
+		
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(array);
+		}
+		
+		@Override
+		public String toString() {
+			return Arrays.toString(array);
+		}
+	}
+	
 	public static String bytesToHexString(byte[] bytes) {
 		StringBuilder sb = new StringBuilder();
 		
@@ -129,6 +171,23 @@ public abstract class Util {
 		}
 		
 		return sb.toString();
+	}
+	
+	public static byte[] bytesFromHexString(String str) {
+		if (!str.matches("[0-9a-fA-F]*")) throw new IllegalArgumentException("Not a valid hexadecimal string.");
+		if (str.length() % 2 != 0) return bytesFromHexString("0" + str);
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		char[] ch = str.toLowerCase().toCharArray();
+		
+		String hexChars = "0123456789abcdef";
+		for (int i = 0; i < ch.length; i += 2) {
+			int b = hexChars.indexOf(ch[i]) << 4;
+			b |= hexChars.indexOf(ch[i+1]);
+			baos.write(b);
+		}
+		
+		return baos.toByteArray();
 	}
 	
 	public static void copyFile(File src, File dst) throws IOException {

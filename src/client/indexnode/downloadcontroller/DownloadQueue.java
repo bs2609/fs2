@@ -40,8 +40,9 @@ import client.platform.Platform;
 import common.FS2Constants;
 import common.Logger;
 import common.SafeSaver;
-import common.Util;
 import common.SafeSaver.Savable;
+import common.Util;
+import common.Util.ByteArray;
 import common.Util.Deferrable;
 import common.Util.Filter;
 
@@ -581,7 +582,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 	public class DownloadFile extends DownloadItem {
 		private static final long serialVersionUID = 6678427711829848635L;
 		private String saveAs;
-		String hash;
+		ByteArray hash;
 		long size;
 		
 		@Override
@@ -630,7 +631,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 			return noSourceDispatches.contains(dispatchID);
 		}
 		
-		public DownloadFile(String name, String hash, long size, DownloadItem parent, Integer dispatchId) {
+		public DownloadFile(String name, ByteArray hash, long size, DownloadItem parent, Integer dispatchId) {
 			this.saveAs = name;
 			this.hash = hash;
 			this.parent = parent;

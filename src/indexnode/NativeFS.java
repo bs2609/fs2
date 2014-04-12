@@ -17,10 +17,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import common.FS2Constants;
+import common.FileList.Item;
 import common.HttpUtil;
 import common.Logger;
 import common.Util;
-import common.FileList.Item;
+import common.Util.ByteArray;
 
 /**
  * An implementation of a FS2 filesystem that uses native java objects for storage and search.
@@ -45,7 +46,7 @@ public class NativeFS implements Filesystem {
 		private long size = 0L;
 		private int linkCount = 2;
 		private NativeEntry parent = null;
-		private String hash = "";
+		private ByteArray hash = ByteArray.empty();
 		private Share share = null;
 		
 		public NativeEntry(NativeEntry parent) {
@@ -64,12 +65,12 @@ public class NativeFS implements Filesystem {
 
 		@Override
 		public synchronized FilesystemEntry createChildDirectory(String name, Share share) {
-			return createChildEntry(name, "", 0, 2, share);
+			return createChildEntry(name, ByteArray.empty(), 0, 2, share);
 		}
 
 		@Override
 		//Does not update sizes or link counts!
-		public synchronized FilesystemEntry createChildEntry(String name, String hash,
+		public synchronized FilesystemEntry createChildEntry(String name, ByteArray hash,
 				long size, int links, Share share) {
 			NativeEntry newChild = new NativeEntry(this);
 			newChild.hash = hash;
@@ -136,7 +137,7 @@ public class NativeFS implements Filesystem {
 		}
 
 		@Override
-		public String getHash() {
+		public ByteArray getHash() {
 			return hash;
 		}
 
@@ -214,7 +215,7 @@ public class NativeFS implements Filesystem {
 
 		@Override
 		public boolean isDirectory() {
-			return hash.equals("");
+			return hash.equals(ByteArray.empty());
 		}
 
 		@Override
@@ -236,7 +237,7 @@ public class NativeFS implements Filesystem {
 	}
 
 	/**Used to lookup files by hash quickly:*/
-	private HashMap<String, HashSet<NativeEntry>> hashIndex  = new HashMap<String, HashSet<NativeEntry>>();
+	private HashMap<ByteArray, HashSet<NativeEntry>> hashIndex  = new HashMap<ByteArray, HashSet<NativeEntry>>();
 	private void addHashIndex(NativeEntry entry) {
 		//Initialise this hash entry if it doesn't have a set yet:
 		synchronized (hashIndex) {
@@ -387,7 +388,7 @@ public class NativeFS implements Filesystem {
 	
 	/**
 	 * Returns the filesize size of all items it contains.
-	 * @param xmlItem
+	 * @param onItem
 	 * @param fsItem
 	 * @return
 	 */
@@ -396,12 +397,12 @@ public class NativeFS implements Filesystem {
 		long sizeAcc = 0L;
 		
 		for (Item childItem : onItem.children.values()) {
-			if (childItem.children!=null) {
+			if (childItem.isDirectory()) {
 				sizeAcc += importFileListIntoFilesystem(childItem, fsItem.createChildDirectory(childItem.name, share), share);
-				linksAcc+=1;
+				linksAcc += 1;
 			} else {
-				if (childItem.hashVersion!=FS2Constants.FILE_DIGEST_VERSION_INT) continue;
-				if (childItem.hash==null || childItem.hash.length()!=32) continue;
+				if (childItem.hashVersion != FS2Constants.FILE_DIGEST_VERSION_INT) continue;
+				if (childItem.hash == null || childItem.hash.get().length != FS2Constants.FILE_DIGEST_BITS / 8) continue;
 				sizeAcc += childItem.size;
 				fsItem.createChildEntry(childItem.name, childItem.hash, childItem.size, 1, share);
 			}
@@ -426,16 +427,15 @@ public class NativeFS implements Filesystem {
 		while (onNode != null) {
 			try {
 				if (onNode.getNodeType() == Element.ELEMENT_NODE) {
-					Element onElement = (Element)onNode;
+					Element onElement = (Element) onNode;
 					if (onElement.getTagName() == "directory") {
 						sizeAcc += importXMLIntoFilesystem(onElement, fsItem.createChildDirectory(onElement.getAttribute("name"), share), share);
 						linksAcc += 1;
-					} else if (onElement.getTagName() == "file"){
+					} else if (onElement.getTagName() == "file") {
 						if (!onElement.getAttribute("hash-version").equals(FS2Constants.FILE_DIGEST_VERSION_XML)) continue;
-						//OooP! Hardcoded constant: (one on of many (^_^) 
-						if (onElement.getAttribute("hash").length() != 32) continue;
+						if (onElement.getAttribute("hash").length() != FS2Constants.FILE_DIGEST_BITS / 4) continue;
 						long thisFileSize = Long.parseLong(onElement.getAttribute("size"));
-						String hash = onElement.getAttribute("hash");
+						ByteArray hash = new ByteArray(Util.bytesFromHexString(onElement.getAttribute("hash")));
 						sizeAcc += thisFileSize;
 						fsItem.createChildEntry(onElement.getAttribute("name"), hash, thisFileSize, 1, share);
 					}

@@ -17,6 +17,7 @@ import client.gui.Utilities;
 import common.FS2Constants;
 import common.Logger;
 import common.Util;
+import common.Util.ByteArray;
 
 /**
  * A class to represent a file or directory available on some indexnode.
@@ -276,7 +277,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	private boolean directory = false;  //true iff this entry represents a directory.
 	private boolean search = false;     //true iff this entry represents a search.
 	private String name;     //this entry's textual representation: unique within its parent. This can be the search terms if this is a search.
-	private String hash; 	 //for files the pseudo-unique identifier for this file.
+	private ByteArray hash; 	 //for files the pseudo-unique identifier for this file.
 	private long size;       //for files their size in bytes.
 	/**
 	 * for directories the number of child directories it contains+2;
@@ -327,7 +328,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Returns the hash of this file as a string.
 	 * @return
 	 */
-	public String getHash() {
+	public ByteArray getHash() {
 		if (directory) throw new IllegalStateException("getHash() is only defined for files.");
 		return hash;
 	}
@@ -613,7 +614,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * @param altCount
 	 * @return
 	 */
-	FileSystemEntry generateChildFile(String name, IndexNode onNode, long size, String hash, String alias, int altCount) {
+	FileSystemEntry generateChildFile(String name, IndexNode onNode, long size, ByteArray hash, String alias, int altCount) {
 		FileSystemEntry ret = new FileSystemEntry();
 		ret.name = name;
 		ret.parent = this;

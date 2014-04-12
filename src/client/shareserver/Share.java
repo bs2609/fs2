@@ -11,20 +11,20 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import common.httpserver.HttpContext;
-
 import client.platform.Platform;
 
 import common.FS2Constants;
 import common.FileList;
+import common.FileList.Item;
 import common.HttpFileHandler;
 import common.HttpUtil;
 import common.Logger;
 import common.ProgressTracker;
 import common.Util;
-import common.FileList.Item;
+import common.Util.ByteArray;
 import common.Util.Deferrable;
 import common.Util.NiceMagnitude;
+import common.httpserver.HttpContext;
 
 public class Share {
 	
@@ -172,7 +172,7 @@ public class Share {
 					hash = true;
 					i.hashVersion = FS2Constants.FILE_DIGEST_VERSION_INT;
 				}
-				if (hash || i.hash.equals("")) {
+				if (hash || i.hash.equals(ByteArray.empty())) {
 					changed++;
 					return calculateHash(f, i);
 				}

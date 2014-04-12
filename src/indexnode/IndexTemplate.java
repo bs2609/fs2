@@ -229,40 +229,40 @@ public class IndexTemplate {
 		Element fl = doc.createElement("div");
 		inSection.appendChild(fl);
 		fl.setAttribute("id", "fs2-filelist");
-		if (collection.size() > 0) {
-			for (FilesystemEntry file : collection) {
-				Element ForD = doc.createElement("b");
-				fl.appendChild(ForD);
-				Element newLink = linkToEntry(file, directDownload);
-				if (file.isDirectory()) {
-					newLink.setAttribute("fs2-type", "directory");
-					newLink.setAttribute("fs2-linkcount", Integer.toString(file.getLinkCount()));
-					ForD.setTextContent(">>");
-					fl.appendChild(newLink);
-				} else {
-					newLink.setAttribute("fs2-type", "file");
-					newLink.setAttribute("fs2-hash", file.getHash()); //mandatory for files
-					newLink.setAttribute("fs2-clientalias", file.getOwnerAlias());
-					int altsCount = file.getAlternatives().size();
-					newLink.setAttribute("fs2-alternativescount", Integer.toString(altsCount));
-					ForD.setTextContent("("+altsCount+")");
-					fl.appendChild(newLink);
-				}
-				newLink.setAttribute("fs2-size", Long.toString(file.getSize()));
-				newLink.setAttribute("fs2-name", file.getName());
-				newLink.setTextContent(file.getName());
-				Element info = doc.createElement("span");
-				info.setTextContent(describeEntry(file));
-				fl.appendChild(info);
-				if (parentLinkForEach) {
-					Element pLink = linkToEntry(file.getParent(), directDownload);
-					pLink.setTextContent("(parent)");
-					fl.appendChild(pLink);
-				}
-				fl.appendChild(doc.createElement("br"));
-			}
-		} else {
+		if (collection.size() == 0) {
 			fl.setTextContent("There is nothing to list.");
+			return;
+		}
+		for (FilesystemEntry file : collection) {
+			Element ForD = doc.createElement("b");
+			fl.appendChild(ForD);
+			Element newLink = linkToEntry(file, directDownload);
+			if (file.isDirectory()) {
+				newLink.setAttribute("fs2-type", "directory");
+				newLink.setAttribute("fs2-linkcount", Integer.toString(file.getLinkCount()));
+				ForD.setTextContent(">>");
+				fl.appendChild(newLink);
+			} else {
+				newLink.setAttribute("fs2-type", "file");
+				newLink.setAttribute("fs2-hash", Util.bytesToHexString(file.getHash().get())); // mandatory for files
+				newLink.setAttribute("fs2-clientalias", file.getOwnerAlias());
+				int altsCount = file.getAlternatives().size();
+				newLink.setAttribute("fs2-alternativescount", Integer.toString(altsCount));
+				ForD.setTextContent("("+altsCount+")");
+				fl.appendChild(newLink);
+			}
+			newLink.setAttribute("fs2-size", Long.toString(file.getSize()));
+			newLink.setAttribute("fs2-name", file.getName());
+			newLink.setTextContent(file.getName());
+			Element info = doc.createElement("span");
+			info.setTextContent(describeEntry(file));
+			fl.appendChild(info);
+			if (parentLinkForEach) {
+				Element pLink = linkToEntry(file.getParent(), directDownload);
+				pLink.setTextContent("(parent)");
+				fl.appendChild(pLink);
+			}
+			fl.appendChild(doc.createElement("br"));
 		}
 	}
 	
