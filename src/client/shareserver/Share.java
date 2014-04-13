@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileStore;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import client.platform.Platform;
+import client.shareserver.ResourcePoolExecutor.ResourceUser;
+
 import common.FS2Constants;
 import common.FileList;
 import common.FileList.Item;
@@ -32,7 +35,7 @@ import common.httpserver.HttpContext;
 
 public class Share {
 	
-	private class Refresher implements Runnable {
+	private class Refresher implements ResourceUser<FileStore> {
 		
 		volatile boolean shouldStop = false;
 		volatile FileCounter fileCounter = null;
@@ -59,6 +62,18 @@ public class Share {
 				fileCounter = null;
 			}
 			shouldStop = true;
+		}
+		
+		@Override
+		public FileStore getResource() {
+			try {
+				return Files.getFileStore(canonicalLocation);
+				
+			} catch (IOException e) {
+				Logger.warn("Unable to access file store: " + e);
+				Logger.log(e);
+				return null;
+			}
 		}
 		
 		@Override

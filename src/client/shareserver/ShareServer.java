@@ -3,6 +3,8 @@ package client.shareserver;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystems;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -27,27 +29,27 @@ import client.gui.Notifications;
 import client.gui.Utilities;
 import client.indexnode.IndexNodeCommunicator;
 import client.indexnode.PeerStatsCollector;
-import client.platform.Platform;
 import client.platform.ClientConfigDefaults.CK;
+import client.platform.Platform;
+import client.shareserver.ResourcePoolExecutor;
 import client.shareserver.Share.Status;
-
-import common.httpserver.HttpContext;
-import common.httpserver.HttpServer;
 
 import common.Config;
 import common.FS2Constants;
 import common.FS2Filter;
 import common.HttpFileHandler;
+import common.HttpFileHandler.HttpFileHandlerEvents;
+import common.HttpUtil.HttpTransferInfo;
 import common.Logger;
 import common.NamedThreadFactory;
 import common.ProgressTracker;
 import common.SimpleHttpHandler;
 import common.Util;
-import common.HttpFileHandler.HttpFileHandlerEvents;
-import common.HttpUtil.HttpTransferInfo;
 import common.Util.Deferrable;
 import common.Util.FileSize;
 import common.Util.NiceMagnitude;
+import common.httpserver.HttpContext;
+import common.httpserver.HttpServer;
 
 /**
  * This is the second major implementation of the ShareServer subsystem.
@@ -285,7 +287,7 @@ public class ShareServer implements TableModel {
 	private List<Share> shares = Collections.synchronizedList(new ArrayList<Share>());
 	private Timer shareRefreshTimer;
 	private Config conf;
-	private ExecutorService shareRefreshPool = Executors.newFixedThreadPool(1, new NamedThreadFactory(true, "Share refresh thread."));
+	private ExecutorService shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread."));
 	private HttpEventsImpl httpEvents = new HttpEventsImpl();
 	private PeerStatsCollector peerstats;
 	private Notifications notify;
