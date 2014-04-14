@@ -7,6 +7,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Timer;
@@ -767,7 +768,7 @@ public class ShareServer implements TableModel {
 	}
 
 	private boolean isShareOverdueForRefresh(Share s) {
-		return getTimeToNextRefreshShare(s)<=0 && s.getStatus()!=Status.REFRESHING && s.getStatus()!=Status.BUILDING && s.getStatus()!=Status.SAVING;
+		return getTimeToNextRefreshShare(s) <= 0 && !EnumSet.of(Status.REFRESHING, Status.BUILDING, Status.SAVING).contains(s.getStatus());
 	}
 
 }
