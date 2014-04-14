@@ -64,6 +64,7 @@ public class Share {
 		@Override
 		public void run() {
 			try {
+				if (shouldStop) return;
 				tracker.setExpectedMaximum(list.root.fileCount);
 				
 				if (list.root.fileCount == 0L) {
@@ -508,8 +509,10 @@ public class Share {
 	}
 	
 	public void setPath(File path) throws IOException {
-		location = path;
-		canonicalLocation = path.toPath().toRealPath();
+		synchronized (location) {
+			location = path;
+			canonicalLocation = path.toPath().toRealPath();
+		}
 		refresh();
 	}
 	
