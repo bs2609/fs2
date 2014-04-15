@@ -387,7 +387,7 @@ public class NativeFS implements Filesystem {
 	
 	/**
 	 * Returns the filesize size of all items it contains.
-	 * @param xmlItem
+	 * @param onItem
 	 * @param fsItem
 	 * @return
 	 */
@@ -396,12 +396,12 @@ public class NativeFS implements Filesystem {
 		long sizeAcc = 0L;
 		
 		for (Item childItem : onItem.children.values()) {
-			if (childItem.children!=null) {
+			if (childItem.isDirectory()) {
 				sizeAcc += importFileListIntoFilesystem(childItem, fsItem.createChildDirectory(childItem.name, share), share);
-				linksAcc+=1;
+				linksAcc += 1;
 			} else {
-				if (childItem.hashVersion!=FS2Constants.FILE_DIGEST_VERSION_INT) continue;
-				if (childItem.hash==null || childItem.hash.length()!=32) continue;
+				if (childItem.hashVersion != FS2Constants.FILE_DIGEST_VERSION_INT) continue;
+				if (childItem.hash == null || childItem.hash.length() != FS2Constants.FILE_DIGEST_BITS / 4) continue;
 				sizeAcc += childItem.size;
 				fsItem.createChildEntry(childItem.name, childItem.hash, childItem.size, 1, share);
 			}
@@ -426,14 +426,13 @@ public class NativeFS implements Filesystem {
 		while (onNode != null) {
 			try {
 				if (onNode.getNodeType() == Element.ELEMENT_NODE) {
-					Element onElement = (Element)onNode;
+					Element onElement = (Element) onNode;
 					if (onElement.getTagName() == "directory") {
 						sizeAcc += importXMLIntoFilesystem(onElement, fsItem.createChildDirectory(onElement.getAttribute("name"), share), share);
 						linksAcc += 1;
-					} else if (onElement.getTagName() == "file"){
+					} else if (onElement.getTagName() == "file") {
 						if (!onElement.getAttribute("hash-version").equals(FS2Constants.FILE_DIGEST_VERSION_XML)) continue;
-						//OooP! Hardcoded constant: (one on of many (^_^) 
-						if (onElement.getAttribute("hash").length() != 32) continue;
+						if (onElement.getAttribute("hash").length() != FS2Constants.FILE_DIGEST_BITS / 4) continue;
 						long thisFileSize = Long.parseLong(onElement.getAttribute("size"));
 						String hash = onElement.getAttribute("hash");
 						sizeAcc += thisFileSize;
