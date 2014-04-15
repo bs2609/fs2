@@ -113,8 +113,7 @@ public class AdvancedSettings extends SettingsPanel {
 		
 		String positionInfo = (iim.getRank()!=0 && (status.equals("inactive") || status.equals("active")) ? "<br>Our automatic indexnode rank is <b>"+iim.getRank()+"</b> out of <b>"+iim.getAlternativeNodes()+"</b>." : "");
 		
-		autoindexInfo.setText("<html>The internal indexnode is: <b>"+status+"</b>" + positionInfo +
-				              "</html>");
+		autoindexInfo.setText("<html>The internal indexnode is: <b>" + status + "</b>" + positionInfo + "</html>");
 	}
 	
 	private JPanel createSlotsPanel() {
@@ -272,9 +271,12 @@ public class AdvancedSettings extends SettingsPanel {
 	}
 	
 	private void setHeapInfo() {
-		heapInfo.setText("<html>Active JVM maximum heap size: <b>"+Util.niceSize(Runtime.getRuntime().maxMemory())+"</b><br>" +
-		         "Current heap usage: <b>"+Util.niceSize(Runtime.getRuntime().maxMemory()-Runtime.getRuntime().freeMemory())+"</b><br>" +
-		         "Configured maximum heap size:");
+		Runtime rt = Runtime.getRuntime();
+		heapInfo.setText("<html>" +
+			"Active JVM maximum heap size: <b>" + Util.niceSize(rt.maxMemory()) + "</b><br>" +
+			"Current heap size: <b>" + Util.niceSize(rt.totalMemory()) + "</b><br>" +
+			"Current heap usage: <b>" + Util.niceSize(rt.totalMemory() - rt.freeMemory()) + "</b><br>" +
+			"Configured maximum heap size: ");
 	}
 	
 	JLabel portNumberInfo = new JLabel();
