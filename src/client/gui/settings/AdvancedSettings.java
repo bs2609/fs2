@@ -311,15 +311,15 @@ public class AdvancedSettings extends SettingsPanel {
 	private void setPortNumberInfo() {
 		ArrayList<String> ports = new ArrayList<String>();
 		ports.add(frame.getGui().getConf().getString(CK.PORT));
-		ports.add(Integer.toString(frame.getGui().getConf().getInt(CK.PORT)+1));
+		ports.add(Integer.toString(frame.getGui().getConf().getInt(CK.PORT) + 1));
 		ports.add(Integer.toString(FS2Constants.ADVERTISMENT_DATAGRAM_PORT));
-		ports.add(Integer.toString(FS2Constants.ADVERTISMENT_DATAGRAM_PORT+1));
-		if (frame.getGui().getShareServer().getIndexNodeCommunicator().getInternalIndexNode().isCurrentlyActive()) {
-			ports.add(Integer.toString(frame.getGui().getShareServer().getIndexNodeCommunicator().getInternalIndexNode().getPort()));
-			ports.add(Integer.toString(frame.getGui().getShareServer().getIndexNodeCommunicator().getInternalIndexNode().getPort()+1));
+		ports.add(Integer.toString(FS2Constants.ADVERTISMENT_DATAGRAM_PORT + 1));
+		if (iim.isCurrentlyActive()) {
+			ports.add(Integer.toString(iim.getPort()));
+			ports.add(Integer.toString(iim.getPort() + 1));
 		}
 		
-		portNumberInfo.setText("<html>FS2 is currently using ports: <b>"+Util.join(ports.toArray(), ", ")+"</b><br>Open these ports on your firewall to use FS2</html>");
+		portNumberInfo.setText("<html>FS2 is currently using ports: <b>" + Util.join(ports.toArray(), ", ") + "</b><br>Open these ports on your firewall to use FS2</html>");
 	}
 	
 	/**
