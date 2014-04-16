@@ -18,10 +18,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
-import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -45,7 +45,7 @@ public class AdvancedSettings extends SettingsPanel {
 	
 	public AdvancedSettings(MainFrame frame) {
 		super(frame, "Advanced", frame.getGui().getUtil().getImage("advanced"));
-				
+		
 		JPanel boxes = createScrollableBoxlayout();
 		
 		//###### actual items go here:
@@ -211,6 +211,7 @@ public class AdvancedSettings extends SettingsPanel {
 	
 	JLabel heapInfo = new JLabel();
 	Timer infoTimer;
+	
 	private JPanel heapSizePanel() {
 		JPanel content = new JPanel();
 		content.setLayout(new BorderLayout());
@@ -276,10 +277,12 @@ public class AdvancedSettings extends SettingsPanel {
 			"Active JVM maximum heap size: <b>" + Util.niceSize(rt.maxMemory()) + "</b><br>" +
 			"Current heap size: <b>" + Util.niceSize(rt.totalMemory()) + "</b><br>" +
 			"Current heap usage: <b>" + Util.niceSize(rt.totalMemory() - rt.freeMemory()) + "</b><br>" +
-			"Configured maximum heap size: ");
+			"Configured maximum heap size: " + "</html>"
+		);
 	}
 	
 	JLabel portNumberInfo = new JLabel();
+	
 	private JPanel portPanel() {
 		JPanel ppanel = new JPanel(new BorderLayout());
 		ppanel.setBorder(getTitledBoldBorder("Client port"));
@@ -375,8 +378,6 @@ public class AdvancedSettings extends SettingsPanel {
 		return ret;
 	}
 	
-	
-	
 	private void restartNeeded() {
 		restartFS2.setText(restartFS2.getText().toUpperCase());
 		restartFS2.setBackground(JBytesBox.bad);
@@ -388,14 +389,14 @@ public class AdvancedSettings extends SettingsPanel {
 	private JButton resetFS2;
 	private JButton restartFS2; //clicking this restarts the FS2 client.
 	private JPanel buttonsPanel;
+	
 	/**
 	 * A single button that nukes FS2's configuration, and a button to relaunch FS2.
 	 * @return
 	 */
 	private JPanel resetToDefaultsPanel() {
-		buttonsPanel = new JPanel(new FlowLayout());
+		buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		buttonsPanel.setBorder(getTitledBoldBorder("Reset controls"));
-		((FlowLayout)buttonsPanel.getLayout()).setAlignment(FlowLayout.LEFT);
 		
 		restartFS2 = new JButton("Restart FS2", frame.getGui().getUtil().getImage("refresh"));
 		restartFS2.addActionListener(new ActionListener() {
@@ -403,7 +404,6 @@ public class AdvancedSettings extends SettingsPanel {
 			public void actionPerformed(ActionEvent e) {
 				if (!Relauncher.increaseHeap(frame.getGui().getConf().getLong(CK.HEAPSIZE), false)) { //this is done by restarting to a new heap of possibly the same size.
 					JOptionPane.showMessageDialog(null, "The client couldn't be restarted. Restart is only supported from .jar files.", "Restart failure.", JOptionPane.ERROR_MESSAGE);
-
 				}
 			}
 		});
