@@ -32,7 +32,6 @@ import client.indexnode.IndexNodeCommunicator;
 import client.indexnode.PeerStatsCollector;
 import client.platform.ClientConfigDefaults.CK;
 import client.platform.Platform;
-import client.shareserver.ResourcePoolExecutor;
 import client.shareserver.Share.Status;
 
 import common.Config;
@@ -55,11 +54,11 @@ import common.httpserver.HttpServer;
 /**
  * This is the second major implementation of the ShareServer subsystem.
  * 
- * The shareserver is responsible for:
+ * The ShareServer is responsible for:
  * 1) managing shares (filelist creation, hashing, etc)
  * 2) exporting shares to other FS2 clients. (A webserver)
  * 
- * This is the top-level class for the shareserver.
+ * This is the top-level class for the ShareServer.
  * 
  * A table model is also implemented so this can drive a swing table with ease.
  * 
@@ -70,23 +69,24 @@ public class ShareServer implements TableModel {
 	private class RefreshSignalHandler implements SignalHandler {
 		@Override
 		public void handle(Signal sig) {
-			Logger.log("Caught signal '"+sig.getName()+"', refreshing shares...");
+			Logger.log("Caught signal '" + sig.getName() + "', refreshing shares...");
 			refreshAllShares();
 		}
 	}
 	
-	private static final int FILENAME_IDX=0;
-	public static final int SECURE_IDX=1;
-	public static final int PEER_IDX=2;
-	public static final int PROGRESS_IDX=3;
-	private static final int SPEED_IDX=4;
-	private static final int ETR_IDX=5;
+	private static final int FILENAME_IDX = 0;
+	public static final int SECURE_IDX = 1;
+	public static final int PEER_IDX = 2;
+	public static final int PROGRESS_IDX = 3;
+	private static final int SPEED_IDX = 4;
+	private static final int ETR_IDX = 5;
+	
 	private class UploadsTableModel implements TableModel {
 
 		ArrayList<HttpTransferInfo> currentTransfers = new ArrayList<HttpTransferInfo>();
 		ArrayList<TableModelListener> listeners = new ArrayList<TableModelListener>();
 		
-		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; //fileName, peer alias, progress,  speed, etr
+		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; // filename, peer alias, progress, speed, etr
 		private String[] columnNames = {"Filename", "Secure?", "Peer", "Progress", "Speed", "Time remaining"};
 		
 		@Override
@@ -138,7 +138,7 @@ public class ShareServer implements TableModel {
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			return false; //read only table
+			return false; // read only table
 		}
 
 		@Override
@@ -150,7 +150,7 @@ public class ShareServer implements TableModel {
 
 		@Override
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			//nothing is editable
+			// nothing is editable
 		}
 		
 		void newTransfer(HttpTransferInfo info) {
@@ -160,7 +160,7 @@ public class ShareServer implements TableModel {
 					Utilities.dispatch(new Runnable() {
 						@Override
 						public void run() {
-							int idx = currentTransfers.size()-1; //this must be the index of the new transfer.
+							int idx = currentTransfers.size() - 1; // This must be the index of the new transfer.
 							synchronized (listeners) {
 								for (TableModelListener l : listeners) {
 									l.tableChanged(new TableModelEvent(UploadsTableModel.this, idx, idx, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
@@ -181,7 +181,7 @@ public class ShareServer implements TableModel {
 				currentTransfers.remove(oldidx);
 				if (Thread.currentThread().isInterrupted()) {
 					try {
-						Thread.sleep(1); //try to sleep (which will fail due to interruption), and will clear the interrupt flag so then we may dispatch safely.
+						Thread.sleep(1); // Try to sleep (which will fail due to interruption), and will clear the interrupt flag so then we may dispatch safely.
 					} catch (InterruptedException cleared) {}
 				}
 				try {
@@ -208,7 +208,9 @@ public class ShareServer implements TableModel {
 		}
 		
 		TableUpdater tableUpdater = new TableUpdater();
+		
 		private class TableUpdater implements Deferrable {
+			
 			HashSet<HttpTransferInfo> infosToUpdate = new HashSet<HttpTransferInfo>();
 			
 			public void updateInfo(HttpTransferInfo info) {
@@ -229,11 +231,11 @@ public class ShareServer implements TableModel {
 						Utilities.dispatch(new Runnable() {
 							@Override
 							public void run() {
-								for (int i=0; i<currentTransfers.size(); i++) {
+								for (int i = 0; i < currentTransfers.size(); i++) {
 									if (copy.contains(currentTransfers.get(i))) {
 										synchronized (listeners) {
 											for (TableModelListener l : listeners) {
-												l.tableChanged(new TableModelEvent(UploadsTableModel.this, i,i,TableModelEvent.ALL_COLUMNS, TableModelEvent.UPDATE));
+												l.tableChanged(new TableModelEvent(UploadsTableModel.this, i, i, TableModelEvent.ALL_COLUMNS, TableModelEvent.UPDATE));
 											}
 										}
 									}
@@ -251,12 +253,13 @@ public class ShareServer implements TableModel {
 	
 	/**
 	 * Handles events from the file serving contexts.
-	 * 1) notifies peer stats collector
+	 * 1) notifies PeerStatsCollector
 	 * 2) updates current uploads table
 	 * 
 	 * @author gary
 	 */
 	private class HttpEventsImpl extends HttpFileHandlerEvents {
+		
 		@Override
 		public void transferStarted(HttpTransferInfo info) {
 			peerstats.sendingFileStarted(info.getAlias());
@@ -288,14 +291,15 @@ public class ShareServer implements TableModel {
 	private List<Share> shares = Collections.synchronizedList(new ArrayList<Share>());
 	private Timer shareRefreshTimer;
 	private Config conf;
-	private ExecutorService shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread."));
+	private ExecutorService shareRefreshPool;
+	private Object shareRefreshPoolLock = new Object();
 	private HttpEventsImpl httpEvents = new HttpEventsImpl();
 	private PeerStatsCollector peerstats;
 	private Notifications notify;
 	private ProgressTracker uploadTracker = new ProgressTracker();
 	private UploadsTableModel uploadsModel = new UploadsTableModel();
-	private SSLContext context; //used for serving TLS.
-	private SecureFilter secureFilter; //Enforces secure connections when it's not possible to have found us via insecure means.
+	private SSLContext context; // Used for serving TLS.
+	private SecureFilter secureFilter; // Enforces secure connections when it's not possible to have found us via insecure means.
 	
 	public TableModel getUploadsModel() {
 		return uploadsModel;
@@ -326,7 +330,7 @@ public class ShareServer implements TableModel {
 		context = SSLContext.getInstance("TLS");
 		context.init(null, null, null); // No key manager needed, no trust manager needed, default secure random generator is fine.
 		
-		// Set up and bind the http server: 
+		// Setup and bind the HTTP server: 
 		// It's bound both on secure and insecure sockets. The secureFilter will reject requests on the insecure socket when the requests are not needed.
 		http = HttpServer.create(new InetSocketAddress(onPort), new InetSocketAddress(onPort + 1), context, new String[] {FS2Constants.DH_ANON_CIPHER_SUITE_USED}, 0);
 		// Enable a multithreaded executor:
@@ -335,7 +339,7 @@ public class ShareServer implements TableModel {
 		http.setSoTimeout(FS2Constants.SERVER_URL_CONNECTION_TIMEOUT_MS);
 		http.setUseKeepAlives(false); // No idle connections are useful to us.
 		
-		// Instantiating the communicator will add a new context to our http server.
+		// Instantiating the communicator will add a new context to our HTTP server.
 		communicator = new IndexNodeCommunicator(this, conf);
 		
 		// Can generate the secureFilter now with the communicator:
@@ -352,9 +356,19 @@ public class ShareServer implements TableModel {
 		// And we're go!
 		http.start();
 		
-		// Set up abuse limits:
+		// Setup abuse limits:
 		setUploadSpeedFromConf();
 		setSlotsFromConf();
+		
+		// Setup share refresh pool:
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (shareRefreshPoolLock) {
+					shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread."));
+				}
+			}
+		}).start();
 		
 		// Now add shares specified in the config:
 		restartConfigShares();
@@ -373,7 +387,7 @@ public class ShareServer implements TableModel {
 			Logger.warn("Couldn't attach a signal handler for share refreshes.");
 		}
 		
-		Logger.log("Now exporting shares on port " + onPort);
+		Logger.log("Now exporting shares on port "+onPort);
 	}
 	
 	private class ConsiderRefreshingSharesTask extends TimerTask {
@@ -475,19 +489,21 @@ public class ShareServer implements TableModel {
 	}
 	
 	public void shutdown() {
-		// Shut down the refresh timer:
+		// Shutdown the refresh timer:
 		shareRefreshTimer.cancel();
-		
-		shareRefreshPool.shutdown();
-		//) Shut down each share as they might be refreshing:
+		// Shutdown the refresh pool:
+		synchronized (shareRefreshPoolLock) {
+			shareRefreshPool.shutdown();
+		}
+		//) Shutdown each share as they might be refreshing:
 		synchronized (shares) {
-			for (Share s : shares) {
+			for (final Share s : shares) {
 				s.shutdown();
-				//Null large file list just in case. (if this was an OOM shutdown)
+				// Null large file list just in case. (if this was an OOM shutdown)
 				s.list = null;
 			}
 		}
-		//) Shut down the communicator.
+		//) Shutdown the communicator.
 		communicator.shutdown();
 		
 		http.stop();
@@ -506,12 +522,12 @@ public class ShareServer implements TableModel {
 	int cachedAutoRefreshInterval = 0;
 	
 	/**
-	 * Returns the number of SECONDS between autorefreshes of shares.
+	 * Returns the number of SECONDS between auto-refreshes of shares.
 	 * @return
 	 */
 	public int getAutoRefreshInterval() {
-		if (cachedAutoRefreshInterval>0) return cachedAutoRefreshInterval;
-		return cachedAutoRefreshInterval=conf.getInt(CK.SHARE_AUTOREFRESH_INTERVAL);
+		if (cachedAutoRefreshInterval > 0) return cachedAutoRefreshInterval;
+		return cachedAutoRefreshInterval = conf.getInt(CK.SHARE_AUTOREFRESH_INTERVAL);
 	}
 	
 	/**
@@ -532,7 +548,7 @@ public class ShareServer implements TableModel {
 	
 	/**
 	 * Returns a map of share names onto share objects.
-	 * This is is the actual data structure used by the shareserver, so don't mess it up.
+	 * This is the actual data structure used by the ShareServer, so don't mess it up.
 	 * This returns a synchronised list, but make sure to synchronise again if iterating.
 	 */
 	public List<Share> getShares() {
@@ -551,7 +567,7 @@ public class ShareServer implements TableModel {
 		conf.putString(CK.SHARES + "/s" + name.hashCode() + "/path", location.getPath());
 		listShare(name, location);
 		communicator.sharesChanged();
-		Logger.log("Share '" + name + "' successfully added.");
+		Logger.log("Share '" + name + "' sucessfully added.");
 	}
 	
 	public boolean shareNameExists(String name) {
@@ -567,20 +583,32 @@ public class ShareServer implements TableModel {
 	 * Called on startup to load shares from config file:
 	 */
 	private void restartConfigShares() {
-		for (String shareKey : conf.getChildKeys(CK.SHARES)) {
-			String shareName = conf.getString(shareKey + "/name");
-			File sharePath = new File(conf.getString(shareKey + "/path"));
+		ExecutorService shareLoader = Executors.newSingleThreadExecutor();
+		for (final String shareKey : conf.getChildKeys(CK.SHARES)) {
+			final String shareName = conf.getString(shareKey + "/name");
+			final File sharePath = new File(conf.getString(shareKey + "/path"));
 			notify.incrementLaunchProgress("Loading share '" + shareName + "'....");
 			if (!shareKey.equals(CK.SHARES + "/s" + shareName.hashCode())) {
 				Logger.log("Making config key canonical for share: " + shareName);
-				// stored in the config with a non-canonical key, so erase it:
+				// Stored in the config with a non-canonical key, so erase it:
 				conf.deleteKey(shareKey);
 				// and re-add it canonically
-				addShare(shareName, sharePath);
+				shareLoader.submit(new Runnable() {
+					@Override
+					public void run() {
+						addShare(shareName, sharePath);
+					}
+				});
 			} else {
-				listShare(shareName, sharePath);
+				shareLoader.submit(new Runnable() {
+					@Override
+					public void run() {
+						listShare(shareName, sharePath);
+					}
+				});
 			}
 		}
+		shareLoader.shutdown();
 		communicator.sharesChanged();
 	}
 	
@@ -607,19 +635,21 @@ public class ShareServer implements TableModel {
 		int idx;
 		share.shutdown();
 		synchronized (shares) {
-			if ((idx=shares.indexOf(share))==-1) {
-				Logger.warn("Attempt to remove unknown share '"+share.getName()+"'");
+			if ((idx = shares.indexOf(share)) == -1) {
+				Logger.warn("Attempt to remove unknown share '" + share.getName() + "'");
 				return;
 			}
 			shares.remove(idx);
 		}
 		notifyShareRemoved(idx);
-		conf.deleteKey(CK.SHARES+"/s"+share.getName().hashCode());
+		conf.deleteKey(CK.SHARES + "/s" + share.getName().hashCode());
 		communicator.sharesChanged();
 	}
 	
 	Executor getShareRefreshPool() {
-		return shareRefreshPool;
+		synchronized (shareRefreshPoolLock) {
+			return shareRefreshPool;
+		}
 	}
 	
 	private void refreshAllShares() {
@@ -634,11 +664,11 @@ public class ShareServer implements TableModel {
 		synchronized (shares) {
 			for (Share s : shares) {
 				if (s.getName().equals(FS2Constants.CLIENT_DEFAULT_SHARE_NAME)) {
-					conf.putString(CK.SHARES+"/s"+FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode()+"/path", newDefaultDir.getPath());
+					conf.putString(CK.SHARES + "/s" + FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode() + "/path", newDefaultDir.getPath());
 					try {
 						s.setPath(newDefaultDir);
 					} catch (IOException e) {
-						Logger.severe("Couldn't set the path for the default download dir: "+e);
+						Logger.severe("Couldn't set the path for the default download dir: " + e);
 					}
 				}
 			}
@@ -646,14 +676,15 @@ public class ShareServer implements TableModel {
 	}
 	
 	ArrayList<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
-	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class}; //Name, status , size, time to next refresh
+	
+	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class}; // Name, status, size, time to next refresh
 	private String[] columnNames = {"Name", "Status", "Size", "Files", "Next refresh", "Path"};
-	private static final int NAME_IDX=0;
-	private static final int STATUS_IDX=1;
-	private static final int SIZE_IDX=2;
-	private static final int FILE_IDX=3;
-	private static final int NEXT_REFRESH_IDX=4;
-	private static final int PATH_IDX=5;
+	private static final int NAME_IDX = 0;
+	private static final int STATUS_IDX = 1;
+	private static final int SIZE_IDX = 2;
+	private static final int FILE_IDX = 3;
+	private static final int NEXT_REFRESH_IDX = 4;
+	private static final int PATH_IDX = 5;
 
 	@Override
 	public void addTableModelListener(TableModelListener l) {
@@ -697,7 +728,7 @@ public class ShareServer implements TableModel {
 			return new NiceMagnitude(share.getFileCount(), " files");
 		case NEXT_REFRESH_IDX:
 			long ttnr = getTimeToNextRefreshShare(share);
-			return (ttnr<=0 ? "pending" : Util.describeInterval(ttnr));
+			return (ttnr <= 0 ? "pending" : Util.describeInterval(ttnr));
 		case PATH_IDX:
 			return share.getPath().getAbsolutePath();
 		}
@@ -713,7 +744,7 @@ public class ShareServer implements TableModel {
 	 * @return A non-negative integer representing the time that should elapse between now and the next refresh of the share specified.
 	 */
 	private long getTimeToNextRefreshShare(Share share) {
-		return Math.max(0l,(((long)getAutoRefreshInterval()*1000l+share.getLastRefreshed())-System.currentTimeMillis())/1000);
+		return Math.max(0L, (((long) getAutoRefreshInterval() * 1000L + share.getLastRefreshed()) - System.currentTimeMillis()) / 1000);
 	}
 
 	@Override
@@ -730,14 +761,14 @@ public class ShareServer implements TableModel {
 
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		//Cells are not editable
+		// Cells are not editable
 	}
 	
 	void notifyShareChanged(Share share) {
 		int rowidx = -1;
 		rowidx = shares.indexOf(share);
-		if (rowidx==-1) {
-			//this is possible as shares can change status before they are in the list.
+		if (rowidx == -1) {
+			// This is possible as shares can change status before they are in the list.
 			return;
 		}
 		fireTableChanged(new TableModelEvent(this, rowidx));
@@ -763,9 +794,9 @@ public class ShareServer implements TableModel {
 					}
 				}
 			});
-		} catch (Exception e1) {
-			Logger.warn("Couldn't notify Shares table listeners: "+e1);
-			Logger.log(e1);
+		} catch (Exception ex) {
+			Logger.warn("Couldn't notify Shares table listeners: "+ex);
+			Logger.log(ex);
 		}
 	}
 
