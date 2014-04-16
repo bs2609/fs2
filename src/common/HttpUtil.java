@@ -1,4 +1,5 @@
 package common;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -411,7 +412,7 @@ public class HttpUtil {
 	public static String simpleDownloadToString(URL url) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		InputStream is = url.openStream();
-		byte[] buf = new byte[1024];
+		byte[] buf = new byte[FS2Constants.SMALL_BUFFER_SIZE];
 		int amount;
 		while ((amount=is.read(buf))>0) {
 			sb.append(new String(buf,0,amount));

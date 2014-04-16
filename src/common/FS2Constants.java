@@ -14,6 +14,9 @@ public class FS2Constants {
 	/** Arbitrarily sized buffers are 64KiB at the moment: */
 	public static final int ARBITRARY_BUFFER_SIZE = 1024*64;
 	
+	/** Smaller buffer for network transfers and such (1KiB) */
+	public static final int SMALL_BUFFER_SIZE = 1024;
+	
 	/** How often will the filesystem consider refreshing its cache? */
 	public static final int CLIENT_REFRESH_FILESYSTEM_CACHE_INTERVAL = 1000*10;
 	

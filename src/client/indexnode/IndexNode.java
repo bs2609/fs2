@@ -457,7 +457,7 @@ public class IndexNode {
 		if (!secureTested) {
 			boolean canContactInsecure = false;
 			boolean canContactSecure = false;
-			byte[] buf = new byte[1024];
+			byte[] buf = new byte[FS2Constants.SMALL_BUFFER_SIZE];
 			
 			try {
 				//1) do secure test (this should be fast as even insecure indexnodes still listen on secure sockets)
