@@ -9,6 +9,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Timer;
@@ -87,7 +88,6 @@ public class ShareServer implements TableModel {
 		
 		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; //fileName, peer alias, progress,  speed, etr
 		private String[] columnNames = {"Filename", "Secure?", "Peer", "Progress", "Speed", "Time remaining"};
-		
 		
 		@Override
 		public void addTableModelListener(TableModelListener l) {
@@ -206,6 +206,7 @@ public class ShareServer implements TableModel {
 			tableUpdater.updateInfo(info);
 			Util.scheduleExecuteNeverFasterThan(FS2Constants.CLIENT_EVENT_MIN_INTERVAL, tableUpdater);
 		}
+		
 		TableUpdater tableUpdater = new TableUpdater();
 		private class TableUpdater implements Deferrable {
 			HashSet<HttpTransferInfo> infosToUpdate = new HashSet<HttpTransferInfo>();
@@ -306,12 +307,12 @@ public class ShareServer implements TableModel {
 		this.notify = notify;
 		
 		int onPort = conf.getInt(CK.PORT);
-		//Check for valid port:
-		if ((onPort < 1) || (onPort > 65535)) {
+		// Check for valid port:
+		if (onPort < 1 || onPort > 65535) {
 			throw new IllegalArgumentException("Bad port number");
 		}
 		
-		//Prepare the filelist directory if needed:
+		// Prepare the filelist directory if needed:
 		File filelistDir = Platform.getPlatformFile("filelists");
 		if (!filelistDir.isDirectory()) {
 			filelistDir.mkdir();
@@ -323,48 +324,46 @@ public class ShareServer implements TableModel {
 		tq.setQueueTimeoutMS(FS2Constants.CLIENT_TIMEDQUEUE_TOKEN_EXPIRY_INTERVAL);
 		
 		context = SSLContext.getInstance("TLS");
-		context.init(null, null, null); //no key manager needed, no trust manager needed, default secure random generator is fine.
+		context.init(null, null, null); // No key manager needed, no trust manager needed, default secure random generator is fine.
 		
-		//Setup and bind the http server: 
-		//  it's bound both on secure and insecure sockets. The secureFilter will reject requests on the insecure socket when the requests are not needed.
-		http = HttpServer.create(new InetSocketAddress(onPort), new InetSocketAddress(onPort+1), context, new String[] {FS2Constants.DH_ANON_CIPHER_SUITE_USED}, 0);
-		//Enable a multithreaded executor:
+		// Set up and bind the http server: 
+		// It's bound both on secure and insecure sockets. The secureFilter will reject requests on the insecure socket when the requests are not needed.
+		http = HttpServer.create(new InetSocketAddress(onPort), new InetSocketAddress(onPort + 1), context, new String[] {FS2Constants.DH_ANON_CIPHER_SUITE_USED}, 0);
+		// Enable a multithreaded executor:
 		http.setExecutor(Executors.newCachedThreadPool(new NamedThreadFactory(true, "HTTP serving thread")));
 		
 		http.setSoTimeout(FS2Constants.SERVER_URL_CONNECTION_TIMEOUT_MS);
-		http.setUseKeepAlives(false); //no idle connections are useful to us.
+		http.setUseKeepAlives(false); // No idle connections are useful to us.
 		
-		//Instantiating the communicator will add a new context to our http server.
+		// Instantiating the communicator will add a new context to our http server.
 		communicator = new IndexNodeCommunicator(this, conf);
 		
-		//Can generate the secureFilter now with the communicator:
+		// Can generate the secureFilter now with the communicator:
 		secureFilter = new SecureFilter(communicator);
-		//Add a default context:
-		http.createContext("/",new SimpleHttpHandler(404,"File not found.")).getFilters().add(secureFilter);
+		// Add a default context:
+		http.createContext("/", new SimpleHttpHandler(404, "File not found.")).getFilters().add(secureFilter);
 		
-		
-		//Share the filelists:
+		// Share the filelists:
 		HttpContext flc = http.createContext("/filelists", new HttpFileHandler(filelistDir, httpEvents, uploadTracker));
-		//Make the filelists talk correctly.
+		// Make the filelists talk correctly.
 		flc.getFilters().add(fs2Filter);
-		flc.getFilters().add(communicator.getIndexNodeOnlyFilter()); //only indexnode and localhost may access them.
-
+		flc.getFilters().add(communicator.getIndexNodeOnlyFilter()); // Only indexnode and localhost may access them.
 		
-		//And we're go!
+		// And we're go!
 		http.start();
 		
-		//setup abuse limits:
+		// Set up abuse limits:
 		setUploadSpeedFromConf();
 		setSlotsFromConf();
 		
-		//Now add shares specified in the config:
+		// Now add shares specified in the config:
 		restartConfigShares();
 		
-		//Start the timer that will periodically check to see if a share needs refreshing:
+		// Start the timer that will periodically check to see if a share needs refreshing:
 		shareRefreshTimer = new Timer("Share refresh timer", false);
 		shareRefreshTimer.schedule(new ConsiderRefreshingSharesTask(), 0, FS2Constants.CLIENT_SHARE_REFRESH_POLL_INTERVAL);
 		
-		//Register with configured indexnodes:
+		// Register with configured indexnodes:
 		notify.incrementLaunchProgress("Registering with configured indexnodes...");
 		communicator.loadConfiguredNodes();
 		
@@ -374,7 +373,7 @@ public class ShareServer implements TableModel {
 			Logger.warn("Couldn't attach a signal handler for share refreshes.");
 		}
 		
-		Logger.log("Now exporting shares on port "+onPort);
+		Logger.log("Now exporting shares on port " + onPort);
 	}
 	
 	private class ConsiderRefreshingSharesTask extends TimerTask {
@@ -392,7 +391,6 @@ public class ShareServer implements TableModel {
 				notifyShareChanged(s);
 			}
 		}
-		
 	}
 	
 	public Config getConf() {
@@ -477,13 +475,11 @@ public class ShareServer implements TableModel {
 	}
 	
 	public void shutdown() {
-		
-		//shutdown the refresh timer:
+		// Shut down the refresh timer:
 		shareRefreshTimer.cancel();
 		
 		shareRefreshPool.shutdown();
-		
-		//) shutdown each share as they might be refreshing:
+		//) Shut down each share as they might be refreshing:
 		synchronized (shares) {
 			for (Share s : shares) {
 				s.shutdown();
@@ -491,7 +487,7 @@ public class ShareServer implements TableModel {
 				s.list = null;
 			}
 		}
-		//) shutdown the communicator.
+		//) Shut down the communicator.
 		communicator.shutdown();
 		
 		http.stop();
@@ -508,6 +504,7 @@ public class ShareServer implements TableModel {
 	}
 	
 	int cachedAutoRefreshInterval = 0;
+	
 	/**
 	 * Returns the number of SECONDS between autorefreshes of shares.
 	 * @return
@@ -536,30 +533,25 @@ public class ShareServer implements TableModel {
 	/**
 	 * Returns a map of share names onto share objects.
 	 * This is is the actual data structure used by the shareserver, so don't mess it up.
-	 * This returns a syncrhonized list, but make sure to synchronize again if iterating.
+	 * This returns a synchronised list, but make sure to synchronise again if iterating.
 	 */
 	public List<Share> getShares() {
 		return shares;
 	}
 	
 	/**
-	 * Permenantly exports the given directory as the name given.
+	 * Permanently exports the given directory as the name given.
 	 * @param name
 	 * @param location
 	 */
 	public void addShare(String name, File location) {
 		if (name.equals("")) throw new IllegalArgumentException("Invalid name.");
 		if (shareNameExists(name)) throw new IllegalArgumentException("Share name already exists!");
-		conf.putString(CK.SHARES+"/s"+name.hashCode()+"/name", name);
-		conf.putString(CK.SHARES+"/s"+name.hashCode()+"/path", location.getPath());
-		try {
-			listShare(name, location);
-		} catch (IOException e) {
-			Logger.severe("Couldn't add new share: "+e);
-			Logger.log(e);
-		}
+		conf.putString(CK.SHARES + "/s" + name.hashCode() + "/name", name);
+		conf.putString(CK.SHARES + "/s" + name.hashCode() + "/path", location.getPath());
+		listShare(name, location);
 		communicator.sharesChanged();
-		Logger.log("Share '"+name+"' sucessfully added.");
+		Logger.log("Share '" + name + "' successfully added.");
 	}
 	
 	public boolean shareNameExists(String name) {
@@ -573,18 +565,17 @@ public class ShareServer implements TableModel {
 	
 	/**
 	 * Called on startup to load shares from config file:
-	 * @throws IOException 
 	 */
-	private void restartConfigShares() throws IOException {
+	private void restartConfigShares() {
 		for (String shareKey : conf.getChildKeys(CK.SHARES)) {
-			String shareName = conf.getString(shareKey+"/name");
-			File sharePath = new File(conf.getString(shareKey+"/path"));
-			notify.incrementLaunchProgress("Loading share '"+shareName+"'....");
-			if (!shareKey.equals(CK.SHARES+"/s"+shareName.hashCode())) {
-				Logger.log("Making config key canonical for share: "+shareName);
-				//stored in the config with a non-canonical key, so erase it:
+			String shareName = conf.getString(shareKey + "/name");
+			File sharePath = new File(conf.getString(shareKey + "/path"));
+			notify.incrementLaunchProgress("Loading share '" + shareName + "'....");
+			if (!shareKey.equals(CK.SHARES + "/s" + shareName.hashCode())) {
+				Logger.log("Making config key canonical for share: " + shareName);
+				// stored in the config with a non-canonical key, so erase it:
 				conf.deleteKey(shareKey);
-				//and re-add it canonically
+				// and re-add it canonically
 				addShare(shareName, sharePath);
 			} else {
 				listShare(shareName, sharePath);
@@ -594,12 +585,11 @@ public class ShareServer implements TableModel {
 	}
 	
 	/**
-	 * Creates and exports a share object. but does not create a record in the configuration file, nor notify the indexnodes.
+	 * Creates and exports a share object, but does not create a record in the configuration file, nor notify the indexnodes.
 	 * @param name
 	 * @param location
-	 * @throws IOException 
 	 */
-	private void listShare(String name, File location) throws IOException {
+	private void listShare(String name, File location) {
 		Share s = new Share(this, name, location);
 		int idx;
 		synchronized (shares) {
@@ -780,7 +770,7 @@ public class ShareServer implements TableModel {
 	}
 
 	private boolean isShareOverdueForRefresh(Share s) {
-		return getTimeToNextRefreshShare(s)<=0 && s.getStatus()!=Status.REFRESHING && s.getStatus()!=Status.BUILDING && s.getStatus()!=Status.SAVING;
+		return getTimeToNextRefreshShare(s) <= 0 && !EnumSet.of(Status.REFRESHING, Status.BUILDING, Status.SAVING).contains(s.getStatus());
 	}
 
 }

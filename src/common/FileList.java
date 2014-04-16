@@ -105,14 +105,13 @@ public class FileList implements Serializable {
 	 * @throws IOException if the serialisation doesn't work for some reason.
 	 */
 	public void deconstruct(OutputStream os) throws IOException {
-		
-		//Compress the serialised object to make them more friendly. Filelists can be huge!
-		DeflaterOutputStream dos = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
-		
+		// Compress the serialised object to make them more friendly. Filelists can be huge!
+		Deflater def = new Deflater(Deflater.BEST_COMPRESSION);
+		DeflaterOutputStream dos = new DeflaterOutputStream(os, def);
 		ObjectOutputStream oos = new ObjectOutputStream(dos);
 		oos.writeObject(this);
 		oos.flush();
 		dos.finish();
+		def.end();
 	}
-	
 }

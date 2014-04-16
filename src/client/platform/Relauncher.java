@@ -130,23 +130,23 @@ public class Relauncher {
 		}
 	}
 	
-	//From: http://stackoverflow.com/questions/60302/starting-a-process-with-inherited-stdin-stdout-stderr-in-java-6
+	// From: http://stackoverflow.com/questions/60302/starting-a-process-with-inherited-stdin-stdout-stderr-in-java-6
 	private static void pipeOutput(Process process) {
-	    pipe(process.getErrorStream(), System.err);
-	    pipe(process.getInputStream(), System.out);
+		pipe(process.getErrorStream(), System.err);
+		pipe(process.getInputStream(), System.out);
 	}
+	
 	private static void pipe(final InputStream src, final PrintStream dest) {
-	    new Thread(new Runnable() {
-	        public void run() {
-	            try {
-	                byte[] buffer = new byte[1024];
-	                for (int n = 0; n != -1; n = src.read(buffer)) {
-	                    dest.write(buffer, 0, n);
-	                }
-	            } catch (IOException e) { // just exit
-	            }
-	        }
-	    }).start();
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					byte[] buffer = new byte[FS2Constants.SMALL_BUFFER_SIZE];
+					for (int n = 0; n != -1; n = src.read(buffer)) {
+						dest.write(buffer, 0, n);
+					}
+				} catch (IOException e) {} // just exit
+			}
+		}).start();
 	}
 
 }

@@ -79,6 +79,7 @@ public class Share {
 		@Override
 		public void run() {
 			try {
+				if (shouldStop) return;
 				tracker.setExpectedMaximum(list.root.fileCount);
 				
 				if (list.root.fileCount == 0L) {
@@ -108,9 +109,9 @@ public class Share {
 			} catch (Exception e) {
 				Logger.severe("Exception during share refresh: " + e);
 				Logger.log(e);
-				causeOtherDescription = e.toString();
 				setStatus(Status.ERROR);
 				cause = ErrorCause.OTHER;
+				causeOtherDescription = e.toString();
 				
 			} finally {
 				refreshActive = false;
@@ -215,7 +216,6 @@ public class Share {
 				
 			} catch (IOException e) {
 				Logger.warn("Failed to update details for " + p.getFileName() + ": " + e);
-				return false;
 			}
 			return false;
 		}
@@ -325,17 +325,24 @@ public class Share {
 	
 	private NotifyShareServer notifyShareServer = new NotifyShareServer();
 	
-	public Share(ShareServer ssvr, String name, File location) throws IOException {
-		
-		this.location = location;
-		this.canonicalLocation = location.toPath().toRealPath();
+	public Share(ShareServer ssvr, String name, File location) {
 		this.ssvr = ssvr;
+		this.location = location;
+		canonicalLocation = location.toPath().toAbsolutePath();
 		listFile = Platform.getPlatformFile("filelists" + File.separator + name + ".FileList").toPath();
 		
+		try {
+			canonicalLocation = canonicalLocation.toRealPath();
+		} catch (IOException e) {
+			Logger.warn("Couldn't resolve " + canonicalLocation + ": " + e);
+		}
+		
 		if (Files.exists(listFile)) {
-			InputStream is = new BufferedInputStream(Files.newInputStream(listFile));
-			list = FileList.reconstruct(is);
-			is.close();
+			try (InputStream is = new BufferedInputStream(Files.newInputStream(listFile))) {
+				list = FileList.reconstruct(is);
+			} catch (IOException e) {
+				Logger.warn("Unable to open filelist " + listFile + " for reading: " + e);
+			}
 		}
 		
 		// The user might (for some reason) have changed the case of the share name, so update the filelist now:
@@ -523,8 +530,10 @@ public class Share {
 	}
 	
 	public void setPath(File path) throws IOException {
-		location = path;
-		canonicalLocation = path.toPath().toRealPath();
+		synchronized (location) {
+			canonicalLocation = path.toPath().toRealPath();
+			location = path;
+		}
 		refresh();
 	}
 	

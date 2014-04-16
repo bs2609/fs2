@@ -13,6 +13,9 @@ public class FS2Constants {
 	/** Arbitrarily sized buffers are 64KiB at the moment:*/
 	public static final int ARBITRARY_BUFFER_SIZE = 1024*64;
 	
+	/** Smaller buffer for network transfers and such (1KiB) */
+	public static final int SMALL_BUFFER_SIZE = 1024;
+	
 	/**
 	 * How often will the filesystem consider refreshing its cache?
 	 */
@@ -53,6 +56,9 @@ public class FS2Constants {
 	/**What algorithm should be used for file hashes?*/
 	public static final String FILE_DIGEST_ALGORITHM = "MD5";
 	//Md5 currently as it's implementation is polished on desktop platforms and we don't need cryptographically strong hashes.
+	
+	/** How many bits should a file digest contain? */
+	public static final int FILE_DIGEST_BITS = 128;
 	
 	/** The hash version we are using for fs2, so we know to not
 	 *  accept incompatible hashes in the indexnode and clients know to
