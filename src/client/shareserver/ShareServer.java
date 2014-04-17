@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
@@ -67,6 +68,7 @@ import common.httpserver.HttpServer;
 public class ShareServer implements TableModel {
 
 	private class RefreshSignalHandler implements SignalHandler {
+		
 		@Override
 		public void handle(Signal sig) {
 			Logger.log("Caught signal '" + sig.getName() + "', refreshing shares...");
@@ -83,8 +85,8 @@ public class ShareServer implements TableModel {
 	
 	private class UploadsTableModel implements TableModel {
 
-		ArrayList<HttpTransferInfo> currentTransfers = new ArrayList<HttpTransferInfo>();
-		ArrayList<TableModelListener> listeners = new ArrayList<TableModelListener>();
+		List<HttpTransferInfo> currentTransfers = new ArrayList<HttpTransferInfo>();
+		List<TableModelListener> listeners = new ArrayList<TableModelListener>();
 		
 		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; // filename, peer alias, progress, speed, etr
 		private String[] columnNames = {"Filename", "Secure?", "Peer", "Progress", "Speed", "Time remaining"};
@@ -154,51 +156,54 @@ public class ShareServer implements TableModel {
 		}
 		
 		void newTransfer(HttpTransferInfo info) {
+			final int idx;
 			synchronized (currentTransfers) {
 				currentTransfers.add(info);
-				try {
-					Utilities.dispatch(new Runnable() {
-						@Override
-						public void run() {
-							int idx = currentTransfers.size() - 1; // This must be the index of the new transfer.
-							synchronized (listeners) {
-								for (TableModelListener l : listeners) {
-									l.tableChanged(new TableModelEvent(UploadsTableModel.this, idx, idx, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
-								}
+				// This must be the index of the new transfer.
+				idx = currentTransfers.size() - 1;
+			}
+			try {
+				Utilities.dispatch(new Runnable() {
+					@Override
+					public void run() {
+						synchronized (listeners) {
+							for (TableModelListener l : listeners) {
+								l.tableChanged(new TableModelEvent(UploadsTableModel.this, idx, idx, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
 							}
 						}
-					});
-				} catch (Exception e) {
-					Logger.warn("Couldn't insert into uploads table: "+e);
-					Logger.log(e);
-				}
+					}
+				});
+			} catch (Exception e) {
+				Logger.warn("Couldn't insert into uploads table: " + e);
+				Logger.log(e);
 			}
 		}
 		
 		void transferEnded(HttpTransferInfo info) {
+			final int oldidx;
 			synchronized (currentTransfers) {
-				final int oldidx = currentTransfers.indexOf(info);
+				oldidx = currentTransfers.indexOf(info);
 				currentTransfers.remove(oldidx);
-				if (Thread.currentThread().isInterrupted()) {
-					try {
-						Thread.sleep(1); // Try to sleep (which will fail due to interruption), and will clear the interrupt flag so then we may dispatch safely.
-					} catch (InterruptedException cleared) {}
-				}
+			}
+			if (Thread.currentThread().isInterrupted()) {
 				try {
-					Utilities.dispatch(new Runnable() {
-						@Override
-						public void run() {
-							synchronized (listeners) {
-								for (TableModelListener l : listeners) {
-									l.tableChanged(new TableModelEvent(UploadsTableModel.this, oldidx, oldidx, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
-								}
+					Thread.sleep(1); // Try to sleep (which will fail due to interruption), and will clear the interrupt flag so then we may dispatch safely.
+				} catch (InterruptedException cleared) {}
+			}
+			try {
+				Utilities.dispatch(new Runnable() {
+					@Override
+					public void run() {
+						synchronized (listeners) {
+							for (TableModelListener l : listeners) {
+								l.tableChanged(new TableModelEvent(UploadsTableModel.this, oldidx, oldidx, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
 							}
 						}
-					});
-				} catch (Exception e) {
-					Logger.warn("Couldn't remove from uploads table: "+e);
-					Logger.log(e);
-				}
+					}
+				});
+			} catch (Exception e) {
+				Logger.warn("Couldn't remove from uploads table: " + e);
+				Logger.log(e);
 			}
 		}
 		
@@ -211,7 +216,7 @@ public class ShareServer implements TableModel {
 		
 		private class TableUpdater implements Deferrable {
 			
-			HashSet<HttpTransferInfo> infosToUpdate = new HashSet<HttpTransferInfo>();
+			Set<HttpTransferInfo> infosToUpdate = new HashSet<HttpTransferInfo>();
 			
 			public void updateInfo(HttpTransferInfo info) {
 				synchronized (infosToUpdate) {
@@ -221,16 +226,16 @@ public class ShareServer implements TableModel {
 			
 			@Override
 			public void run() {
-				final HashSet<HttpTransferInfo> copy;
+				final Set<HttpTransferInfo> copy;
 				synchronized (infosToUpdate) {
 					copy = new HashSet<HttpTransferInfo>(infosToUpdate);
 					infosToUpdate.clear();
 				}
-				synchronized (currentTransfers) {
-					try {
-						Utilities.dispatch(new Runnable() {
-							@Override
-							public void run() {
+				try {
+					Utilities.dispatch(new Runnable() {
+						@Override
+						public void run() {
+							synchronized (currentTransfers) {
 								for (int i = 0; i < currentTransfers.size(); i++) {
 									if (copy.contains(currentTransfers.get(i))) {
 										synchronized (listeners) {
@@ -241,11 +246,11 @@ public class ShareServer implements TableModel {
 									}
 								}
 							}
-						});
-					} catch (Exception e) {
-						Logger.warn("Couldn't update uploads table: "+e);
-						Logger.log(e);
-					}
+						}
+					});
+				} catch (Exception e) {
+					Logger.warn("Couldn't update uploads table: " + e);
+					Logger.log(e);
 				}
 			}
 		}
@@ -387,14 +392,14 @@ public class ShareServer implements TableModel {
 			Logger.warn("Couldn't attach a signal handler for share refreshes.");
 		}
 		
-		Logger.log("Now exporting shares on port "+onPort);
+		Logger.log("Now exporting shares on port " + onPort);
 	}
 	
 	private class ConsiderRefreshingSharesTask extends TimerTask {
 
 		@Override
 		public void run() {
-			ArrayList<Share> scopy;
+			List<Share> scopy;
 			synchronized (shares) {
 				scopy = new ArrayList<Share>(shares);
 			}
@@ -675,7 +680,7 @@ public class ShareServer implements TableModel {
 		}
 	}
 	
-	ArrayList<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
+	List<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
 	
 	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class}; // Name, status, size, time to next refresh
 	private String[] columnNames = {"Name", "Status", "Size", "Files", "Next refresh", "Path"};
@@ -715,8 +720,7 @@ public class ShareServer implements TableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		Share share = null;
-		share = shares.get(rowIndex);
+		Share share = shares.get(rowIndex);
 		switch (columnIndex) {
 		case NAME_IDX:
 			return share.getName();
@@ -765,8 +769,7 @@ public class ShareServer implements TableModel {
 	}
 	
 	void notifyShareChanged(Share share) {
-		int rowidx = -1;
-		rowidx = shares.indexOf(share);
+		int rowidx = shares.indexOf(share);
 		if (rowidx == -1) {
 			// This is possible as shares can change status before they are in the list.
 			return;
@@ -795,7 +798,7 @@ public class ShareServer implements TableModel {
 				}
 			});
 		} catch (Exception ex) {
-			Logger.warn("Couldn't notify Shares table listeners: "+ex);
+			Logger.warn("Couldn't notify Shares table listeners: " + ex);
 			Logger.log(ex);
 		}
 	}
