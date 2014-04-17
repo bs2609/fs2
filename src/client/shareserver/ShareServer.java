@@ -10,8 +10,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -86,15 +88,16 @@ public class ShareServer implements TableModel {
 	private class UploadsTableModel implements TableModel {
 
 		List<HttpTransferInfo> currentTransfers = new ArrayList<HttpTransferInfo>();
-		List<TableModelListener> listeners = new ArrayList<TableModelListener>();
+		Set<TableModelListener> currentListeners = new HashSet<TableModelListener>();
+		Map<HttpTransferInfo, Set<TableModelListener>> transferListeners = new HashMap<HttpTransferInfo, Set<TableModelListener>>();
 		
 		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; // filename, peer alias, progress, speed, etr
 		private String[] columnNames = {"Filename", "Secure?", "Peer", "Progress", "Speed", "Time remaining"};
 		
 		@Override
 		public void addTableModelListener(TableModelListener l) {
-			synchronized (listeners) {
-				listeners.add(l);
+			synchronized (currentListeners) {
+				currentListeners.add(l);
 			}
 		}
 
@@ -145,8 +148,13 @@ public class ShareServer implements TableModel {
 
 		@Override
 		public void removeTableModelListener(TableModelListener l) {
-			synchronized (listeners) {
-				listeners.remove(l);
+			synchronized (currentListeners) {
+				currentListeners.remove(l);
+			}
+			synchronized (transferListeners) {
+				for (Set<TableModelListener> set : transferListeners.values()) {
+					set.remove(l);
+				}
 			}
 		}
 
@@ -155,7 +163,7 @@ public class ShareServer implements TableModel {
 			// nothing is editable
 		}
 		
-		void newTransfer(HttpTransferInfo info) {
+		void newTransfer(final HttpTransferInfo info) {
 			final int idx;
 			synchronized (currentTransfers) {
 				currentTransfers.add(info);
@@ -166,8 +174,11 @@ public class ShareServer implements TableModel {
 				Utilities.dispatch(new Runnable() {
 					@Override
 					public void run() {
-						synchronized (listeners) {
-							for (TableModelListener l : listeners) {
+						synchronized (transferListeners) {
+							synchronized (currentListeners) {
+								transferListeners.put(info, new HashSet<TableModelListener>(currentListeners));
+							}
+							for (TableModelListener l : transferListeners.get(info)) {
 								l.tableChanged(new TableModelEvent(UploadsTableModel.this, idx, idx, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
 							}
 						}
@@ -179,7 +190,7 @@ public class ShareServer implements TableModel {
 			}
 		}
 		
-		void transferEnded(HttpTransferInfo info) {
+		void transferEnded(final HttpTransferInfo info) {
 			final int oldidx;
 			synchronized (currentTransfers) {
 				oldidx = currentTransfers.indexOf(info);
@@ -194,10 +205,11 @@ public class ShareServer implements TableModel {
 				Utilities.dispatch(new Runnable() {
 					@Override
 					public void run() {
-						synchronized (listeners) {
-							for (TableModelListener l : listeners) {
+						synchronized (transferListeners) {
+							for (TableModelListener l : transferListeners.get(info)) {
 								l.tableChanged(new TableModelEvent(UploadsTableModel.this, oldidx, oldidx, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
 							}
+							transferListeners.remove(info);
 						}
 					}
 				});
@@ -237,9 +249,10 @@ public class ShareServer implements TableModel {
 						public void run() {
 							synchronized (currentTransfers) {
 								for (int i = 0; i < currentTransfers.size(); i++) {
-									if (!copy.contains(currentTransfers.get(i))) continue;
-									synchronized (listeners) {
-										for (TableModelListener l : listeners) {
+									HttpTransferInfo info = currentTransfers.get(i);
+									if (!copy.contains(info)) continue;
+									synchronized (transferListeners) {
+										for (TableModelListener l : transferListeners.get(info)) {
 											l.tableChanged(new TableModelEvent(UploadsTableModel.this, i, i, TableModelEvent.ALL_COLUMNS, TableModelEvent.UPDATE));
 										}
 									}
@@ -678,7 +691,7 @@ public class ShareServer implements TableModel {
 		}
 	}
 	
-	List<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
+	Set<TableModelListener> modelListeners = new HashSet<TableModelListener>();
 	
 	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class}; // Name, status, size, time to next refresh
 	private String[] columnNames = {"Name", "Status", "Size", "Files", "Next refresh", "Path"};
@@ -768,11 +781,8 @@ public class ShareServer implements TableModel {
 	
 	void notifyShareChanged(Share share) {
 		int rowidx = shares.indexOf(share);
-		if (rowidx == -1) {
-			// This is possible as shares can change status before they are in the list.
-			return;
-		}
-		fireTableChanged(new TableModelEvent(this, rowidx));
+		// This is possible as shares can change status before they are in the list.
+		if (rowidx != -1) fireTableChanged(new TableModelEvent(this, rowidx));
 	}
 	
 	void notifySharedAdded(int rowidx) {
@@ -804,5 +814,4 @@ public class ShareServer implements TableModel {
 	private boolean isShareOverdueForRefresh(Share s) {
 		return getTimeToNextRefreshShare(s) <= 0 && !EnumSet.of(Status.REFRESHING, Status.BUILDING, Status.SAVING).contains(s.getStatus());
 	}
-
 }
