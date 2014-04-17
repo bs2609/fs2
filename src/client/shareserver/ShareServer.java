@@ -237,11 +237,10 @@ public class ShareServer implements TableModel {
 						public void run() {
 							synchronized (currentTransfers) {
 								for (int i = 0; i < currentTransfers.size(); i++) {
-									if (copy.contains(currentTransfers.get(i))) {
-										synchronized (listeners) {
-											for (TableModelListener l : listeners) {
-												l.tableChanged(new TableModelEvent(UploadsTableModel.this, i, i, TableModelEvent.ALL_COLUMNS, TableModelEvent.UPDATE));
-											}
+									if (!copy.contains(currentTransfers.get(i))) continue;
+									synchronized (listeners) {
+										for (TableModelListener l : listeners) {
+											l.tableChanged(new TableModelEvent(UploadsTableModel.this, i, i, TableModelEvent.ALL_COLUMNS, TableModelEvent.UPDATE));
 										}
 									}
 								}
@@ -668,13 +667,12 @@ public class ShareServer implements TableModel {
 	public void defaultDownloadDirectoryChanged(File newDefaultDir) {
 		synchronized (shares) {
 			for (Share s : shares) {
-				if (s.getName().equals(FS2Constants.CLIENT_DEFAULT_SHARE_NAME)) {
-					conf.putString(CK.SHARES + "/s" + FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode() + "/path", newDefaultDir.getPath());
-					try {
-						s.setPath(newDefaultDir);
-					} catch (IOException e) {
-						Logger.severe("Couldn't set the path for the default download dir: " + e);
-					}
+				if (!s.getName().equals(FS2Constants.CLIENT_DEFAULT_SHARE_NAME)) continue;
+				conf.putString(CK.SHARES + "/s" + FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode() + "/path", newDefaultDir.getPath());
+				try {
+					s.setPath(newDefaultDir);
+				} catch (IOException e) {
+					Logger.severe("Couldn't set the path for the default download dir: " + e);
 				}
 			}
 		}
@@ -748,7 +746,7 @@ public class ShareServer implements TableModel {
 	 * @return A non-negative integer representing the time that should elapse between now and the next refresh of the share specified.
 	 */
 	private long getTimeToNextRefreshShare(Share share) {
-		return Math.max(0L, (((long) getAutoRefreshInterval() * 1000L + share.getLastRefreshed()) - System.currentTimeMillis()) / 1000);
+		return Math.max(0L, (share.getLastRefreshed() + getAutoRefreshInterval() * 1000L - System.currentTimeMillis()) / 1000L);
 	}
 
 	@Override
