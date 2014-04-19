@@ -136,7 +136,7 @@ public class IndexTemplate {
 			if (directURLs) {
 				retElem.setAttribute("href", entry.getURL());
 			} else {
-				retElem.setAttribute("href", linkBase+"download/"+entry.getHash());
+				retElem.setAttribute("href", linkBase+"download/"+Util.bytesToHexString(entry.getHash().get()));
 			}
 		}
 		return retElem;

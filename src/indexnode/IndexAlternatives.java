@@ -9,6 +9,7 @@ import common.httpserver.HttpHandler;
 import common.HttpUtil;
 import common.Logger;
 import common.Util;
+import common.Util.ByteArray;
 
 public class IndexAlternatives implements HttpHandler {
 
@@ -30,7 +31,7 @@ public class IndexAlternatives implements HttpHandler {
 			template.setTitle("Alternative sources...");
 			
 			//Get a copy of the list of all files with the same hash:
-			LinkedList<FilesystemEntry> results = new LinkedList<FilesystemEntry>(fs.searchForHash(HttpUtil.getPathAfterContext(exchange)));
+			LinkedList<FilesystemEntry> results = new LinkedList<FilesystemEntry>(fs.searchForHash(new ByteArray(Util.bytesFromHexString(HttpUtil.getPathAfterContext(exchange)))));
 			
 			//Keep track of the aliases that we've allowed into the result list...
 			final HashSet<String> seenAliases = new HashSet<String>();

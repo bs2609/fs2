@@ -8,6 +8,7 @@ import java.util.Collection;
 import org.w3c.dom.Element;
 
 import common.FileList.Item;
+import common.Util.ByteArray;
 
 public interface Filesystem {
 
@@ -52,7 +53,7 @@ public interface Filesystem {
 	 * @param hash
 	 * @return 
 	 */
-	public abstract Collection<? extends FilesystemEntry> searchForHash(String hash);
+	public abstract Collection<? extends FilesystemEntry> searchForHash(ByteArray hash);
 
 	/**
 	 * Performs a filesystem search for files that contain all of the keywords specified in their name.

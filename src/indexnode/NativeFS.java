@@ -478,7 +478,7 @@ public class NativeFS implements Filesystem {
 	}
 
 	@Override
-	public Collection<NativeEntry> searchForHash(String hash)  {
+	public Collection<NativeEntry> searchForHash(ByteArray hash) {
 		synchronized (hashIndex) {
 			Collection<NativeEntry> res = hashIndex.get(hash);
 			return (res == null ? new LinkedList<NativeEntry>() : res);
