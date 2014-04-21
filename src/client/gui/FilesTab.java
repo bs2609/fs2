@@ -53,23 +53,25 @@ import common.HttpUtil;
 import common.ProgressTracker;
 import common.Util;
 
+import client.gui.MainFrame.StatusHint;
 import client.indexnode.FileSystem;
-import client.indexnode.FileSystemEntry;
-import client.indexnode.ListableEntry;
 import client.indexnode.FileSystem.FileSystemRoot;
 import client.indexnode.FileSystem.PathRequired;
+import client.indexnode.FileSystemEntry;
+import client.indexnode.ListableEntry;
 import client.indexnode.downloadcontroller.DownloadQueue.DownloadSubmissionListener;
 import client.platform.ClientConfigDefaults.CK;
-import client.gui.MainFrame.StatusHint;
 
 @SuppressWarnings("serial")
-public class FilesTab extends TabItem implements 	ActionListener,
-													MouseListener, 
-													TreeSelectionListener, 
-													MouseMotionListener, 
-													PropertyChangeListener,
-													TreeExpansionListener,
-													ListSelectionListener {
+public class FilesTab extends TabItem implements 
+	ActionListener, 
+	MouseListener, 
+	TreeSelectionListener, 
+	MouseMotionListener, 
+	PropertyChangeListener, 
+	TreeExpansionListener, 
+	ListSelectionListener 
+{
 
 	private JTextField searchQuery;
 	private JButton searchQueryButton;
@@ -194,7 +196,6 @@ public class FilesTab extends TabItem implements 	ActionListener,
 	private DownloadSubmissionListener getDSLForDownloadBatch(final long totalSize, String barCaption) {
 		final ProgressMonitor progressBar = new ProgressMonitor(frame, barCaption, "Starting...", 0, 10000);
 		Notifications.fixupPM(progressBar, true);
-		
 		
 		final ProgressTracker tracker = new ProgressTracker();
 		tracker.setExpectedMaximum(totalSize);
@@ -372,6 +373,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 	}
 
 	static ImageIcon search;
+	
 	private class BrowseTreeCellRenderer extends DefaultTreeCellRenderer {
 		
 		public BrowseTreeCellRenderer() {
@@ -415,15 +417,6 @@ public class FilesTab extends TabItem implements 	ActionListener,
 			}
 		}
 		
-//		@Override
-//		public void paint(Graphics g) {
-//			// TODO Auto-generated method stub
-//			super.paint(g);
-//			
-//			g.setColor(Color.black);
-//			g.drawRect(0, 0, g.getClipBounds().width-1, g.getClipBounds().height-1);
-//		}
-		
 		/**
 		 * Returns true if the point specified is on an icon in the browseTree.
 		 * @param p The point relative to the browseTree.
@@ -441,6 +434,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 		}
 		
 		Point lastMouse;
+		
 		/**
 		 * Notifies the renderer where the mouse was last so that mouse-overs for icons can work correctly.
 		 * @param p
@@ -455,6 +449,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 	 * @author gary
 	 */
 	private class LoadingAnimationHelper implements ImageObserver, TreeModelListener {
+		
 		int loadingNodeCount = 0;
 		ImageIcon spinner;
 		
@@ -468,8 +463,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 		}
 		
 		@Override
-		public boolean imageUpdate(Image img, int infoflags, int x, int y,
-				int width, int height) {
+		public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
 			if (loadingNodeCount>0) {
 				browseTree.imageUpdate(img, infoflags, x, y, width, height);
 				filesTable.imageUpdate(img, infoflags, x, y, width, height);
@@ -503,17 +497,16 @@ public class FilesTab extends TabItem implements 	ActionListener,
 	}
 	
 	static ImageIcon dir;
+	
 	private class FilesTableNameRenderer extends DefaultTableCellRenderer {
+		
 		public FilesTableNameRenderer() {
 			dir = frame.gui.util.getImage("type-dir");
 		}
 		
 		@Override
-		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row,
-				int column) {
-			super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-					row, column);
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			
 			FileSystemEntry fse = fs.getEntryForRow(filesTable.convertRowIndexToModel(row));
 			if (fse.isLoadingNode) {
@@ -531,7 +524,6 @@ public class FilesTab extends TabItem implements 	ActionListener,
 			}
 			return this;
 		}
-		
 	}
 	
 	@Override
@@ -655,6 +647,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 
 	ListableEntry lastInspectedFSE;
 	boolean lastOnIcon = false;
+	
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		if (e.getSource()==browseTree) {
@@ -721,7 +714,7 @@ public class FilesTab extends TabItem implements 	ActionListener,
 	private void collapseOldNodes() {
 		Stack<ListableEntry> toConsider = new Stack<ListableEntry>(); //this is a stack of expanded nodes that need their children (and themselves) to be considered.
 		toConsider.push(fs.getBrowseRoot()); //we know these are always expanded, and uncollapsable.
-		toConsider.push(fs.getSearchRoot()); // "               "                    "        
+		toConsider.push(fs.getSearchRoot());
 		
 		//a) mark all uncollapsable nodes
 		TreePath[] selecteds = browseTree.getSelectionPaths();
@@ -732,7 +725,6 @@ public class FilesTab extends TabItem implements 	ActionListener,
 				}
 			}
 		}
-		
 		
 		//b) collapse old expanded nodes.
 		while (!toConsider.empty()) {

@@ -111,15 +111,6 @@ public class ServerImpl extends HttpServer {
 						//set socket options:
 						req.setKeepAlive(useKeepAlives);
 						req.setSoTimeout(soTimeout);
-						
-						//Simulate a slow connection:
-//						try {
-//							Thread.sleep(1000);
-//						} catch (InterruptedException e1) {
-//							// TODO Auto-generated catch block
-//							e1.printStackTrace();
-//						}
-						
 						executor.submit(new Runnable() {
 							@Override
 							public void run() {
