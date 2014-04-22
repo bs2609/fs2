@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
@@ -21,6 +22,7 @@ import client.gui.settings.ShareSettings;
 public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 	
 	private class MenuItem {
+		
 		Runnable action;
 		String description;
 		ImageIcon icon;
@@ -55,7 +57,6 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 
 		menu.addSeparator();
 		
-		
 		registerNewMenuItem(menu, "Shares", frame.gui.util.getImage("shares"), "See and change what you share", new Runnable() {
 			@Override
 			public void run() {
@@ -72,7 +73,6 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 		
 		menu.addSeparator();
 		
-		
 		JMenu laf = new JMenu("Look and Feel");
 		menu.add(laf);
 		
@@ -83,14 +83,14 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 			}
 		});
 		
-		registerNewMenuItem(laf, "Pretty cross platform", null, "Sets java to use a modern, not too shabby look and feel", new Runnable() {
+		registerNewMenuItem(laf, "Pretty cross platform", null, "Sets Java to use a modern, not too shabby look and feel", new Runnable() {
 			@Override
 			public void run() {
-				frame.gui.setLaF("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+				frame.gui.setLaF("javax.swing.plaf.nimbus.NimbusLookAndFeel");
 			}
 		});
 		
-		registerNewMenuItem(laf, "Cross platform", null, "Sets java to use it's delicious cross-platform look and feel", new Runnable() {
+		registerNewMenuItem(laf, "Cross platform", null, "Sets Java to use its delicious cross-platform look and feel", new Runnable() {
 			@Override
 			public void run() {
 				frame.gui.setLaF(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -102,8 +102,7 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 			public void run() {
 				frame.gui.setLaF("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
 			}
-		});	
-		
+		});
 	}
 	
 	private void addViewMenu() {
@@ -171,7 +170,8 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 		});
 	}
 
-	HashMap<String, MenuItem> menuInfo = new HashMap<String, MenuItem>();
+	Map<String, MenuItem> menuInfo = new HashMap<String, MenuItem>();
+	
 	void registerNewMenuItem(JMenu onMenu, String name, ImageIcon icon, String description, Runnable action) {
 		JMenuItem item = new JMenuItem(name, icon);
 		onMenu.add(item);
@@ -190,7 +190,7 @@ public class MenuBar extends JMenuBar implements ActionListener, MouseListener {
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		MenuItem item = menuInfo.get(((JMenuItem)e.getSource()).getText());
+		MenuItem item = menuInfo.get(((JMenuItem) e.getSource()).getText());
 		frame.setStatusHint(new StatusHint(item.icon, item.description));
 	}
 
