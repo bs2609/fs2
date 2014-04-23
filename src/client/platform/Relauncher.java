@@ -50,24 +50,21 @@ public class Relauncher {
 		return false;
 	}
 	
-	@SuppressWarnings({ "unchecked" })
 	private static boolean relaunch(URL newJar) {
-		Logger.log("Attempting to start a newer version of FS2... ("+newJar+")");
-		try (URLClassLoader loader = new URLClassLoader(new URL[] { newJar }, null)) {
+		Logger.log("Attempting to start a newer version of FS2... (" + newJar + ")");
+		try (URLClassLoader loader = new URLClassLoader(new URL[] {newJar}, null)) {
 			//                    __/-This is used so that automatic refactoring might work in future if the entry point is changed.
-			@SuppressWarnings("rawtypes")
-			Class ce = loader.loadClass(ClientExecutor.class.getName());
+			Class<?> ce = loader.loadClass(ClientExecutor.class.getName());
 			Method init = ce.getDeclaredMethod("main", String[].class);
-			//Shutdown the current instance:
+			// Shutdown the current instance:
 			ClientExecutor.shutdown();
-			//Now launch the new instance:
-			init.invoke(null, (Object)ClientExecutor.args);
-			
+			// Now launch the new instance:
+			init.invoke(null, (Object) ClientExecutor.args);
 			return true;
 			
 		} catch (Exception e) {
 			Logger.severe("The update is corrupt or incompatible with this version of FS2.");
-			Logger.log("This version of FS2 will continue to execute.");
+			Logger.warn("This version of FS2 will continue to execute.");
 			Logger.log(e);
 			return false;
 		}

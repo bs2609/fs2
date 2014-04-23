@@ -189,12 +189,11 @@ public class FileSystem implements TreeModel, TableModel {
 			subtrees.add(searches);
 		}
 		
-		@SuppressWarnings({ "unchecked", "rawtypes" })
 		@Override
-		public Enumeration children() {
-			//Copy the array whilst synchronized, stupid enumerations :@
+		public Enumeration<TreeNode> children() {
+			// Copy the array whilst synchronised, stupid enumerations :@
 			synchronized (subtrees) {
-				return new Util.EnumerationWrapper(new ArrayList<TreeNode>(subtrees));
+				return new Util.EnumerationWrapper<TreeNode>(new ArrayList<TreeNode>(subtrees));
 			}
 		}
 
