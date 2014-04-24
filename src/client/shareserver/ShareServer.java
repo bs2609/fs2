@@ -79,9 +79,9 @@ public class ShareServer implements TableModel {
 	}
 	
 	private static final int FILENAME_IDX = 0;
-	public static final int SECURE_IDX = 1;
-	public static final int PEER_IDX = 2;
-	public static final int PROGRESS_IDX = 3;
+	public  static final int SECURE_IDX = 1;
+	public  static final int PEER_IDX = 2;
+	public  static final int PROGRESS_IDX = 3;
 	private static final int SPEED_IDX = 4;
 	private static final int ETR_IDX = 5;
 	
@@ -91,7 +91,7 @@ public class ShareServer implements TableModel {
 		Set<TableModelListener> currentListeners = new HashSet<TableModelListener>();
 		Map<HttpTransferInfo, Set<TableModelListener>> transferListeners = new HashMap<HttpTransferInfo, Set<TableModelListener>>();
 		
-		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class}; // filename, peer alias, progress, speed, etr
+		private Class<?>[] columnClasses = {String.class, Boolean.class, String.class, Float.class, FileSize.class, String.class};
 		private String[] columnNames = {"Filename", "Secure?", "Peer", "Progress", "Speed", "Time remaining"};
 		
 		@Override
@@ -143,7 +143,7 @@ public class ShareServer implements TableModel {
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			return false; // read only table
+			return false; // Read only table.
 		}
 
 		@Override
@@ -160,7 +160,7 @@ public class ShareServer implements TableModel {
 
 		@Override
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			// nothing is editable
+			// Nothing is editable.
 		}
 		
 		void newTransfer(final HttpTransferInfo info) {
@@ -315,8 +315,11 @@ public class ShareServer implements TableModel {
 	private Notifications notify;
 	private ProgressTracker uploadTracker = new ProgressTracker();
 	private UploadsTableModel uploadsModel = new UploadsTableModel();
-	private SSLContext context; // Used for serving TLS.
-	private SecureFilter secureFilter; // Enforces secure connections when it's not possible to have found us via insecure means.
+	
+	/** Used for serving TLS. */
+	private SSLContext context;
+	/** Enforces secure connections when it's not possible to have found us via insecure means. */
+	private SecureFilter secureFilter;
 	
 	public TableModel getUploadsModel() {
 		return uploadsModel;
@@ -641,7 +644,7 @@ public class ShareServer implements TableModel {
 			shares.add(s);
 			idx = shares.indexOf(s);
 		}
-		notifySharedAdded(idx);
+		notifyShareAdded(idx);
 	}
 	
 	/**
@@ -693,8 +696,9 @@ public class ShareServer implements TableModel {
 	
 	Set<TableModelListener> modelListeners = new HashSet<TableModelListener>();
 	
-	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class}; // Name, status, size, time to next refresh
+	private Class<?>[] columnClasses = {String.class, String.class, FileSize.class, FileSize.class, String.class, String.class};
 	private String[] columnNames = {"Name", "Status", "Size", "Files", "Next refresh", "Path"};
+	
 	private static final int NAME_IDX = 0;
 	private static final int STATUS_IDX = 1;
 	private static final int SIZE_IDX = 2;
@@ -776,16 +780,19 @@ public class ShareServer implements TableModel {
 
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		// Cells are not editable
+		// Cells are not editable.
 	}
 	
 	void notifyShareChanged(Share share) {
-		int rowidx = shares.indexOf(share);
+		int rowidx;
+		synchronized (shares) {
+			rowidx = shares.indexOf(share);
+		}
 		// This is possible as shares can change status before they are in the list.
 		if (rowidx != -1) fireTableChanged(new TableModelEvent(this, rowidx));
 	}
 	
-	void notifySharedAdded(int rowidx) {
+	void notifyShareAdded(int rowidx) {
 		fireTableChanged(new TableModelEvent(this, rowidx, rowidx, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
 	}
 	
