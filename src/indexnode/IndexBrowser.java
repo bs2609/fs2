@@ -8,6 +8,7 @@ import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
 import common.HttpUtil;
 import common.Logger;
+import common.Util;
 
 public class IndexBrowser implements HttpHandler {
 	private Filesystem fs;
@@ -46,7 +47,7 @@ public class IndexBrowser implements HttpHandler {
 				//However, it will also understand paths to files
 				// in the case of a file path, redirect to /download/{hash}
 				
-				HttpUtil.redirectToURL(exchange, new URL(HttpUtil.getClientURLToServerRoot(exchange)+"download/"+requestedEntry.getHash()));
+				HttpUtil.redirectToURL(exchange, new URL(HttpUtil.getClientURLToServerRoot(exchange)+"download/"+Util.bytesToHexString(requestedEntry.getHash().get())));
 				return;
 			}
 			

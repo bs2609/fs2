@@ -9,6 +9,8 @@ import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
 import common.HttpUtil;
 import common.Logger;
+import common.Util;
+import common.Util.ByteArray;
 
 /**
  * Allows downloading of a file from fs2.
@@ -32,7 +34,7 @@ public class IndexDownloader implements HttpHandler {
 			Collection<? extends FilesystemEntry> hashMatches = null;
 			
 			String path = HttpUtil.getPathAfterContext(exchange);
-			hashMatches = fs.searchForHash(path);
+			hashMatches = fs.searchForHash(new ByteArray(Util.bytesFromHexString(path)));
 			if (hashMatches.size() == 0) {
 				//Then they supplied a hash that matches no files:
 				HttpUtil.simple404(exchange);

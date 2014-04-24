@@ -3,13 +3,14 @@ package client.shareserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import common.FS2Constants;
 import common.ProgressTracker;
-import common.Util;
+import common.Util.ByteArray;
 
 /**
  * Provides Java with the ability to produce digests of files but at a throttled rate.
@@ -24,7 +25,7 @@ import common.Util;
  */
 public class ThrottledFileDigester {
 
-	public static String digest(InputStream input, BandwidthSharer bs, String algorithm, byte[] extra, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
+	public static ByteArray digest(InputStream input, BandwidthSharer bs, String algorithm, byte[] extra, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
 		if (bs != null) input = new ThrottledInputStream(input, bs);
 		try (DigestInputStream digester = new DigestInputStream(input, MessageDigest.getInstance(algorithm))) {
 			byte[] buf = new byte[FS2Constants.ARBITRARY_BUFFER_SIZE];
@@ -32,7 +33,7 @@ public class ThrottledFileDigester {
 			while ((read = digester.read(buf)) > 0) {
 				if (tracker != null) tracker.progress(read);
 			}
-			return Util.bytesToHexString(digester.getMessageDigest().digest(extra));
+			return new ByteArray(digester.getMessageDigest().digest(extra));
 		}
 	}
 
@@ -44,15 +45,15 @@ public class ThrottledFileDigester {
 	 * @throws IOException 
 	 * @throws NoSuchAlgorithmException 
 	 */
-	public static String fs2DigestFile(File file, BandwidthSharer bs) throws NoSuchAlgorithmException, IOException {
+	public static ByteArray fs2DigestFile(File file, BandwidthSharer bs) throws NoSuchAlgorithmException, IOException {
 		return fs2DigestFile(file, bs, null);
 	}
 	
-	public static String fs2TrackableDigestFile(File file, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
+	public static ByteArray fs2TrackableDigestFile(File file, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
 		return fs2DigestFile(file, null, tracker);
 	}
 	
-	public static String fs2DigestFile(File file, BandwidthSharer bs, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
-		return digest(new FileCropperStream(file, FS2Constants.FILE_DIGEST_HEAD_FOOT_LENGTH), bs, FS2Constants.FILE_DIGEST_ALGORITHM, Long.toString(file.length()).getBytes("UTF-8"), tracker);
+	public static ByteArray fs2DigestFile(File file, BandwidthSharer bs, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
+		return digest(new FileCropperStream(file, FS2Constants.FILE_DIGEST_HEAD_FOOT_LENGTH), bs, FS2Constants.FILE_DIGEST_ALGORITHM, BigInteger.valueOf(file.length()).toByteArray(), tracker);
 	}
 }

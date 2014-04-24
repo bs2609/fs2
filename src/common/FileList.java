@@ -11,6 +11,8 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import common.Util.ByteArray;
+
 /**
  * The new FS2 filelist format. Now without XML... ooOOOoo.
  * This should not be modified lightly!
@@ -35,25 +37,25 @@ public class FileList implements Serializable {
 	 */
 	public static class Item implements Serializable {
 		private static final long serialVersionUID = 5527044711593501827L;
-		public HashMap<String, Item> children;  //Maps child-names onto their representative item.
+		public HashMap<String, Item> children;  // Maps child-names onto their representative item.
 		public String name;
-		public String hash;
+		public ByteArray hash;
 		public int hashVersion;
-		public long lastModified; //used for the last-refreshed date for the file-list.
-		public long size; //The size of a file or recursive size of a directory.
-		public long fileCount; //for directories the recursive count of files within. This is obviously 1 for files, as they are one file.
+		public long lastModified; // Used for the last-refreshed date for the file-list.
+		public long size; // The size of a file or recursive size of a directory.
+		public long fileCount; // For directories the recursive count of files within. This is obviously 1 for files, as they are one file.
 		
 		public boolean isDirectory() {
-			return children!=null;
+			return children != null;
 		}
 	}
 	
 	public int revision;
 	public Item root;
 	
-	//Items below this line MUST NOT be non-transient!
+	// Items below this line MUST NOT be non-transient!
 	
-	//Prevent direct instantiation, creates an empty file list.
+	// Prevent direct instantiation, creates an empty file list.
 	private FileList(String name) {
 		root = new Item();
 		root.name = name;
@@ -83,11 +85,11 @@ public class FileList implements Serializable {
 	 * DOES NOT close the stream after reading.
 	 * 
 	 * @param is The stream containing a filelist as packed by the 'deconstruct' method given here.
-	 * @return The filelist if one could be contstructed from the stream, null otherwise.
+	 * @return The filelist if one could be constructed from the stream, null otherwise.
 	 */
 	public static FileList reconstruct(InputStream is) {
 		try {
-			//Decompress the input stream, as when deconstructing a filelist they are compressed.
+			// Decompress the input stream, as when deconstructing a filelist they are compressed.
 			is = new InflaterInputStream(is);
 			ObjectInputStream ois = new ObjectInputStream(is);
 			FileList out = (FileList) ois.readObject();
@@ -101,7 +103,7 @@ public class FileList implements Serializable {
 	
 	/**
 	 * Deconstructs this filelist and dumps it onto the output stream in the format that it so chooses.
-	 * @param os The output stream to recieve a compressed filelist.
+	 * @param os The output stream to receive a compressed filelist.
 	 * @throws IOException if the serialisation doesn't work for some reason.
 	 */
 	public void deconstruct(OutputStream os) throws IOException {

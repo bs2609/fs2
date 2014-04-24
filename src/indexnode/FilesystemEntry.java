@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Map;
 
+import common.Util.ByteArray;
+
 public interface FilesystemEntry {
 
 	public abstract boolean isRoot();
@@ -18,14 +20,14 @@ public interface FilesystemEntry {
 
 	public abstract FilesystemEntry getParent();
 
-	public abstract String getHash();
+	public abstract ByteArray getHash();
 
 	public abstract Share getShare();
 
 	public abstract boolean isDirectory();
 
 	/**
-	 * returns a list of all files with the same hash.
+	 * Returns a list of all files with the same hash.
 	 * @return
 	 */
 	public abstract Collection<? extends FilesystemEntry> getAlternatives();
@@ -45,7 +47,7 @@ public interface FilesystemEntry {
 
 	/**
 	 * Returns the string path to this file in the filesystem.
-	 * @return a / seperated path from the root of fs2 to this file.
+	 * @return a / separated path from the root of fs2 to this file.
 	 * @throws UnsupportedEncodingException 
 	 */
 	public abstract String getPath(boolean urlEncode, boolean includeOwner) throws
@@ -85,7 +87,7 @@ public interface FilesystemEntry {
 	 * @param share The share that this item belongs to.
 	 * @return the new entry
 	 */
-	public abstract FilesystemEntry createChildEntry(String name, String hash, long size,
+	public abstract FilesystemEntry createChildEntry(String name, ByteArray hash, long size,
 			int links, Share share);
 
 	public abstract FilesystemEntry createChildDirectory(String name, Share share);
