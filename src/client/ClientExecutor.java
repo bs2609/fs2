@@ -1,7 +1,6 @@
 package client;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import client.gui.Gui;
@@ -136,9 +135,9 @@ public class ClientExecutor {
 	}
 	
 	private static void setupLogging() {
-		if (Boolean.parseBoolean(conf.getString(CK.LOG_MESSAGES_TO_DISK))) {
-			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath()+File.separator+new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date()));
-			Logger.log("Log messages are now being saved to: "+Logger.getLogFile());
+		if (conf.getBoolean(CK.LOG_MESSAGES_TO_DISK)) {
+			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath() + File.separator + Util.formatDate(new Date(), "yyyy-MM-dd_HHmmss"));
+			Logger.log("Log messages are now being saved to: " + Logger.getLogFile());
 		}
 	}
 
