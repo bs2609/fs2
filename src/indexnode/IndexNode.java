@@ -928,15 +928,10 @@ public class IndexNode {
 	}
 	
 	public static long generateCapabilityValue() {
-		Random r = new Random();
-		
-		//round to the nearest 100k
-		long c = Runtime.getRuntime().maxMemory()/100000; 
-		c *= 100000;
-		
-		c += (Math.abs(r.nextLong())%100000); //add noise to the end of the number.
-		
-		return c;
+		// Round to the nearest 100k
+		long c = Util.roundTo(Runtime.getRuntime().maxMemory(), 100000L, true);
+		// Add noise to the end of the number.
+		return c + new Random().nextInt(100000);
 	}
 	
 	public IndexAdvertismentManager getAdvertManager() {

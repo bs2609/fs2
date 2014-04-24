@@ -409,6 +409,10 @@ public abstract class Util {
 		return (int) ((value + (trunc ? 0.0 : 0.5) * roundTo) / roundTo) * roundTo;
 	}
 	
+	public static long roundTo(long value, long roundTo, boolean trunc) {
+		return (long) ((value + (trunc ? 0.0 : 0.5) * roundTo) / roundTo) * roundTo;
+	}
+	
 	/**
 	 * Checks that the file specified is contained by the container specified.
 	 * --that all of the container's path is the leftmost section of the item's path.
