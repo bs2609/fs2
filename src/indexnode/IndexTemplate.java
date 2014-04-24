@@ -14,21 +14,21 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import common.httpserver.HttpExchange;
-
 import common.ChatMessage;
 import common.FS2Constants;
 import common.HttpUtil;
 import common.Logger;
 import common.Sxml;
-import common.Util;
 import common.Sxml.SXMLException;
+import common.Util;
+import common.httpserver.HttpExchange;
 
 /**
  * An output template for the indexnode.
  * @author gary
  */
 public class IndexTemplate {
+	
 	private Sxml xml;
 	Document doc;
 	private Element title;
@@ -43,7 +43,7 @@ public class IndexTemplate {
 	public IndexTemplate(HttpExchange exchange) throws SXMLException {
 		this();
 		linkBase = HttpUtil.getClientURLToServerRoot(exchange);
-		footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION+" at "+linkBase+" on "+new Date()));
+		footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " at " + linkBase + " on " + Util.formatDate(new Date())));
 	}
 	
 	public IndexTemplate() throws SXMLException {

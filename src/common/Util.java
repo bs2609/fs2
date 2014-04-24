@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -117,6 +118,16 @@ public abstract class Util {
 	public static String unquote(String quoted) {
 		if (quoted.length() < 2) return "";
 		return quoted.substring(1, quoted.length() - 1).replaceAll("\\\\\"", Matcher.quoteReplacement("\"")).replaceAll("\\\\\\\\", Matcher.quoteReplacement("\\"));
+	}
+	
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	public static String formatDate(Date date) {
+		return dateFormat.format(date);
+	}
+	
+	public static String formatDate(Date date, String format) {
+		return new SimpleDateFormat(format).format(date);
 	}
 	
 	public static String bytesToHexString(byte[] bytes) {
@@ -543,7 +554,7 @@ public abstract class Util {
 		
 		if (resizeMode != ImageResizeType.NORATIO) {
 			mWidth = (int) ((double) inWidth * chosenRatio);
-			mHeight = (int) ((double) inHeight * chosenRatio);	
+			mHeight = (int) ((double) inHeight * chosenRatio);
 		}
 		
 		int oX = (outWidth - mWidth) / 2; // Offset from edge in X

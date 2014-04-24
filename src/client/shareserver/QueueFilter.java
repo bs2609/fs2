@@ -8,7 +8,6 @@ import java.util.Random;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-
 import common.httpserver.Filter;
 import common.httpserver.HttpExchange;
 
@@ -29,6 +28,7 @@ import common.Sxml;
  *
  */
 public class QueueFilter extends Filter {
+	
 	private Random gen = new Random();
 	private TimedQueue<Long> tq;
 	
@@ -120,7 +120,7 @@ public class QueueFilter extends Filter {
 			html.appendChild(footer);
 			footer.setAttribute("id", "fs2-footer");
 			footer.appendChild(doc.createElement("hr"));
-			footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION+" client at "+InetAddress.getLocalHost()+" on "+new Date()));
+			footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " client at " + InetAddress.getLocalHost() + " on " + Util.formatDate(new Date())));
 			
 			HttpUtil.simpleResponse(exchange, xml.toString(), 503);
 			
@@ -133,6 +133,5 @@ public class QueueFilter extends Filter {
 			}
 		}
 	}
-	
 	
 }

@@ -9,6 +9,7 @@ import indexnode.IndexNode.Share;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedList;
 
 import org.w3c.dom.Document;
@@ -27,6 +28,7 @@ import common.httpserver.HttpHandler;
  * @author gp
  */
 public class IndexStatistics implements HttpHandler {
+	
 	private final IndexNode onNode;
 	private volatile long lastGenerated = 0;
 	private String cachedStatsPage = "";
@@ -70,12 +72,12 @@ public class IndexStatistics implements HttpHandler {
 					Element general = addSection("General", "general");
 					Element memory = addSection("Memory Usage", "memory");
 					//Uptime
-					addStatistic("Indexnode started",IndexStatistics.this.onNode.startedDate.toString(),Long.toString(IndexStatistics.this.onNode.startedDate.getTime()), "indexnode-started", general);
+					Date startDate = IndexStatistics.this.onNode.startedDate;
+					addStatistic("Indexnode started", Util.formatDate(startDate), Long.toString(startDate.getTime()), "indexnode-started", general);
 					//Memory usage:
 					addStatistic("Maximum heap",Util.niceSize(Runtime.getRuntime().maxMemory()), Long.toString(Runtime.getRuntime().maxMemory()) , "indexnode-maxheap", memory);
 					addStatistic("Used heap",Util.niceSize(Runtime.getRuntime().totalMemory()), Long.toString(Runtime.getRuntime().totalMemory()) , "indexnode-usedheap", memory);
 					addStatistic("Available heap",Util.niceSize(Runtime.getRuntime().freeMemory()), Long.toString(Runtime.getRuntime().freeMemory()) , "indexnode-freeheap", memory);
-					
 					
 					//number of files
 					int fileCount = IndexStatistics.this.onNode.fs.countFiles();

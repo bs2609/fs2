@@ -37,7 +37,6 @@ import client.platform.ClientConfigDefaults.CK;
 @SuppressWarnings("serial")
 public class IndexnodeSettings extends SettingsPanel {
 
-
 	private class IndexNodeStatusRenderer extends DefaultTableCellRenderer {
 		@Override
 		public Component getTableCellRendererComponent(JTable table,
@@ -56,13 +55,13 @@ public class IndexnodeSettings extends SettingsPanel {
 	private class IndexNodeDateRenderer extends DefaultTableCellRenderer {
 		@Override
 		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row,
-				int column) {
-			super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-					row, column);
+			Object value, boolean isSelected, boolean hasFocus, int row, int column)
+		{
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			
-			if (((Date)value).getTime()==0) setText("never"); 
-
+			Date lastSeen = (Date) value;
+			setText(lastSeen.getTime() == 0 ? "never" : Util.formatDate(lastSeen));
+			
 			return this;
 		}
 	}
