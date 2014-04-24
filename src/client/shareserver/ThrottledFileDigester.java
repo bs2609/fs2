@@ -1,9 +1,14 @@
 package client.shareserver;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -39,9 +44,9 @@ public class ThrottledFileDigester {
 
 	/**
 	 * Generates and returns the fs2 digest of a file.
-	 * @param file
+	 * @param file The file to be digested.
 	 * @param bs The BandwidthSharer to throttle the digesting. Use null for unlimited.
-	 * @return The fs2 digest of the file as a string.
+	 * @return The fs2 digest of the file as a byte array.
 	 * @throws IOException 
 	 * @throws NoSuchAlgorithmException 
 	 */
@@ -49,11 +54,40 @@ public class ThrottledFileDigester {
 		return fs2DigestFile(file, bs, null);
 	}
 	
+	public static ByteArray fs2DigestFile(Path path, BandwidthSharer bs) throws NoSuchAlgorithmException, IOException {
+		return fs2DigestFile(path, bs, null);
+	}
+	
 	public static ByteArray fs2TrackableDigestFile(File file, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
 		return fs2DigestFile(file, null, tracker);
 	}
 	
 	public static ByteArray fs2DigestFile(File file, BandwidthSharer bs, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
-		return digest(new FileCropperStream(file, FS2Constants.FILE_DIGEST_HEAD_FOOT_LENGTH), bs, FS2Constants.FILE_DIGEST_ALGORITHM, BigInteger.valueOf(file.length()).toByteArray(), tracker);
+		return fs2DigestStream(new FileCropperStream(file, FS2Constants.FILE_DIGEST_HEAD_FOOT_LENGTH), bs, file.length(), tracker);
+	}
+	
+	public static ByteArray fs2DigestFile(Path path, BandwidthSharer bs, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
+		return fs2DigestStream(getCroppedBytes(path, FS2Constants.FILE_DIGEST_HEAD_FOOT_LENGTH), bs, Files.size(path), tracker);
+	}
+	
+	private static ByteArray fs2DigestStream(InputStream stream, BandwidthSharer bs, long size, ProgressTracker tracker) throws NoSuchAlgorithmException, IOException {
+		return digest(stream, bs, FS2Constants.FILE_DIGEST_ALGORITHM, BigInteger.valueOf(size).toByteArray(), tracker);
+	}
+	
+	public static InputStream getCroppedBytes(Path path, int crop) throws IOException {
+		try (FileChannel channel = FileChannel.open(path)) {
+			long size = channel.size();
+			
+			if (size < crop << 1) {
+				byte[] data = new byte[(int) size];
+				channel.read(ByteBuffer.wrap(data));
+				return new ByteArrayInputStream(data);
+			}
+			
+			byte[] data = new byte[crop << 1];
+			channel.read(ByteBuffer.wrap(data, 0, crop), 0L);
+			channel.read(ByteBuffer.wrap(data, crop, crop), size - crop);
+			return new ByteArrayInputStream(data);
+		}
 	}
 }
