@@ -21,7 +21,7 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 	
 	public interface ResourceUser<T> extends Runnable {
 		
-		/** Returns the resource */
+		/** Returns the resource this task will be using. */
 		T getResource();
 	}
 	
@@ -44,6 +44,7 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 		ExecutorService pool = Executors.newCachedThreadPool();
 		for (final ExecutorService ex : resourceMap.values()) {
 			pool.submit(new Callable<Boolean>() {
+				@Override
 				public Boolean call() throws InterruptedException {
 					return ex.awaitTermination(timeout, unit);
 				}
@@ -55,20 +56,18 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 	
 	@Override
 	public boolean isShutdown() {
-		boolean shutdown = true;
 		for (ExecutorService ex : resourceMap.values()) {
-			shutdown = shutdown && ex.isShutdown();
+			if (!ex.isShutdown()) return false;
 		}
-		return shutdown;
+		return true;
 	}
 	
 	@Override
 	public boolean isTerminated() {
-		boolean terminated = true;
 		for (ExecutorService ex : resourceMap.values()) {
-			terminated = terminated && ex.isTerminated();
+			if (!ex.isTerminated()) return false;
 		}
-		return terminated;
+		return true;
 	}
 	
 	@Override
@@ -97,5 +96,4 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 			}
 		}
 	}
-	
 }
