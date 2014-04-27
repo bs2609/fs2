@@ -7,8 +7,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -20,74 +23,78 @@ import common.Logger;
 
 public class Utilities {
 	
-	HashMap<String, ImageIcon> cachedImages = new HashMap<String, ImageIcon>();
+	Map<String, Reference<ImageIcon>> cachedImages = new HashMap<String, Reference<ImageIcon>>();
 	
 	/**
-	 * Gets an {@link Image} of an icon, preferably from the filesystem, but if it doesn't exist then this
-	 * tries to locate it within this jar file.
+	 * Gets an {@link Image} of an icon, preferably from the filesystem,
+	 * but if it doesn't exist then this tries to locate it within this jar file.
 	 * @param iconName
 	 * @return the image for the icon, or null if it couldn't be loaded.
 	 */
 	public ImageIcon getImage(String iconName) {
-		return getImageFullname(iconName+".png");
+		return getImageFullname(iconName + ".png");
 	}
 	
 	public ImageIcon getImageFullname(String filename) {
 		try {
+			ImageIcon icon;
 			if (cachedImages.containsKey(filename)) {
-				return cachedImages.get(filename);
-			} else {
-				File fsFile = new File("icons"+File.separator+filename);
-				if (fsFile.exists()) {
-					return new ImageIcon(Toolkit.getDefaultToolkit().createImage(fsFile.getPath()));
-				} else {
-					return new ImageIcon(Toolkit.getDefaultToolkit().createImage(Gui.class.getClassLoader().getResource("icons/"+filename)));
-				}
+				icon = cachedImages.get(filename).get();
+				if (icon != null) return icon;
 			}
+			
+			File fsFile = new File("icons" + File.separator + filename);
+			if (fsFile.exists()) {
+				icon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(fsFile.getPath()));
+			} else {
+				icon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(Gui.class.getClassLoader().getResource("icons/" + filename)));
+			}
+			cachedImages.put(filename, new WeakReference<ImageIcon>(icon));
+			return icon;
+			
 		} catch (Exception e) {
-			Logger.warn("Image '"+filename+"' couldn't be loaded: "+e);
-			return null; //The caller should handle this well.
+			Logger.warn("Image '" + filename + "' couldn't be loaded: " + e);
+			return null; // The caller should handle this well.
 		}
 	}
 	
 	/**
-	 * This gets a buffered image from the jar or filesystem.
+	 * This gets a BufferedImage from the jar or filesystem.
 	 * This does not cache so call infrequently!
 	 * @param filename
 	 * @return
 	 */
 	public BufferedImage getBufferedImageFullname(String filename) {
 		try {
-			File fsFile = new File("icons"+File.separator+filename);
+			File fsFile = new File("icons" + File.separator + filename);
 			InputStream is = null;
-			try {
-				if (fsFile.exists()) {
-					is = new FileInputStream(fsFile);
-				} else {
-					is = Gui.class.getClassLoader().getResource("icons/"+filename).openStream();
-				}
-				return ImageIO.read(is);
-			} finally {
-				if (is!=null) is.close();
+			if (fsFile.exists()) {
+				is = new FileInputStream(fsFile);
+			} else {
+				is = Gui.class.getClassLoader().getResource("icons/" + filename).openStream();
 			}
+			try (InputStream in = is) {
+				return ImageIO.read(in);
+			}
+			
 		} catch (Exception e) {
-			Logger.warn("Image '"+filename+"' couldn't be loaded: "+e);
-			return null; //The caller should handle this well.
+			Logger.warn("Image '" + filename + "' couldn't be loaded: " + e);
+			return null; // The caller should handle this well.
 		}
 	}
 	
 	public enum FileType {UNKNOWN, APPLICATION, AUDIO, VIDEO, IMAGE, PDF, HTML, JAVA, CODE, TEXT, DOCUMENT, ARCHIVE, DISKIMAGE, TORRENT, CAKE};
 	
 	/**
-	 * This will attempt to guess the mime type of a file based on its extention.
+	 * This will attempt to guess the MIME type of a file based on its extension.
 	 * This does not know many extensions!
 	 * @param filename
 	 * @return The type of the file (in FS2 types)
 	 */
 	public FileType guessType(String filename) {
-		if (filename!=null) {
+		if (filename != null) {
 			String[] items = filename.split("\\.");
-			if (items.length>1) {
+			if (items.length > 1) {
 				String ext = items[items.length-1].toLowerCase();
 				if (typeMap.containsKey(ext)) {
 					return typeMap.get(ext);
@@ -97,14 +104,14 @@ public class Utilities {
 		return FileType.UNKNOWN;
 	}
 	
-	HashMap<String, FileType> typeMap = new HashMap<String, FileType>();
+	Map<String, FileType> typeMap = new HashMap<String, FileType>();
 	
 	public Utilities() {
-		//Applications
+		// Applications
 		typeMap.put("exe", FileType.APPLICATION);
 		typeMap.put("app", FileType.APPLICATION);
 		
-		//Audio
+		// Audio
 		typeMap.put("wav", FileType.AUDIO);
 		typeMap.put("mp3", FileType.AUDIO);
 		typeMap.put("wma", FileType.AUDIO);
@@ -112,8 +119,10 @@ public class Utilities {
 		typeMap.put("aac", FileType.AUDIO);
 		typeMap.put("caf", FileType.AUDIO);
 		typeMap.put("aif", FileType.AUDIO);
+		typeMap.put("aiff", FileType.AUDIO);
+		typeMap.put("flac", FileType.AUDIO);
 		
-		//Video
+		// Video
 		typeMap.put("avi", FileType.VIDEO);
 		typeMap.put("mpg", FileType.VIDEO);
 		typeMap.put("mpeg", FileType.VIDEO);
@@ -126,11 +135,12 @@ public class Utilities {
 		typeMap.put("asx", FileType.VIDEO);
 		typeMap.put("asf", FileType.VIDEO);
 		typeMap.put("3gp", FileType.VIDEO);
+		typeMap.put("mov", FileType.VIDEO);
 		typeMap.put("mjpg", FileType.VIDEO);
 		typeMap.put("m4v", FileType.VIDEO);
+		typeMap.put("flv", FileType.VIDEO);
 		
-		
-		//Image
+		// Image
 		typeMap.put("bmp", FileType.IMAGE);
 		typeMap.put("jpg", FileType.IMAGE);
 		typeMap.put("jpeg", FileType.IMAGE);
@@ -139,64 +149,71 @@ public class Utilities {
 		typeMap.put("raw", FileType.IMAGE);
 		typeMap.put("dng", FileType.IMAGE);
 		typeMap.put("svg", FileType.IMAGE);
+		typeMap.put("tif", FileType.IMAGE);
+		typeMap.put("tiff", FileType.IMAGE);
 		
-		
-		//pdf
+		// PDF
 		typeMap.put("pdf", FileType.PDF);
 		
-		//HTML
+		// HTML
 		typeMap.put("htm", FileType.HTML);
 		typeMap.put("html", FileType.HTML);
 		typeMap.put("xml", FileType.HTML);
 		typeMap.put("xhtml", FileType.HTML);
 		
-		//Java
+		// Java
 		typeMap.put("java", FileType.JAVA);
 		typeMap.put("jar", FileType.JAVA);
 		typeMap.put("class", FileType.JAVA);
 		
-		//Code
+		// Code
+		typeMap.put("asm", FileType.CODE);
 		typeMap.put("c", FileType.CODE);
 		typeMap.put("cpp", FileType.CODE);
+		typeMap.put("cxx", FileType.CODE);
 		typeMap.put("h", FileType.CODE);
 		typeMap.put("rb", FileType.CODE);
 		typeMap.put("py", FileType.CODE);
-		typeMap.put("cpp", FileType.CODE);
+		typeMap.put("hs", FileType.CODE);
+		typeMap.put("cs", FileType.CODE);
 		typeMap.put("pas", FileType.CODE);
 		typeMap.put("sh", FileType.CODE);
 		typeMap.put("pl", FileType.CODE);
 		typeMap.put("asp", FileType.CODE);
+		typeMap.put("aspx", FileType.CODE);
 		typeMap.put("php", FileType.CODE);
 		typeMap.put("vb", FileType.CODE);
 
-		//Text
+		// Text
 		typeMap.put("txt", FileType.TEXT);
 		typeMap.put("text", FileType.TEXT);
 		
-		//Document
+		// Document
 		typeMap.put("doc", FileType.DOCUMENT);
-		typeMap.put("odf", FileType.DOCUMENT);
+		typeMap.put("docx", FileType.DOCUMENT);
+		typeMap.put("odt", FileType.DOCUMENT);
 		typeMap.put("xls", FileType.DOCUMENT);
-		typeMap.put("dot", FileType.DOCUMENT);
-		typeMap.put("xlt", FileType.DOCUMENT);
-		typeMap.put("sda", FileType.DOCUMENT);
-		typeMap.put("sdb", FileType.DOCUMENT);
-		typeMap.put("sdc", FileType.DOCUMENT);
-		typeMap.put("sdd", FileType.DOCUMENT);
-		typeMap.put("sdw", FileType.DOCUMENT);
+		typeMap.put("xlsx", FileType.DOCUMENT);
+		typeMap.put("ods", FileType.DOCUMENT);
+		typeMap.put("ppt", FileType.DOCUMENT);
+		typeMap.put("pptx", FileType.DOCUMENT);
+		typeMap.put("odp", FileType.DOCUMENT);
 		typeMap.put("rtf", FileType.DOCUMENT);
+		typeMap.put("tex", FileType.DOCUMENT);
+		typeMap.put("lyx", FileType.DOCUMENT);
 		
-		//Archive
+		// Archive
 		typeMap.put("zip", FileType.ARCHIVE);
 		typeMap.put("rar", FileType.ARCHIVE);
+		typeMap.put("7z", FileType.ARCHIVE);
 		typeMap.put("tar", FileType.ARCHIVE);
 		typeMap.put("gz", FileType.ARCHIVE);
+		typeMap.put("tgz", FileType.ARCHIVE);
 		typeMap.put("bz2", FileType.ARCHIVE);
 		typeMap.put("tbz", FileType.ARCHIVE);
-		typeMap.put("bz", FileType.ARCHIVE);
-		typeMap.put("tgz", FileType.ARCHIVE);
+		typeMap.put("xz", FileType.ARCHIVE);
 
-		//Disk images
+		// Disk images
 		typeMap.put("iso", FileType.DISKIMAGE);
 		typeMap.put("mdf", FileType.DISKIMAGE);
 		typeMap.put("mds", FileType.DISKIMAGE);
@@ -206,34 +223,38 @@ public class Utilities {
 		typeMap.put("img", FileType.DISKIMAGE);
 		typeMap.put("nrg", FileType.DISKIMAGE);
 
-		//Torrent
+		// Torrent
 		typeMap.put("torrent", FileType.TORRENT);
 		
-		//Cake
+		// Cake
 		typeMap.put("gcf", FileType.CAKE);
 	}
 	
 	public ImageIcon getIconForType(FileType type) {
-		return getImage("type-"+type.toString().toLowerCase());
+		return getImage("type-" + type.toString().toLowerCase());
+	}
+	
+	/** Gets the icon corresponding to the FileType returned by guessType(filename) */
+	public ImageIcon guessIconForType(String filename) {
+		return getIconForType(guessType(filename));
 	}
 	
 	/**
-	 * Executes the given task in the swing thread or in the current thread if this is a headless instance.
+	 * Executes the given task in the Swing thread or in the current thread if this is a headless instance.
 	 * 
-	 * This should only be used for event notification for gui related items, as it is not guaranteed that dispatched items will ever be called!
+	 * This should only be used for event notification for GUI related items, as it is not guaranteed that dispatched items will ever be called!
 	 * (they may not be during a shutdown process)
 	 * 
 	 * Calls to this function will be ignored if an externally triggered shutdown is in progress (shutdown triggered by shutdown hook)
-	 * So, don't dispatch important things, it's only intended to be used to update gui elements.
+	 * So, don't dispatch important things, it's only intended to be used to update GUI elements.
 	 * Additionally, while calls may be dispatched onto the AWT queue before a shutdown happens they will only be executed if there is NOT a shutdown of any type in progress.
-	 * 
 	 * 
 	 * @param run
 	 * @throws InvocationTargetException 
 	 * @throws InterruptedException 
 	 */
 	public static void dispatch(final Runnable run, boolean synchronous) throws InterruptedException, InvocationTargetException {
-		if (System.getProperty("headless")==null) {
+		if (System.getProperty("headless") == null) {
 			if (!(ClientExecutor.endGame && ClientExecutor.shuttingDown)) {
 				Runnable safeRun = new Runnable() {
 					@Override
@@ -254,15 +275,14 @@ public class Utilities {
 	}
 	
 	/**
-	 * Executes the given task in the swing thread or in the current thread if this is a headless instance.
+	 * Executes the given task in the Swing thread or in the current thread if this is a headless instance.
 	 * 
-	 * This should only be used for event notification for gui related items, as it is not guaranteed that dispatched items will ever be called!
+	 * This should only be used for event notification for GUI related items, as it is not guaranteed that dispatched items will ever be called!
 	 * (they may not be during a shutdown process)
 	 * 
 	 * Calls to this function will be ignored if an externally triggered shutdown is in progress (shutdown triggered by shutdown hook)
-	 * So, don't dispatch important things, it's only intended to be used to update gui elements.
+	 * So, don't dispatch important things, it's only intended to be used to update GUI elements.
 	 * Additionally, while calls may be dispatched onto the AWT queue before a shutdown happens they will only be executed if there is NOT a shutdown of any type in progress.
-	 * 
 	 * 
 	 * @param run
 	 * @throws InvocationTargetException 
@@ -281,7 +301,7 @@ public class Utilities {
 		try {
 			dispatch(run);
 		} catch (Exception e) {
-			Logger.warn("During dispatch to swing: "+e);
+			Logger.warn("During dispatch to swing: " + e);
 			Logger.log(e);
 		}
 	}
