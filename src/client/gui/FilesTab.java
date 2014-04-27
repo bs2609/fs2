@@ -511,17 +511,12 @@ public class FilesTab extends TabItem implements
 			FileSystemEntry fse = fs.getEntryForRow(filesTable.convertRowIndexToModel(row));
 			if (fse.isLoadingNode) {
 				setIcon(spinner.getSpinner());
+			} else if (fse.isDirectory()) {
+				setIcon(fse.isSearch() ? search : dir);
 			} else {
-				if (fse.isDirectory()) {
-					if (fse.isSearch()) {
-						setIcon(search);
-					} else {
-						setIcon(dir);
-					}
-				} else {
-					setIcon(frame.gui.util.getIconForType(frame.gui.util.guessType(value.toString())));
-				}
+				setIcon(frame.gui.util.guessIconForType(value.toString()));
 			}
+			
 			return this;
 		}
 	}

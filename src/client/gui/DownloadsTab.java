@@ -304,36 +304,29 @@ public class DownloadsTab extends TabItem implements TreeExpansionListener, Acti
 	private class DLQRenderer extends DefaultTreeCellRenderer {
 		@Override
 		public Component getTreeCellRendererComponent(JTree tree, Object value,
-				boolean sel, boolean expanded, boolean leaf, int row,
-				boolean hasFocus) {
-			super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf,
-					row, hasFocus);
+			boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus)
+		{
+			super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 			
 			DownloadItem item = (DownloadItem) value;
 			if (item instanceof DownloadDirectory) {
-				if (expanded) {
-					setIcon(openIcon);
-				} else setIcon(closedIcon);
+				setIcon(expanded ? openIcon : closedIcon);
+				
 			} else if (item instanceof DownloadFile) {
-				DownloadFile f = (DownloadFile)item;
+				DownloadFile f = (DownloadFile) item;
 				if (f.hasNoSources()) {
 					setIcon(frame.gui.util.getImage("nosources"));
 				} else if (f.isError()) {
 					setIcon(frame.gui.util.getImage("error"));
-				} else if (f.isDownloading()) { 
-					if (f.isSecure()) {
-						setIcon(frame.gui.util.getImage("secure"));
-					} else {
-						setIcon(frame.gui.util.getImage("activetransfers"));
-					}
+				} else if (f.isDownloading()) {
+					setIcon(frame.gui.util.getImage(f.isSecure() ? "secure" : "activetransfers"));
 				} else {
-					setIcon(frame.gui.util.getIconForType(frame.gui.util.guessType(f.getName())));
+					setIcon(frame.gui.util.guessIconForType(f.getName()));
 				}
 			}
 			
 			return this;
 		}
-		
 	}
 	
 	/**
@@ -409,35 +402,35 @@ public class DownloadsTab extends TabItem implements TreeExpansionListener, Acti
 		}
 	}
 
-	/** The file most recently downloaded */
+	/** The file most recently downloaded. */
 	private DownloadFile mostRecentlyFinished;
 	
-	//The gui updating is throttled to prevent extreme cpu usage when downloading a load of files.
+	// The GUI updating is throttled to prevent extreme CPU usage when downloading a load of files.
 	// We cache the last filename displayed so if a user clicks during a fast update the correct file is opened.
 	private DownloadFile displayedFile;
 	private DownloadCompleteGuiUpdater dcgu = new DownloadCompleteGuiUpdater();
+	
 	private class DownloadCompleteGuiUpdater implements Deferrable {
-
 		@Override
 		public void run() {
 			Utilities.edispatch(new Runnable() {
 				@Override
 				public void run() {
 					displayedFile = mostRecentlyFinished;
-					openldDir.setText("Open "+displayedFile.getFile().getParent());
+					openldDir.setText("Open " + displayedFile.getFile().getParent());
 					openldDir.setEnabled(true);
-					openldFile.setText("Open "+displayedFile.getFile().getName());
+					openldFile.setText("Open " + displayedFile.getFile().getName());
 					openldFile.setIcon(frame.gui.util.getIconForType(frame.gui.util.guessType(displayedFile.getFile().getName())));
+					openldFile.setIcon(frame.gui.util.guessIconForType(displayedFile.getFile().getName()));
 					openldFile.setEnabled(true);
 				}
 			});
 		}
-		
 	}
 	
-	
 	/**
-	 * Called when a download has finished successfully. It is not called in a swing thread. This is to allow us to keep track of the most recently downloaded file.
+	 * Called when a download has finished successfully. It is not called in a Swing thread.
+	 * This is to allow us to keep track of the most recently downloaded file.
 	 */
 	@Override
 	public void downloadComplete(DownloadFile file) {
