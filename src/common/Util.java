@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,16 +46,14 @@ public abstract class Util {
 
 	/**
 	 * Describes an object that can filter items.
-	 * @author gary
-	 *
 	 * @param <T> The type of object that can be filtered by this.
+	 * @author gary
 	 */
 	public interface Filter<T> {
 		
 		/**
 		 * Returns true if the item supplied passes through the filter.
 		 * @param item
-		 * @return
 		 */
 		boolean accept(T item);
 	}
@@ -68,6 +67,27 @@ public abstract class Util {
 		Iterator<T> it = collection.iterator();
 		while (it.hasNext()) {
 			if (!filter.accept(it.next())) it.remove();
+		}
+	}
+	
+	
+	/** Wraps a Lock so it can be closed automatically by a try-with block. */
+	public static class LockHolder implements AutoCloseable {
+		
+		private final Lock lock;
+		
+		private LockHolder (Lock lock) {
+			this.lock = lock;
+			lock.lock();
+		}
+		
+		public static LockHolder hold(Lock lock) {
+			return new LockHolder(lock);
+		}
+
+		@Override
+		public void close() {
+			lock.unlock();
 		}
 	}
 	
@@ -159,7 +179,7 @@ public abstract class Util {
 		
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof byte[] && Arrays.equals(array, (byte[]) obj) || obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array);
+			return obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array) || obj instanceof byte[] && Arrays.equals(array, (byte[]) obj);
 		}
 		
 		@Override
@@ -245,7 +265,6 @@ public abstract class Util {
 	
 	/**
 	 * Returns a string describing the given size in bytes in nice human units.
-	 * 
 	 * One decimal place.
 	 * 
 	 * @param inSize The long representing the number of bytes.
@@ -329,7 +348,6 @@ public abstract class Util {
 	
 	/**
 	 * A class for printing magnitudes with SI-prefixed suffixes.
-	 * 
 	 * This importantly differs from NiceSize in that it uses SI orders of magnitude and does not say "b" for x10^0.
 	 * 
 	 * @author gp
@@ -529,7 +547,7 @@ public abstract class Util {
 	 * This is necessary because FS2 currently only uses non-authenticated crypto.
 	 * 
 	 * This is because the only reasonable way to do a decently secure, authenticated, standard crypto is with a PKI.
-	 * Future FS2 protocols may use a PKI or clever auth scheme to prevent MITM attacks..
+	 * Future FS2 protocols may use a PKI or clever authentication scheme to prevent MITM attacks...
 	 * @throws NoSuchAlgorithmException If crypto is unsupported on this system.
 	 * @throws KeyManagementException 
 	 */
@@ -618,7 +636,7 @@ public abstract class Util {
 		
 		if (resizeMode != ImageResizeType.NORATIO) {
 			mWidth = (int) ((double) inWidth * chosenRatio);
-			mHeight = (int) ((double) inHeight * chosenRatio);
+			mHeight = (int) ((double) inHeight * chosenRatio);	
 		}
 		
 		int oX = (outWidth - mWidth) / 2; // Offset from edge in X
