@@ -40,7 +40,7 @@ import client.platform.Platform;
 
 @SuppressWarnings("serial")
 public class BasicSettings extends SettingsPanel implements KeyListener {
-
+	
 	public BasicSettings(MainFrame frame) {
 		super(frame, "Basic", frame.getGui().getUtil().getImage("basic"));
 		
@@ -51,7 +51,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 		boxes.add(createSpeedsPanel());
 		
 	}
-
+	
 	private JPanel createSpeedsPanel() {
 		JPanel panel0 = new JPanel();
 		panel0.setLayout(new BoxLayout(panel0, BoxLayout.PAGE_AXIS));
@@ -66,9 +66,8 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 	
 	private JPanel createUploadSpeedPanel() {
 		JPanel content = new JPanel();
-		content.setBorder(BorderFactory.createEmptyBorder(0,0,5,0));
-		
 		content.setLayout(new BoxLayout(content, BoxLayout.X_AXIS));
+		content.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 		
 		final JBytesBox speed = new JBytesBox(frame.getGui().getShareServer().getUploadSpeed());
 		
@@ -76,16 +75,16 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				long nv = (Long) evt.getNewValue();
-				if (nv<=0) {
-					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The upload speed can't be set to '"+speed.getText()+"'."));
+				if (nv < 0) {
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The upload speed can't be set to '" + speed.getText() + "'."));
 				} else {
 					frame.getGui().getShareServer().setUploadSpeed(nv);
-					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The upload speed has been set to "+Util.niceSize(nv)));
+					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The upload speed has been set to " + Util.niceSize(nv)));
 				}
 			}
 		});
 		
-		content.add(new JLabel("Upload:     "));
+		content.add(new JLabel("Upload:   "));
 		content.add(speed);
 		
 		registerHint(speed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum upload amount per second, examples: 5.5mb, 10b, 999tib"));
@@ -103,11 +102,11 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				long nv = (Long) evt.getNewValue();
-				if (nv<0) {
-					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The download speed can't be set to '"+speed.getText()+"'."));
+				if (nv < 0) {
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The download speed can't be set to '" + speed.getText() + "'."));
 				} else {
 					frame.getGui().getDc().setDownloadSpeed(nv);
-					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The download speed has been set to "+Util.niceSize(nv)));
+					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The download speed has been set to " + Util.niceSize(nv)));
 				}
 			}
 		});
@@ -214,12 +213,12 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 				InputStream fis = null;
 				try {
 					fis = new BufferedInputStream(new FileInputStream(iconPicker.getSelectedFile()));
-		    		final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER); //resize to appropriate dimensions.
-		    		avatarButton.setText("Sending...");
-		    		avatarButton.setEnabled(false);
-		    		avatarButton.setIcon(new ImageIcon(chosen));
-		    		
-		    		Thread worker = new Thread(new Runnable() {
+					final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER); //resize to appropriate dimensions.
+					avatarButton.setText("Sending...");
+					avatarButton.setEnabled(false);
+					avatarButton.setIcon(new ImageIcon(chosen));
+					
+					Thread worker = new Thread(new Runnable() {
 						@Override
 						public void run() {
 							boolean success;
@@ -231,7 +230,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 								
 								//2) set the indexnode comm to use this file:
 								frame.getGui().getShareServer().getIndexNodeCommunicator().setAvatarFile(avatarCache);
-							
+								
 								success = true;
 							} catch (IOException e) {
 								ex = e;
@@ -239,10 +238,10 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 								Logger.warn("Couldn't send avatar to indexnode: "+e);
 							}
 							
-						    final boolean esuccess = success;
-						    final IOException eex = ex;
+							final boolean esuccess = success;
+							final IOException eex = ex;
 							
-				    		Utilities.edispatch(new Runnable() {
+							Utilities.edispatch(new Runnable() {
 								@Override
 								public void run() {
 									if (esuccess) {
@@ -250,13 +249,13 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 									} else {
 										avatarButton.setText("failure: "+eex);
 									}
-						    		avatarButton.setEnabled(true);
+									avatarButton.setEnabled(true);
 								}
 							});
 						}
 					});
-		    		worker.setName("avatar change submitter");
-		    		worker.start();
+					worker.setName("avatar change submitter");
+					worker.start();
 				} finally {
 					if (fis!=null) fis.close();
 				}
@@ -271,11 +270,11 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 	public void keyReleased(KeyEvent e) {
 		if (e.getSource()==aliasText) frame.getGui().getShareServer().setAlias(aliasText.getText());
 	}
-
+	
 	@Override
 	public void keyPressed(KeyEvent e) {}
-
+	
 	@Override
 	public void keyTyped(KeyEvent e) {}
-
+	
 }
