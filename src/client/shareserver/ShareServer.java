@@ -687,8 +687,10 @@ public class ShareServer implements TableModel {
 				conf.putString(CK.SHARES + "/s" + FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode() + "/path", newDefaultDir.getPath());
 				try {
 					s.setPath(newDefaultDir);
+					
 				} catch (IOException e) {
-					Logger.severe("Couldn't set the path for the default download dir: " + e);
+					Logger.severe("Couldn't set the path (" + newDefaultDir.getPath() + ") for the default download dir: " + e);
+					Logger.log(e);
 				}
 			}
 		}

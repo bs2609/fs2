@@ -260,54 +260,58 @@ public class DownloadDispatcher {
 	 * @param bestSource
 	 */
 	private void startFileDownloading(DownloadFile nF, DownloadSource bestSource) {
-		//first ensure that the file is not already complete on disk:
+		// First ensure that the file is not already complete on disk:
 		if (downloadFileCompleteOnDisk(nF)) {
-			Logger.warn("Complete download: "+nF+" was in the queue. Issueing completion.");
-			nF.downloadComplete();//issue completion
+			Logger.warn("Complete download: " + nF + " was in the queue. Issueing completion.");
+			nF.downloadComplete(); // Issue completion.
 			wereCompleteItemsInQueue = true;
 			return;
 		}
 		
-		//Create a new info container for the file (if it has never been started before, or if for some reason there are no chunks in it (corrupt for some reason? broken code in the past probably))
-		if (nF.active==null) {
-			if (nF.getSize()==0) {
-				//zero byte files do not need downloading. (and indeed they will fail to dispatch correctly as they will never have any incomplete chunks)
+		// Create a new info container for the file: (if it has never been started before, or if for some reason there are no chunks in it (corrupt for some reason? broken code in the past probably))
+		if (nF.active == null) {
+			if (nF.getSize() == 0) {
+				// Zero byte files do not need downloading. (and indeed they will fail to dispatch correctly as they will never have any incomplete chunks)
 				try {
 					nF.getFile().createNewFile();
 					nF.downloadComplete();
 					wereCompleteItemsInQueue = true;
 					return;
+					
 				} catch (IOException e) {
-					Logger.severe("Empty file: "+nF.getFile().getPath()+" couldn't be created on disk: "+e);
+					Logger.severe("Empty file: " + nF.getFile().getPath() + " couldn't be created on disk: " + e);
+					Logger.log(e);
 				}
 			}
 			nF.active = new DownloadInfo(nF);
+			
 		} else {
 			if (nF.active.isComplete()) {
-				Logger.warn("Complete download: "+nF+" was in the queue. Issueing completion.");
+				Logger.warn("Complete download: " + nF + " was in the queue. Issueing completion.");
 				nF.downloadComplete();
 				wereCompleteItemsInQueue = true;
 				return;
-			} else if (nF.active.chunks.size()==0){
-				Logger.warn("Active download '"+nF+"' in queue with no chunks. Restarting download from the beginning.");
+				
+			} else if (nF.active.chunks.size() == 0) {
+				Logger.warn("Active download '" + nF + "' in queue with no chunks. Restarting download from the beginning.");
 				nF.active = new DownloadInfo(nF);
 			}
 		}
 		
 		try {
-			//Create the new worker:
+			// Create the new worker:
 			DownloadWorker w = DownloadWorker.getDownloadWorker(this, nF.active);
 			nF.active.worker = w;
 			workers.add(w);
 			
-			
-			//Start one of the download chunks present in the info:
+			// Start one of the download chunks present in the info:
 			for (DownloadChunk c : w.getIncompleteInactiveChunks()) {
 				w.downloadChunk(c, bestSource, downloadThreadPool);
 				break;
 			}
+			
 		} catch (IOException e) {
-			Logger.severe("Unable to dispatch a download: "+e);
+			Logger.severe("Unable to dispatch a download: " + e);
 			Logger.log(e);
 		}
 	}

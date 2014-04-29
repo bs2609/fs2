@@ -205,9 +205,10 @@ public class NativeFS implements Filesystem {
 		@Override
 		public String getURL() {
 			try {
-				return "http://"+share.getOwner().getURLAddress()+"/shares/"+getPath(true, false);
-			} catch (Exception e){
-				Logger.severe(e.toString());
+				return "http://" + share.getOwner().getURLAddress() + "/shares/" + getPath(true, false);
+				
+			} catch (Exception e) {
+				Logger.severe("Couldn't generate URL for file: " + e);
 				Logger.log(e);
 				return "";
 			}

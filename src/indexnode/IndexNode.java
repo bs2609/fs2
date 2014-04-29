@@ -324,14 +324,16 @@ public class IndexNode {
 			if (local) Logger.warn("Connection from loopback addresses may not work unless valid DNS/WINS servers are available!");
 			
 			try {
-				pingURL = new URL("http://"+getURLAddress()+"/ping");
+				pingURL = new URL("http", getURLAddress(), "ping");
+				
 			} catch (MalformedURLException e) {
-				Logger.severe("Failed to create ping URL: "+e.toString());
+				Logger.severe("Failed to create ping URL: " + e);
+				Logger.log(e);
 			}
 			
-			//Check that the client given is valid:
+			// Check that the client given is valid:
 			if (!isAlive()) {
-				//To prevent the current alias from being "reserved" when this client drops out:
+				// To prevent the current alias from being "reserved" when this client drops out:
 				synchronized (clientAliases) {
 					clientAliases.remove(alias);
 				}
@@ -339,16 +341,16 @@ public class IndexNode {
 			}
 			
 			synchronized (clients) {
-				//Got this far, so register this client with the world.
+				// Got this far, so register this client with the world.
 				filesystemRoot = fs.registerClient(this);
 				clients.put(address, this);
 			}
 			
-			//Add this freshly created client to the refresh timer:
+			// Add this freshly created client to the refresh timer:
 			clientLivenessTimer.schedule(alivenessTask, FS2Constants.INDEXNODE_PING_CLIENT_INTERVAL_MS, FS2Constants.INDEXNODE_PING_CLIENT_INTERVAL_MS);
 			
-			Logger.log(alias+" ("+address+") has registed successfully.");
-			//trigger an update of the client's shares:
+			Logger.log(alias + " (" + address + ") has registed successfully.");
+			// Trigger an update of the client's shares:
 			updateFromClient();
 		}
 		
@@ -606,14 +608,16 @@ public class IndexNode {
 		}
 		
 		/**
-		 * Executes refreshShare. This is to allow a share to be added to a threadpool for execution.
+		 * Executes refreshShare(). This is to allow a share to be added to a threadpool for execution.
 		 */
 		@Override
 		public void run() {
 			try {
 				refreshShare();
-			} catch (Throwable e) { //all possible, including vm errors
-				Logger.severe(e.toString()+" caught but not handleable in the share-refresher thread.");
+				
+			} catch (Throwable e) {
+				// All possible, including VM errors.
+				Logger.severe(e + " caught but not handleable in the share-refresher thread.");
 				Logger.log(e);
 			}
 		}

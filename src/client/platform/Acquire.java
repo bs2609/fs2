@@ -41,17 +41,18 @@ public class Acquire {
 	 */
 	public boolean startupForceCheck() {
 		String updateURL = System.getProperty("update");
-		if (updateURL!=null) {
+		if (updateURL != null) {
 			try {
 				URL forced = null;
 				if (!updateURL.equals("")) forced = new URL(System.getProperty("update"));
 				if (checkAndDownloadUpdate(forced)) {
 					return Relauncher.go(); 
 				} else {
-					Logger.warn("The update URL provided did not contain a new version of FS2");
+					Logger.warn("The update URL provided did not contain a new version of FS2.");
 				}
 			} catch (MalformedURLException e) {
-				Logger.severe("The update URL provided is invalid!");
+				Logger.severe("The update URL provided (" + updateURL + ") is invalid! " + e);
+				Logger.log(e);
 			}
 		}
 		return false;

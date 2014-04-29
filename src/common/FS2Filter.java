@@ -93,8 +93,8 @@ public class FS2Filter extends Filter {
 	}
 
 	/**
-	 * Transforms an URL into 'fs2 secure' form, where http->https and portnumber->{portnumber+1}
-	 * This does not support all URL forms! Just Fs2 http urls.
+	 * Transforms a URL into 'FS2 secure' form, where http->https and portnumber->{portnumber+1}.
+	 * This does not support all URL forms! Just FS2 HTTP URLs.
 	 * 
 	 * @param insecureURL
 	 * @return new URL or null if impossible.
@@ -102,10 +102,11 @@ public class FS2Filter extends Filter {
 	 */
 	public static URL getFS2SecureURL(URL insecureURL) {
 		try {
-			return new URL("https://"+insecureURL.getHost()+":"+(insecureURL.getPort()+1)+insecureURL.getFile());
+			return new URL("https", insecureURL.getHost(), insecureURL.getPort() + 1, insecureURL.getFile());
+			
 		} catch (MalformedURLException e) {
+			Logger.severe("Can't secure URL: " + insecureURL + ", " + e);
 			Logger.log(e);
-			Logger.severe("Can't securify URL: "+insecureURL.toString()+", "+e);
 			return null;
 		}
 	}
