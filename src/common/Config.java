@@ -21,7 +21,6 @@ import com.sun.org.apache.xpath.internal.XPathAPI;
 import common.SafeSaver.Savable;
 import common.Sxml.SXMLException;
 
-
 /**
  * A re-implementation of the ConfigManager, but more sane (IMHO)
  * 
@@ -215,33 +214,33 @@ public class Config implements Savable {
 	 * @return
 	 */
 	private Element getElement(String key) {
-		key=keyPrefix+key;
+		key = keyPrefix + key;
 		synchronized (xml) {
 			if (elemCache.containsKey(key)) return elemCache.get(key);
 			Document doc = xml.getDocument();
 			Node onNode = doc.getFirstChild();
-			if (onNode==null) {
+			if (onNode == null) {
 				onNode = doc.createElement(defs.getRootElementName());
 				doc.appendChild(onNode);
 			}
 			for (String bit : key.split("/")) {
-				if (bit.length()==0) continue;
+				if (bit.length() == 0) continue;
 				try {
 					Node nextNode = XPathAPI.selectSingleNode(onNode, bit);
-					if (nextNode==null) {
+					if (nextNode == null) {
 						nextNode = doc.createElement(bit);
 						onNode.appendChild(nextNode);
 					}
-					
 					onNode = nextNode;
+					
 				} catch (TransformerException e) {
-					Logger.severe("Exception processing configuration: "+e);
-					e.printStackTrace();
+					Logger.severe("Exception processing configuration: " + e);
+					Logger.log(e);
 					return null;
 				}
 			}
-			elemCache.put(key, (Element)onNode);
-			return (Element)onNode;
+			elemCache.put(key, (Element) onNode);
+			return (Element) onNode;
 		}
 	}
 	

@@ -1,4 +1,5 @@
 package common;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -28,7 +29,6 @@ import org.xml.sax.InputSource;
 
 import com.sun.org.apache.xpath.internal.XPathAPI;
 
-
 /**
  * A helper class to make playing with XML using a DOM more friendly.
  * 
@@ -56,7 +56,6 @@ public class Sxml {
 	private boolean standalone = false;
 	private Integer indentAmount = 4;
 	
-	
 	public Integer getIndentAmount() {
 		return indentAmount;
 	}
@@ -67,9 +66,10 @@ public class Sxml {
 
 	public static Element getElementById(Node context, String id) {
 		try {
-			return (Element)XPathAPI.selectSingleNode(context, "//*[@id='"+id+"']");
+			return (Element) XPathAPI.selectSingleNode(context, "//*[@id='" + id + "']");
+			
 		} catch (TransformerException e) {
-			e.printStackTrace();
+			Logger.log(e);
 			return null;
 		}
 	}
