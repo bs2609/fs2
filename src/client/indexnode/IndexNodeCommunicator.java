@@ -171,9 +171,9 @@ public class IndexNodeCommunicator implements TableModel {
 	}
 
 	void setupAdvertListeningIfNeeded() {
-		autodetectIndexnodes = Boolean.parseBoolean(conf.getString(CK.AUTO_INDEX_NODE));
-		if ((listener=AdvertListener.getAdvertListener(this))==null) {
-			Logger.log("Indexnode advert listener couldn't be created. Autodetection and autohosting will be unavailable.\nIt's likely the port ("+FS2Constants.ADVERTISMENT_DATAGRAM_PORT+") is already in use,\nor you do not have permission to recieve UDP broadcasts.");
+		autodetectIndexnodes = conf.getBoolean(CK.AUTO_INDEX_NODE);
+		if ((listener = AdvertListener.getAdvertListener(this)) == null) {
+			Logger.log("Indexnode advert listener couldn't be created. Autodetection and autohosting will be unavailable.\nIt's likely the port (" + FS2Constants.ADVERTISMENT_DATAGRAM_PORT + ") is already in use,\nor you do not have permission to recieve UDP broadcasts.");
 		}
 	}
 	
@@ -184,7 +184,6 @@ public class IndexNodeCommunicator implements TableModel {
 	public Filter getIndexNodeOnlyFilter() {
 		return inof;
 	}
-	
 	
 	/**
 	 * @return the indexnodes that we are communicating with presently.
@@ -255,15 +254,16 @@ public class IndexNodeCommunicator implements TableModel {
 	 * @return Returns true if adverts will now be listened to. Returns false if advert reception is unavailable.
 	 */
 	public void enableAdvertAcceptance() {
-		conf.putString(CK.AUTO_INDEX_NODE, Boolean.TRUE.toString());
+		conf.putBoolean(CK.AUTO_INDEX_NODE, true);
 		autodetectIndexnodes = true;
 	}
 	
 	public void disableAdvertAcceptance() {
-		conf.putString(CK.AUTO_INDEX_NODE, Boolean.FALSE.toString());
+		conf.putBoolean(CK.AUTO_INDEX_NODE, false);
 		autodetectIndexnodes = false;
 		synchronized (nodes) {
-			for (IndexNode node : nodes.toArray(new IndexNode[]{})) { //copy the array to prevent modification exceptions.
+			// Copy the array to prevent modification exceptions.
+			for (IndexNode node : nodes.toArray(new IndexNode[0])) {
 				if (node.wasAdvertised()) deregisterIndexNode(node);
 			}
 		}

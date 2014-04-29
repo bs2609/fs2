@@ -195,10 +195,10 @@ public class Notifications {
 	}
 	
 	public void oneTimeReminder(String configurationKey, String message) {
-		if (!Boolean.parseBoolean(conf.getString(configurationKey))) {
+		if (!conf.getBoolean(configurationKey)) {
 			Logger.warn(message);
-			conf.putString(configurationKey, Boolean.TRUE.toString());
-			if (!GraphicsEnvironment.isHeadless()) JOptionPane.showMessageDialog(null, message, "One time reminder...",JOptionPane.INFORMATION_MESSAGE);
+			conf.putBoolean(configurationKey, true);
+			if (!GraphicsEnvironment.isHeadless()) JOptionPane.showMessageDialog(null, message, "One time reminder...", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 	

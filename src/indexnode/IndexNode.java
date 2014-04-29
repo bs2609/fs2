@@ -834,24 +834,24 @@ public class IndexNode {
 	public IndexNode(final Config conf, boolean internal, String pathPrefix) throws Exception {
 		this.conf = conf;
 		
-		//Initialise filesystem:
+		// Initialise filesystem:
 		fs = new NativeFS();
 		
-		//Setup the the thread pool for refreshing client shares:
+		// Setup the the thread pool for refreshing client shares:
 		refreshSharesPool = Executors.newFixedThreadPool(conf.getInt(IK.FILESYSTEM_UPDATE_POOLSIZE), new NamedThreadFactory(true, "Share refresh"));
 		
 		onPort = conf.getInt(IK.PORT);
 		
-		//Load users database:
+		// Load users database:
 		users = new UserDatabase(new File(pathPrefix+conf.getString(IK.USER_DATABSE)), this);
 		
-		//security things
-		dhanonUsed = Boolean.parseBoolean(conf.getString(IK.DHANON_TLS));
-		useSecure = Boolean.parseBoolean(conf.getString(IK.SECURE_MODE));
+		// Security things:
+		dhanonUsed = conf.getBoolean(IK.DHANON_TLS);
+		useSecure = conf.getBoolean(IK.SECURE_MODE);
 		if (dhanonUsed) Util.enableDHanonCipherSuite();
 		sslcontext = SSLContext.getInstance("TLS");
 		sslcontext.init(null, null, null);
-		authFilter = new IndexAuthFilter(users, this); //the authorisation filter is always used regardless of security mode.
+		authFilter = new IndexAuthFilter(users, this); // The authorisation filter is always used regardless of security mode.
 		if (useSecure) {
 			Logger.log("Running in secure mode. Only connections via a TLS socket will be accepted.");
 		} else {
@@ -870,7 +870,7 @@ public class IndexNode {
 		downloader = new IndexDownloader(fs);
 		ic = new IndexChat(chat, this);
 		alts = new IndexAlternatives(fs);
-		avatar = new IndexAvatar(new File(pathPrefix+conf.getString(IK.AVATAR_CACHE_PATH)), this);
+		avatar = new IndexAvatar(new File(pathPrefix + conf.getString(IK.AVATAR_CACHE_PATH)), this);
 		
 		String bindTo = conf.getString(IK.BIND_INTERFACE);
 		
@@ -887,7 +887,7 @@ public class IndexNode {
 			listenOnInterface(NetworkInterface.getByName(bindTo));
 		}
 		
-		//internal indexnodes do not advertise themselves.
+		// Internal indexnodes do not advertise themselves.
 		if (!internal && conf.getBoolean(IK.ADVERTISE)) {
 			final long advertuid = conf.getLong(IK.ADVERTUID);
 			final long capability = generateCapabilityValue();
@@ -921,7 +921,7 @@ public class IndexNode {
 	
 				@Override
 				public boolean isActive() {
-					return true; //a standalone indexnode can't be inactive.
+					return true; // A standalone indexnode can't be inactive.
 				}
 			});
 		}
