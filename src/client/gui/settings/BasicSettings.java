@@ -19,6 +19,7 @@ import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -27,16 +28,16 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import common.FS2Constants;
-import common.Logger;
-import common.Util;
-
 import client.gui.JBytesBox;
 import client.gui.JTextFieldLimit;
 import client.gui.MainFrame;
-import client.gui.Utilities;
 import client.gui.MainFrame.StatusHint;
+import client.gui.Utilities;
 import client.platform.Platform;
+
+import common.FS2Constants;
+import common.Logger;
+import common.Util;
 
 @SuppressWarnings("serial")
 public class BasicSettings extends SettingsPanel implements KeyListener {
@@ -44,94 +45,79 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 	public BasicSettings(MainFrame frame) {
 		super(frame, "Basic", frame.getGui().getUtil().getImage("basic"));
 		
-		//Construct a basic settings page including: alias, avatar, etc.
+		// Construct a basic settings page including: alias, avatar, etc.
 		JPanel boxes = createScrollableBoxlayout();
 		boxes.add(createAliasPanel());
 		boxes.add(createDDPanel());
 		boxes.add(createSpeedsPanel());
-		
 	}
 	
 	private JPanel createSpeedsPanel() {
-		JPanel panel0 = new JPanel();
-		panel0.setLayout(new BoxLayout(panel0, BoxLayout.PAGE_AXIS));
+		JPanel speedsPanel = new JPanel();
 		
-		panel0.setBorder(getTitledBoldBorder("Maximum transfer speeds"));
+		GroupLayout layout = new GroupLayout(speedsPanel);
+		layout.setAutoCreateGaps(true);
 		
-		panel0.add(createUploadSpeedPanel());
-		panel0.add(createDownloadSpeedPanel());
+		speedsPanel.setLayout(layout);
+		speedsPanel.setBorder(getTitledBoldBorder("Maximum transfer speeds"));
 		
-		return panel0;
-	}
-	
-	private JPanel createUploadSpeedPanel() {
-		JPanel content = new JPanel();
-		content.setLayout(new BoxLayout(content, BoxLayout.X_AXIS));
-		content.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-		
-		final JBytesBox speed = new JBytesBox(frame.getGui().getShareServer().getUploadSpeed());
-		
-		speed.addPropertyChangeListener("value", new PropertyChangeListener() {
+		JLabel upLabel = new JLabel("Upload:");
+		final JBytesBox upSpeed = new JBytesBox(frame.getGui().getShareServer().getUploadSpeed());
+		upSpeed.addPropertyChangeListener("value", new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				long nv = (Long) evt.getNewValue();
 				if (nv < 0) {
-					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The upload speed can't be set to '" + speed.getText() + "'."));
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The upload speed can't be set to '" + upSpeed.getText() + "'."));
 				} else {
 					frame.getGui().getShareServer().setUploadSpeed(nv);
 					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The upload speed has been set to " + Util.niceSize(nv)));
 				}
 			}
 		});
+		registerHint(upSpeed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum upload amount per second, examples: 5.5mb, 10b, 999tib"));
 		
-		content.add(new JLabel("Upload:   "));
-		content.add(speed);
-		
-		registerHint(speed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum upload amount per second, examples: 5.5mb, 10b, 999tib"));
-		
-		return content;
-	}
-	
-	private JPanel createDownloadSpeedPanel() {
-		JPanel content = new JPanel();
-		content.setLayout(new BoxLayout(content, BoxLayout.X_AXIS));
-		
-		final JBytesBox speed = new JBytesBox(frame.getGui().getDc().getDownloadSpeed());
-		
-		speed.addPropertyChangeListener("value", new PropertyChangeListener() {
+		JLabel downLabel = new JLabel("Download:");
+		final JBytesBox downSpeed = new JBytesBox(frame.getGui().getDc().getDownloadSpeed());
+		downSpeed.addPropertyChangeListener("value", new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				long nv = (Long) evt.getNewValue();
 				if (nv < 0) {
-					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The download speed can't be set to '" + speed.getText() + "'."));
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The download speed can't be set to '" + downSpeed.getText() + "'."));
 				} else {
 					frame.getGui().getDc().setDownloadSpeed(nv);
 					frame.setStatusHint(new StatusHint(SettingsTab.TICK, "The download speed has been set to " + Util.niceSize(nv)));
 				}
 			}
 		});
+		registerHint(downSpeed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum download amount per second, examples: 5.5mb, 10b, 999tib"));
 		
-		content.add(new JLabel("Download: "));
-		content.add(speed);
+		GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
+		hGroup.addGroup(layout.createParallelGroup().addComponent(upLabel).addComponent(downLabel));
+		hGroup.addGroup(layout.createParallelGroup().addComponent(upSpeed).addComponent(downSpeed));
+		layout.setHorizontalGroup(hGroup);
 		
-		registerHint(speed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum download amount per second, examples: 5.5mb, 10b, 999tib"));
+		GroupLayout.SequentialGroup vGroup = layout.createSequentialGroup();
+		vGroup.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(upLabel).addComponent(upSpeed));
+		vGroup.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(downLabel).addComponent(downSpeed));
+		layout.setVerticalGroup(vGroup);
 		
-		return content;
+		return speedsPanel;
 	}
 	
 	private JPanel createDDPanel() {
-		final JButton downloadDirectory;
 		final JLabel currentLocation = new JLabel(frame.getGui().getDc().getDefaultDownloadDirectory().getPath());
-		downloadDirectory = new JButton("<html><b>Browse</b></html>", frame.getGui().getUtil().getImage("type-dir"));
+		final JButton downloadDirectory = new JButton("<html><b>Browse</b></html>", frame.getGui().getUtil().getImage("type-dir"));
 		downloadDirectory.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser(frame.getGui().getDc().getDefaultDownloadDirectory());
 				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				int retVal = fc.showOpenDialog(null);
-				if (retVal==JFileChooser.APPROVE_OPTION) {
+				if (retVal == JFileChooser.APPROVE_OPTION) {
 					frame.getGui().getDc().setDefaultDownloadDirectory(fc.getSelectedFile());
-					frame.getGui().getShareServer().defaultDownloadDirectoryChanged(fc.getSelectedFile()); //change the "My Downloads" share if it still exists.
+					frame.getGui().getShareServer().defaultDownloadDirectoryChanged(fc.getSelectedFile()); // Change the "My Downloads" share if it still exists.
 					currentLocation.setText(frame.getGui().getDc().getDefaultDownloadDirectory().getPath());
 				}
 			}
@@ -151,124 +137,113 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 	
 	JButton avatarButton;
 	private JTextField aliasText;
+	
 	private JPanel createAliasPanel() {
-		JPanel panel = new JPanel(new BorderLayout());
-		panel.setBorder(getTitledBoldBorder("Alias and Avatar"));
+		JPanel aliasPanel = new JPanel(new BorderLayout());
+		aliasPanel.setBorder(getTitledBoldBorder("Alias and Avatar"));
 		
 		JPanel panel0 = new JPanel(new BorderLayout());
-		panel.add(panel0, BorderLayout.NORTH);
+		aliasPanel.add(panel0, BorderLayout.NORTH);
 		
 		aliasText = new JTextField();
 		JPanel panel1 = new JPanel();
 		panel1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		
 		panel1.setLayout(new BoxLayout(panel1, BoxLayout.PAGE_AXIS));
-		panel1.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 200)));	//enable the slack space to be taken in.s
+		panel1.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 200))); // Enable the slack space to be taken in.s
 		panel1.add(aliasText);
-		aliasText.setMaximumSize(new Dimension(aliasText.getMaximumSize().width, aliasText.getMinimumSize().height)); //fix to be the correct height.
+		aliasText.setMaximumSize(new Dimension(aliasText.getMaximumSize().width, aliasText.getMinimumSize().height)); // Fix to be the correct height.
 		panel1.add(new Box.Filler(new Dimension(2, 2), new Dimension(2, 2), new Dimension(2, 200)));
 		panel0.add(panel1, BorderLayout.CENTER);
+		
 		aliasText.setDocument(new JTextFieldLimit(32));
 		aliasText.setText(frame.getGui().getShareServer().getAlias());
 		aliasText.addKeyListener(this);
+		registerHint(aliasText, new StatusHint(frame.getGui().getUtil().getImage("tick"), "(saved on change) Set your alias on the FS2 network here."));
 		
-		ImageIcon ico = null;
+		ImageIcon icon = frame.getGui().getUtil().getImage("defaultavatar");
 		File avatarFile = frame.getGui().getShareServer().getIndexNodeCommunicator().getAvatarFile();
 		if (avatarFile.isFile()) {
 			try {
-				ico = new ImageIcon(ImageIO.read(avatarFile));
+				icon = new ImageIcon(ImageIO.read(avatarFile));
 			} catch (IOException e) {
-				Logger.warn("Avatar "+avatarFile.getPath()+" couldn't be loaded from disk: "+ e);
-				ico = frame.getGui().getUtil().getImage("defaultavatar");
+				Logger.warn("Avatar " + avatarFile.getPath() + " couldn't be loaded from disk: " + e);
 			}
-		} else {
-			ico = frame.getGui().getUtil().getImage("defaultavatar");
 		}
 		
-		avatarButton = new JButton("", ico);
+		avatarButton = new JButton(icon);
 		avatarButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				setIcon();
 			}
 		});
-		
+		registerHint(avatarButton, new StatusHint(frame.getGui().getUtil().getImage("type-image"), "Click this button to set your avatar"));
 		panel0.add(avatarButton, BorderLayout.WEST);
 		
-		registerHint(aliasText, new StatusHint(frame.getGui().getUtil().getImage("tick"), "(saved on change) Set your alias on the FS2 network here."));
-		registerHint(avatarButton, new StatusHint(frame.getGui().getUtil().getImage("type-image"), "Click this button to set your avatar"));
-		
-		return panel;
+		return aliasPanel;
 	}
 	
 	private File lastUsedIconPath;
+	
 	private void setIcon() {
 		JFileChooser iconPicker = new JFileChooser(lastUsedIconPath);
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Images", "jpg", "gif", "jpeg", "png", "tiff", "bmp");
 		iconPicker.setFileFilter(filter);
 		int result = iconPicker.showOpenDialog(this);
-		if(result == JFileChooser.APPROVE_OPTION) {
-			try {
-				lastUsedIconPath = iconPicker.getCurrentDirectory();
-				InputStream fis = null;
-				try {
-					fis = new BufferedInputStream(new FileInputStream(iconPicker.getSelectedFile()));
-					final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER); //resize to appropriate dimensions.
-					avatarButton.setText("Sending...");
-					avatarButton.setEnabled(false);
-					avatarButton.setIcon(new ImageIcon(chosen));
-					
-					Thread worker = new Thread(new Runnable() {
-						@Override
-						public void run() {
-							boolean success;
-							IOException ex = null;
-							try {
-								//1) save the resized image to a cache file:
-								File avatarCache = Platform.getPlatformFile("avatar.png");
-								ImageIO.write(chosen, "png", avatarCache);
-								
-								//2) set the indexnode comm to use this file:
-								frame.getGui().getShareServer().getIndexNodeCommunicator().setAvatarFile(avatarCache);
-								
-								success = true;
-							} catch (IOException e) {
-								ex = e;
-								success = false;
-								Logger.warn("Couldn't send avatar to indexnode: "+e);
-							}
+		if (result != JFileChooser.APPROVE_OPTION) return;
+		try {
+			lastUsedIconPath = iconPicker.getCurrentDirectory();
+			try (InputStream fis = new BufferedInputStream(new FileInputStream(iconPicker.getSelectedFile()))) {
+				
+				final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER); //resize to appropriate dimensions.
+				avatarButton.setText("Sending...");
+				avatarButton.setEnabled(false);
+				avatarButton.setIcon(new ImageIcon(chosen));
+				
+				Thread worker = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						boolean success;
+						IOException ex = null;
+						try {
+							// 1) Save the resized image to a cache file:
+							File avatarCache = Platform.getPlatformFile("avatar.png");
+							ImageIO.write(chosen, "png", avatarCache);
+							// 2) Set the indexnode communicator to use this file:
+							frame.getGui().getShareServer().getIndexNodeCommunicator().setAvatarFile(avatarCache);
+							success = true;
 							
-							final boolean esuccess = success;
-							final IOException eex = ex;
-							
-							Utilities.edispatch(new Runnable() {
-								@Override
-								public void run() {
-									if (esuccess) {
-										avatarButton.setText("");
-									} else {
-										avatarButton.setText("failure: "+eex);
-									}
-									avatarButton.setEnabled(true);
-								}
-							});
+						} catch (IOException e) {
+							ex = e;
+							success = false;
+							Logger.warn("Couldn't send avatar to indexnode: " + e);
 						}
-					});
-					worker.setName("avatar change submitter");
-					worker.start();
-				} finally {
-					if (fis!=null) fis.close();
-				}
-			} catch (Exception ex) {
-				Logger.warn("Couldn't load a selected avatar: "+ex);
-				avatarButton.setText(iconPicker.getSelectedFile().getName()+" can't be loaded.");
+						
+						final boolean esuccess = success;
+						final IOException eex = ex;
+						
+						Utilities.edispatch(new Runnable() {
+							@Override
+							public void run() {
+								avatarButton.setText(esuccess ? "" : "failure: " + eex);
+								avatarButton.setEnabled(true);
+							}
+						});
+					}
+				});
+				worker.setName("avatar change submitter");
+				worker.start();
 			}
+			
+		} catch (Exception ex) {
+			Logger.warn("Couldn't load a selected avatar: " + ex);
+			avatarButton.setText(iconPicker.getSelectedFile().getName() + " can't be loaded.");
 		}
 	}
 	
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (e.getSource()==aliasText) frame.getGui().getShareServer().setAlias(aliasText.getText());
+		if (e.getSource() == aliasText) frame.getGui().getShareServer().setAlias(aliasText.getText());
 	}
 	
 	@Override
