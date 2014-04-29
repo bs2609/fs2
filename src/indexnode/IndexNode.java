@@ -324,7 +324,7 @@ public class IndexNode {
 			if (local) Logger.warn("Connection from loopback addresses may not work unless valid DNS/WINS servers are available!");
 			
 			try {
-				pingURL = new URL("http", getURLAddress(), "ping");
+				pingURL = new URL("http://" + getURLAddress() + "/ping");
 				
 			} catch (MalformedURLException e) {
 				Logger.severe("Failed to create ping URL: " + e);
