@@ -75,7 +75,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 				}
 			}
 		});
-		registerHint(upSpeed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum upload amount per second, examples: 5.5mb, 10b, 999tib"));
+		registerHint(upSpeed, new StatusHint(frame.getGui().getUtil().getImage("upload"), "(saved on change) The maximum upload amount per second, examples: 5.5mb, 10b, 999tib"));
 		
 		JLabel downLabel = new JLabel("Download:");
 		final JBytesBox downSpeed = new JBytesBox(frame.getGui().getDc().getDownloadSpeed());
@@ -91,7 +91,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 				}
 			}
 		});
-		registerHint(downSpeed, new StatusHint(SettingsTab.TICK, "(saved on change) The maximum download amount per second, examples: 5.5mb, 10b, 999tib"));
+		registerHint(downSpeed, new StatusHint(frame.getGui().getUtil().getImage("download"), "(saved on change) The maximum download amount per second, examples: 5.5mb, 10b, 999tib"));
 		
 		GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
 		hGroup.addGroup(layout.createParallelGroup().addComponent(upLabel).addComponent(downLabel));
@@ -158,7 +158,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 		aliasText.setDocument(new JTextFieldLimit(32));
 		aliasText.setText(frame.getGui().getShareServer().getAlias());
 		aliasText.addKeyListener(this);
-		registerHint(aliasText, new StatusHint(frame.getGui().getUtil().getImage("tick"), "(saved on change) Set your alias on the FS2 network here."));
+		registerHint(aliasText, new StatusHint(SettingsTab.TICK, "(saved on change) Set your alias on the FS2 network here."));
 		
 		ImageIcon icon = frame.getGui().getUtil().getImage("defaultavatar");
 		File avatarFile = frame.getGui().getShareServer().getIndexNodeCommunicator().getAvatarFile();
@@ -194,8 +194,8 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 		try {
 			lastUsedIconPath = iconPicker.getCurrentDirectory();
 			try (InputStream fis = new BufferedInputStream(new FileInputStream(iconPicker.getSelectedFile()))) {
-				
-				final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER); //resize to appropriate dimensions.
+				// Resize to appropriate dimensions.
+				final BufferedImage chosen = Util.processImageInternal(fis, FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, Util.ImageResizeType.OUTER);
 				avatarButton.setText("Sending...");
 				avatarButton.setEnabled(false);
 				avatarButton.setIcon(new ImageIcon(chosen));

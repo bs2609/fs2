@@ -62,16 +62,15 @@ public class AdvancedSettings extends SettingsPanel {
 		// ###### No more items.
 	}
 	
-	JLabel autoindexInfo;
+	JLabel autoindexInfo = new JLabel();
 	
 	private JPanel autoindexnodePanel() {
-		JPanel ret = new JPanel(new BorderLayout());
-		ret.setBorder(getTitledBoldBorder("Internal indexnode"));
+		JPanel indexnodePanel = new JPanel(new BorderLayout());
+		indexnodePanel.setBorder(getTitledBoldBorder("Internal indexnode"));
 		
-		autoindexInfo = new JLabel();
 		updateAutoIndexnodeInfo();
 		
-		ret.add(autoindexInfo, BorderLayout.NORTH);
+		indexnodePanel.add(autoindexInfo, BorderLayout.NORTH);
 		
 		final JCheckBox autoindex = new JCheckBox("become an indexnode if needed", iim.isAutoIndexnodeEnabled());
 		autoindex.setEnabled(false);
@@ -92,10 +91,10 @@ public class AdvancedSettings extends SettingsPanel {
 			}
 		});
 		
-		ret.add(autoindex, BorderLayout.WEST);
-		ret.add(always, BorderLayout.EAST);
+		indexnodePanel.add(autoindex, BorderLayout.WEST);
+		indexnodePanel.add(always, BorderLayout.EAST);
 		
-		return ret;
+		return indexnodePanel;
 	}
 	
 	private void updateAutoIndexnodeInfo() {
@@ -194,9 +193,9 @@ public class AdvancedSettings extends SettingsPanel {
 	Timer infoTimer;
 	
 	private JPanel heapSizePanel() {
-		JPanel content = new JPanel();
-		content.setLayout(new BorderLayout());
-		content.setBorder(getTitledBoldBorder("Maximum heap size"));
+		JPanel heapSizePanel = new JPanel();
+		heapSizePanel.setLayout(new BorderLayout());
+		heapSizePanel.setBorder(getTitledBoldBorder("Maximum heap size"));
 		
 		final JBytesBox heapsize = new JBytesBox(frame.getGui().getConf().getLong(CK.HEAPSIZE));
 		
@@ -220,10 +219,10 @@ public class AdvancedSettings extends SettingsPanel {
 			}
 		});
 		
-		content.add(heapInfo, BorderLayout.WEST);
+		heapSizePanel.add(heapInfo, BorderLayout.WEST);
 		setHeapInfo();
 		heapInfo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
-		content.add(heapsize, BorderLayout.CENTER);
+		heapSizePanel.add(heapsize, BorderLayout.CENTER);
 		
 		infoTimer = new Timer(5000, new ActionListener() {
 			@Override
@@ -243,12 +242,12 @@ public class AdvancedSettings extends SettingsPanel {
 				setHeapInfo();
 			}
 		});
-		content.add(gc, BorderLayout.EAST);
+		heapSizePanel.add(gc, BorderLayout.EAST);
 		
 		registerHint(heapsize, new StatusHint(SettingsTab.TICK, "Set this to several GiB to host a large indexnode."));
 		registerHint(gc, new StatusHint(frame.getGui().getUtil().getImage("gc"), "Triggers a garbage collection now."));
 		
-		return content;
+		return heapSizePanel;
 	}
 	
 	private void setHeapInfo() {
@@ -264,11 +263,10 @@ public class AdvancedSettings extends SettingsPanel {
 	JLabel portNumberInfo = new JLabel();
 	
 	private JPanel portPanel() {
-		JPanel ppanel = new JPanel(new BorderLayout());
-		ppanel.setBorder(getTitledBoldBorder("Client port"));
+		JPanel portPanel = new JPanel(new BorderLayout());
+		portPanel.setBorder(getTitledBoldBorder("Client port"));
 		
 		final JSpinner port = new JSpinner(new SpinnerNumberModel(frame.getGui().getConf().getInt(CK.PORT), 1, Integer.MAX_VALUE, 1));
-		
 		port.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -277,18 +275,20 @@ public class AdvancedSettings extends SettingsPanel {
 				restartNeeded();
 			}
 		});
-		
 		registerHint(port, new StatusHint(frame.getGui().getUtil().getImage("network"), "The port that FS2 listens on. (port+1 is also used!)"));
-		
 		((DefaultEditor) port.getEditor()).getTextField().setColumns(7);
-		JPanel portShrinker = new JPanel(new BorderLayout());
-		portShrinker.add(port, BorderLayout.WEST);
 		
-		ppanel.add(portNumberInfo, BorderLayout.NORTH);
-		ppanel.add(portShrinker, BorderLayout.CENTER);
+		JLabel portLabel = new JLabel("Current port:");
+		
+		JPanel portShrinker = new JPanel(new FlowLayout(FlowLayout.LEADING));
+		portShrinker.add(portLabel);
+		portShrinker.add(port);
+		
+		portPanel.add(portNumberInfo, BorderLayout.NORTH);
+		portPanel.add(portShrinker, BorderLayout.CENTER);
 		setPortNumberInfo();
 		
-		return ppanel;
+		return portPanel;
 	}
 	
 	private void setPortNumberInfo() {
@@ -309,8 +309,8 @@ public class AdvancedSettings extends SettingsPanel {
 	 * @return
 	 */
 	private JPanel autoupdatePanel() {
-		JPanel ret = new JPanel(new BorderLayout());
-		ret.setBorder(getTitledBoldBorder("Autoupdate"));
+		JPanel updatePanel = new JPanel(new BorderLayout());
+		updatePanel.setBorder(getTitledBoldBorder("Autoupdate"));
 		
 		String[] options = {"Automatically update (Recommended)", "Ask when updates are available", "Never update"};
 		
@@ -342,11 +342,11 @@ public class AdvancedSettings extends SettingsPanel {
 		});
 		
 		JLabel auinfo = new JLabel("<html>Select <i>'" + options[2] + "'</i> to prevent FS2 from even checking for updates.</html>");
-		ret.add(auinfo, BorderLayout.NORTH);
-		ret.add(choice, BorderLayout.WEST);
+		updatePanel.add(auinfo, BorderLayout.NORTH);
+		updatePanel.add(choice, BorderLayout.WEST);
 		
 		JButton aunow = new JButton("Check for updates now", frame.getGui().getUtil().getImage("checkupdates"));
-		ret.add(aunow, BorderLayout.EAST);
+		updatePanel.add(aunow, BorderLayout.EAST);
 		aunow.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -354,28 +354,28 @@ public class AdvancedSettings extends SettingsPanel {
 			}
 		});
 		
-		return ret;
+		return updatePanel;
 	}
 	
 	private void restartNeeded() {
 		restartFS2.setText(restartFS2.getText().toUpperCase());
 		restartFS2.setBackground(JBytesBox.BAD);
-		buttonsPanel.setBackground(JBytesBox.BAD);
+		resetPanel.setBackground(JBytesBox.BAD);
 		restartFS2.setFont(restartFS2.getFont().deriveFont(Font.BOLD | Font.ITALIC));
-		((TitledBorder) buttonsPanel.getBorder()).setTitle("You need to restart FS2 to apply the changes!");
+		((TitledBorder) resetPanel.getBorder()).setTitle("You need to restart FS2 to apply the changes!");
 	}
 	
 	private JButton resetFS2;
 	private JButton restartFS2; // Clicking this restarts the FS2 client.
-	private JPanel buttonsPanel;
+	private JPanel resetPanel;
 	
 	/**
 	 * A single button that nukes FS2's configuration, and a button to relaunch FS2.
 	 * @return
 	 */
 	private JPanel resetToDefaultsPanel() {
-		buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		buttonsPanel.setBorder(getTitledBoldBorder("Reset controls"));
+		resetPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+		resetPanel.setBorder(getTitledBoldBorder("Reset controls"));
 		
 		restartFS2 = new JButton("Restart FS2", frame.getGui().getUtil().getImage("refresh"));
 		restartFS2.addActionListener(new ActionListener() {
@@ -402,10 +402,10 @@ public class AdvancedSettings extends SettingsPanel {
 		});
 		registerHint(resetFS2, new StatusHint(frame.getGui().getUtil().getImage("failure"), "This resets all changes to FS2's default configuration. USE WITH CARE."));
 		
-		buttonsPanel.add(restartFS2);
-		buttonsPanel.add(resetFS2);
+		resetPanel.add(restartFS2);
+		resetPanel.add(resetFS2);
 		
-		return buttonsPanel;
+		return resetPanel;
 	}
 	
 }
