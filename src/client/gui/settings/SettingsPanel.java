@@ -4,7 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -20,17 +21,16 @@ import client.gui.MainFrame.StatusHint;
 
 /**
  * Settings panels on the settings tab should extend this class.
- * 
  * Subclasses should use the 'inner' field to place components.
  * @author gp
  */
 @SuppressWarnings("serial")
 public abstract class SettingsPanel extends JPanel implements MouseListener {
-
+	
 	protected String settingName;
 	protected ImageIcon icon;
 	protected MainFrame frame;
-	private HashMap<JComponent, StatusHint> hints = new HashMap<JComponent, StatusHint>();
+	private Map<JComponent, StatusHint> hints = new WeakHashMap<JComponent, StatusHint>();
 	
 	public SettingsPanel(MainFrame frame, String name, ImageIcon icon) {
 		this.frame = frame;
@@ -41,13 +41,12 @@ public abstract class SettingsPanel extends JPanel implements MouseListener {
 		setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 	}
 	
-
 	/**
-	 * Returns a panel that will autoscroll but otherwise behave like a box-layouted panel. (it is added to the settingspanel already)
+	 * Returns a panel that will autoscroll but otherwise behave like a box-layout panel. (it is added to the settings panel already)
 	 * @return
 	 */
 	protected JPanel createScrollableBoxlayout() {
-		//setup a scrollable multipanel area:
+		// Setup a scrollable multipanel area:
 		JPanel inner = new JPanel(new BorderLayout());
 		JPanel boxes = new JPanel();
 		boxes.setLayout(new BoxLayout(boxes, BoxLayout.PAGE_AXIS));
@@ -60,7 +59,7 @@ public abstract class SettingsPanel extends JPanel implements MouseListener {
 	}
 	
 	/**
-	 * Gets a 'control group' looking border for a jpanel.
+	 * Gets a 'control group' looking border for a JPanel.
 	 * @param text
 	 * @return
 	 */
@@ -87,15 +86,18 @@ public abstract class SettingsPanel extends JPanel implements MouseListener {
 	
 	@Override
 	public void mouseClicked(MouseEvent e) {}
+	
 	@Override
 	public void mouseExited(MouseEvent e) {}
+	
 	@Override
 	public void mousePressed(MouseEvent e) {}
+	
 	@Override
 	public void mouseReleased(MouseEvent e) {}
 	
 	/**
-	 * This is the name that will be displayed in the settings categories box on the left of the settings tab
+	 * This is the name that will be displayed in the settings categories box on the left of the settings tab.
 	 * @return
 	 */
 	public String getSettingName() {

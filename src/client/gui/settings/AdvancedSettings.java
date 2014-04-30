@@ -43,6 +43,7 @@ import common.Util;
 public class AdvancedSettings extends SettingsPanel {
 	
 	InternalIndexnodeManager iim = frame.getGui().getShareServer().getIndexNodeCommunicator().getInternalIndexNode();
+	Timer infoTimer;
 	
 	public AdvancedSettings(MainFrame frame) {
 		super(frame, "Advanced", frame.getGui().getUtil().getImage("advanced"));
@@ -60,6 +61,16 @@ public class AdvancedSettings extends SettingsPanel {
 		boxes.add(portPanel());
 		boxes.add(resetToDefaultsPanel());
 		// ###### No more items.
+		
+		infoTimer = new Timer(FS2Constants.INTERNAL_INDEXNODE_RECONSIDER_INTERVAL_MS, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setHeapInfo();
+				setPortNumberInfo();
+				updateAutoIndexnodeInfo();
+			}
+		});
+		infoTimer.start();
 	}
 	
 	JLabel autoindexInfo = new JLabel();
@@ -190,15 +201,17 @@ public class AdvancedSettings extends SettingsPanel {
 	}
 	
 	JLabel heapInfo = new JLabel();
-	Timer infoTimer;
 	
 	private JPanel heapSizePanel() {
 		JPanel heapSizePanel = new JPanel();
 		heapSizePanel.setLayout(new BorderLayout());
 		heapSizePanel.setBorder(getTitledBoldBorder("Maximum heap size"));
 		
-		final JBytesBox heapsize = new JBytesBox(frame.getGui().getConf().getLong(CK.HEAPSIZE));
+		heapInfo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+		setHeapInfo();
+		heapSizePanel.add(heapInfo, BorderLayout.WEST);
 		
+		final JBytesBox heapsize = new JBytesBox(frame.getGui().getConf().getLong(CK.HEAPSIZE));
 		heapsize.addPropertyChangeListener("value", new PropertyChangeListener() {
 			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
@@ -218,21 +231,8 @@ public class AdvancedSettings extends SettingsPanel {
 				restartNeeded();
 			}
 		});
-		
-		heapSizePanel.add(heapInfo, BorderLayout.WEST);
-		setHeapInfo();
-		heapInfo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+		registerHint(heapsize, new StatusHint(frame.getGui().getUtil().getImage("heapsize"), "Set this to several GiB to host a large indexnode."));
 		heapSizePanel.add(heapsize, BorderLayout.CENTER);
-		
-		infoTimer = new Timer(5000, new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				setHeapInfo();
-				setPortNumberInfo();
-				updateAutoIndexnodeInfo();
-			}
-		});
-		infoTimer.start();
 		
 		JButton gc = new JButton(frame.getGui().getUtil().getImage("gc"));
 		gc.addActionListener(new ActionListener() {
@@ -242,10 +242,8 @@ public class AdvancedSettings extends SettingsPanel {
 				setHeapInfo();
 			}
 		});
-		heapSizePanel.add(gc, BorderLayout.EAST);
-		
-		registerHint(heapsize, new StatusHint(SettingsTab.TICK, "Set this to several GiB to host a large indexnode."));
 		registerHint(gc, new StatusHint(frame.getGui().getUtil().getImage("gc"), "Triggers a garbage collection now."));
+		heapSizePanel.add(gc, BorderLayout.EAST);
 		
 		return heapSizePanel;
 	}

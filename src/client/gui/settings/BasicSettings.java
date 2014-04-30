@@ -158,7 +158,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 		aliasText.setDocument(new JTextFieldLimit(32));
 		aliasText.setText(frame.getGui().getShareServer().getAlias());
 		aliasText.addKeyListener(this);
-		registerHint(aliasText, new StatusHint(SettingsTab.TICK, "(saved on change) Set your alias on the FS2 network here."));
+		registerHint(aliasText, new StatusHint(frame.getGui().getUtil().getImage("alias"), "(saved on change) Set your alias on the FS2 network here."));
 		
 		ImageIcon icon = frame.getGui().getUtil().getImage("defaultavatar");
 		File avatarFile = frame.getGui().getShareServer().getIndexNodeCommunicator().getAvatarFile();

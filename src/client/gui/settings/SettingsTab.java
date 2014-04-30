@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -27,15 +28,13 @@ import client.gui.TabItem;
 import client.platform.ClientConfigDefaults.CK;
 
 /**
- * The graphical settings manager for FS2
- * 
+ * The graphical settings manager for FS2.
  * @author gp
  */
 @SuppressWarnings("serial")
-public class SettingsTab extends TabItem implements PropertyChangeListener,
-													ListSelectionListener {
-
-	private ArrayList<SettingsPanel> settings = new ArrayList<SettingsPanel>();
+public class SettingsTab extends TabItem implements PropertyChangeListener, ListSelectionListener {
+	
+	private List<SettingsPanel> settings = new ArrayList<SettingsPanel>();
 	private JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 	private CardLayout cards = new CardLayout();
 	private JPanel rightHand;
@@ -47,12 +46,11 @@ public class SettingsTab extends TabItem implements PropertyChangeListener,
 	class SettingsRenderer extends DefaultTableCellRenderer {
 		@Override
 		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row,
-				int column) {
-			super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-					row, column);
+			Object value, boolean isSelected, boolean hasFocus, int row, int column)
+		{
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			
-			SettingsPanel item = (SettingsPanel)value;
+			SettingsPanel item = (SettingsPanel) value;
 			setText(item.getSettingName());
 			setIcon(item.getIcon());
 			
@@ -64,45 +62,38 @@ public class SettingsTab extends TabItem implements PropertyChangeListener,
 		super(pane, frame, "Settings", FS2Tab.SETTINGS, frame.getGui().getUtil().getImage("settings"));
 		
 		setLayout(new BorderLayout());
-		TICK = frame.getGui().getUtil().getImage("tick");
-		ERROR = frame.getGui().getUtil().getImage("error");
+		TICK = frame.getGui().getUtil().getImage("accept");
+		ERROR = frame.getGui().getUtil().getImage("reject");
 		
-		
-		//##########################
-		//1) Populate settings panels (done in order we would like them to appear)
+		// 1) Populate settings panels: (done in the order we would like them to appear)
 		settings.add(new BasicSettings(frame));
 		settings.add(new ShareSettings(frame));
 		settings.add(new IndexnodeSettings(frame));
 		settings.add(new AdvancedSettings(frame));
 		
-		//##########################
+		// 2) Build the UI for the settings panel:
 		
-		
-		
-		//2) Build the ui for the settings panel
-		//2a) construct a table model for the category selection (single column)
+		// 2a) Construct a table model for the category selection: (single column)
 		TableModel tm = new SingleColumnReadonlyModel(settings.toArray(), "Category", SettingsPanel.class);
 		
-		//2b) split pane
+		// 2b) Split pane:
 		this.add(split, BorderLayout.CENTER);
 		split.setContinuousLayout(true);
 		split.setDividerLocation(frame.getGui().getConf().getInt(CK.SETTINGS_DIVIDER_LOCATION));
 		split.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, this);
 		
-		//2c) scrollpaned fancy table to the right.
+		// 2c) Scrollpaned fancy table to the right:
 		ft = new FancierTable(tm, frame.getGui().getConf(), CK.SETTINGS_COLWIDTHS);
 		ft.getSelectionModel().addListSelectionListener(this);
 		ft.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		ft.getColumn(tm.getColumnName(0)).setCellRenderer(new SettingsRenderer());
 		
-		
 		JScrollPane sp = new JScrollPane(ft);
 		sp.setMinimumSize(new Dimension(100, 100));
 		split.setLeftComponent(sp);
 		
-		
-		//2d) card layout right hand side
+		// 2d) Card layout right hand side:
 		rightHand = new JPanel(cards);
 		for (SettingsPanel setting : settings) {
 			rightHand.add(setting, setting.getClass().getSimpleName());
@@ -123,7 +114,8 @@ public class SettingsTab extends TabItem implements PropertyChangeListener,
 				tableIndex++;
 			}
 		}
-		ft.getSelectionModel().setSelectionInterval(0, 0); //select the first if none were valid.
+		// Select the first if none were valid.
+		ft.getSelectionModel().setSelectionInterval(0, 0);
 	}
 	
 	/**
@@ -141,17 +133,17 @@ public class SettingsTab extends TabItem implements PropertyChangeListener,
 			}
 		}
 	}
-
+	
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
-		if (evt.getSource()==split) {
+		if (evt.getSource() == split) {
 			frame.getGui().getConf().putInt(CK.SETTINGS_DIVIDER_LOCATION, split.getDividerLocation());
 		}
 	}
-
+	
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
-		if (ft.getSelectedRowCount()>0) {
+		if (ft.getSelectedRowCount() > 0) {
 			int index = ft.convertRowIndexToModel(ft.getSelectedRow());
 			cards.show(rightHand, settings.get(index).getClass().getSimpleName());
 			frame.getGui().getConf().putString(CK.SETTINGS_ACTIVE_PANEL, settings.get(index).getClass().getSimpleName());

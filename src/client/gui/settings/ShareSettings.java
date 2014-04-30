@@ -10,7 +10,9 @@ import java.awt.event.ActionListener;
 import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -26,17 +28,17 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 
-import common.FS2Constants;
-import common.Logger;
-import common.Util;
-
 import client.gui.FancierTable;
 import client.gui.MainFrame;
 import client.gui.MainFrame.StatusHint;
-import client.platform.Platform;
 import client.platform.ClientConfigDefaults.CK;
+import client.platform.Platform;
 import client.shareserver.Share;
 import client.shareserver.Share.Status;
+
+import common.FS2Constants;
+import common.Logger;
+import common.Util;
 
 @SuppressWarnings("serial")
 public class ShareSettings extends SettingsPanel implements ListSelectionListener {
@@ -48,8 +50,9 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 	private JButton openShares;
 	
 	private class SharesLoadingAnimationHelper implements ImageObserver, TableModelListener {
-
-		ImageIcon spinner = new ImageIcon(frame.getGui().getUtil().getImageFullname("loading.gif").getImage()); //take a copy because we have to assign our own observer.
+		
+		// Take a copy because we have to assign our own observer.
+		ImageIcon spinner = new ImageIcon(frame.getGui().getUtil().getImageFullname("loading.gif").getImage());
 		int activeCount = 0;
 		
 		public SharesLoadingAnimationHelper() {
@@ -57,26 +60,24 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		}
 		
 		@Override
-		public boolean imageUpdate(Image img, int infoflags, int x, int y,
-				int width, int height) {
-			if (activeCount>0) {
+		public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
+			if (activeCount > 0) {
 				shares.imageUpdate(img, infoflags, x, y, width, height);
 			}
 			return true;
 		}
-
+		
 		@Override
 		public void tableChanged(TableModelEvent e) {
-			//There's no way of knowing which ones became inactive, so traul the whole list of shares every update :'(
+			// There's no way of knowing which ones became inactive, so trawl the whole list of shares every update :'(
 			int newCount = 0;
 			for (Share s : frame.getGui().getShareServer().getShares()) {
-				if (s.getStatus()==Status.BUILDING || s.getStatus()==Status.REFRESHING || s.getStatus()==Status.SAVING) {
+				if (EnumSet.of(Status.BUILDING, Status.REFRESHING, Status.SAVING).contains(s.getStatus())) {
 					newCount++;
 				}
 			}
-			activeCount=newCount;
+			activeCount = newCount;
 		}
-		
 	}
 	
 	private class ShareNameCellRenderer extends DefaultTableCellRenderer {
@@ -89,10 +90,9 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		
 		@Override
 		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row,
-				int column) {
-			super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-					row, column);
+			Object value, boolean isSelected, boolean hasFocus, int row, int column)
+		{
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			
 			switch (frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(row)).getStatus()) {
 			case ACTIVE:
@@ -126,7 +126,6 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		registerHint(shares, new StatusHint(frame.getGui().getUtil().getImage("shares"), "These directories are shared with other peers"));
 		
 		shares.getSelectionModel().addListSelectionListener(this);
-		
 		shares.getColumn(frame.getGui().getShareServer().getColumnName(0)).setCellRenderer(new ShareNameCellRenderer());
 		
 		add(new JLabel("Your shared folders: ", frame.getGui().getUtil().getImage("shares"), JLabel.LEFT), BorderLayout.NORTH);
@@ -140,6 +139,7 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		buttonsPanel.add(bottombp, BorderLayout.CENTER);
 		
 		add(buttonsPanel, BorderLayout.SOUTH);
+		
 		addShare = new JButton("Add share...", frame.getGui().getUtil().getImage("add"));
 		registerHint(addShare, new StatusHint(frame.getGui().getUtil().getImage("add"), "Shares a new folder with FS2"));
 		addShare.addActionListener(new ActionListener() {
@@ -180,53 +180,54 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 			}
 		});
 		bottombp.add(openShares);
-		
-		
 	}
-
+	
 	private void addShare(final MainFrame frame, ActionEvent e) {
 		JFileChooser fc = new JFileChooser();
 		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		int retVal = fc.showOpenDialog(null);
-		if (retVal==JFileChooser.APPROVE_OPTION) {
-			final File chosen = fc.getSelectedFile();
-			String shareName;
-			while(true) {
-				shareName = (String) JOptionPane.showInputDialog(null, "What name should it be shared as?", "Share name...", JOptionPane.QUESTION_MESSAGE, null, null, chosen.getName());
-				if (shareName==null) return;
-				if (shareName.equals("") || frame.getGui().getShareServer().shareNameExists(shareName)) {
-					JOptionPane.showMessageDialog(null, "That name is empty or already exists, try again.");
-					continue;
-				} else if (!Util.isValidFileName(Platform.getPlatformFile("filelists"+File.separator+shareName+".FileList"))) {
-					JOptionPane.showMessageDialog(null, "That share name is invalid, try again. (share names must be valid filenames!)");
-					continue;
-				} else break;
-			}
+		if (retVal != JFileChooser.APPROVE_OPTION) return;
+		
+		final File chosen = fc.getSelectedFile();
+		
+		String shareName;
+		while (true) {
+			shareName = (String) JOptionPane.showInputDialog(null, "What name should it be shared as?", "Share name...", JOptionPane.QUESTION_MESSAGE, null, null, chosen.getName());
+			if (shareName == null) return;
+			if (shareName.equals("") || frame.getGui().getShareServer().shareNameExists(shareName)) {
+				JOptionPane.showMessageDialog(null, "That name is empty or already exists, try again.");
+				continue;
+			} else if (!Util.isValidFileName(Platform.getPlatformFile("filelists" + File.separator + shareName + ".FileList"))) {
+				JOptionPane.showMessageDialog(null, "That share name is invalid, try again. (share names must be valid filenames!)");
+				continue;
+			} else break;
+		}
+		
+		final String chosenName = shareName;
+		
+		try {
+			Thread inBackground = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					frame.getGui().getShareServer().addShare(chosenName, chosen);
+				}
+			});
+			inBackground.setDaemon(true);
+			inBackground.setName("GUI bg: adding share");
+			inBackground.start();
 			
-			final String chosenName = shareName;
-			try {
-				Thread inBackground = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						frame.getGui().getShareServer().addShare(chosenName, chosen);
-					}
-				});
-				inBackground.setDaemon(true);
-				inBackground.setName("GUI bg: adding share");
-				inBackground.start();
-				
-				frame.setStatusHint(new StatusHint(SettingsTab.TICK, "Share added! (may take a little while to appear if the file list needs loading!)"));
-			} catch (Exception ex) {
-				Logger.log("Exception adding share: "+e);
-				Logger.log(ex);
-				frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "Share couldn't be added!"));
-			}
+			frame.setStatusHint(new StatusHint(SettingsTab.TICK, "Share added! (may take a little while to appear if the file list needs loading!)"));
+			
+		} catch (Exception ex) {
+			Logger.warn("Exception adding share: " + ex);
+			Logger.log(ex);
+			frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "Share couldn't be added!"));
 		}
 	}
-
+	
 	private void removeShares(final MainFrame frame) {
 		int[] togo = shares.getSelectedRows();
-		final LinkedList<Share> goodbye = new LinkedList<Share>();
+		final List<Share> goodbye = new ArrayList<Share>();
 		for (int i : togo) {
 			goodbye.add(frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(i)));
 		}
@@ -240,10 +241,10 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		inBackground.setName("GUI bg: removing shares");
 		inBackground.start();
 	}
-
+	
 	private void refreshShares(final MainFrame frame) {
 		int[] torefresh = shares.getSelectedRows();
-		LinkedList<Share> ref = new LinkedList<Share>();
+		List<Share> ref = new ArrayList<Share>();
 		for (int i : torefresh) {
 			ref.add(frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(i)));
 		}
@@ -252,33 +253,33 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 	
 	private void openShares(final MainFrame frame) {
 		int[] toopen = shares.getSelectedRows();
-		LinkedList<Share> ref = new LinkedList<Share>();
+		List<Share> ref = new ArrayList<Share>();
 		for (int i : toopen) {
 			ref.add(frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(i)));
 		}
-		for (Share s : ref)
+		for (Share s : ref) {
 			try {
 				Desktop.getDesktop().open(s.getPath());
 			} catch (IOException e) {
-				Logger.warn("Couldn't open a file browser for some reason: "+e);
+				Logger.warn("Couldn't open a file browser for some reason: " + e);
 				Logger.log(e);
 			}
+		}
 	}
-
+	
 	@Override
 	public void valueChanged(ListSelectionEvent lse) {
 		int[] selected = shares.getSelectedRows();
-		if (selected==null || selected.length==0) {
+		if (selected == null || selected.length == 0) {
 			openShares.setText("Open share");
 			openShares.setEnabled(false);
-		} else if (selected.length>1) {
-			openShares.setText("Open "+selected.length+" shares");
+		} else if (selected.length > 1) {
+			openShares.setText("Open " + selected.length + " shares");
 			openShares.setEnabled(true);
 		} else {
-			openShares.setText("Open "+frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(shares.getSelectedRow())).getPath().getAbsolutePath());
+			openShares.setText("Open " + frame.getGui().getShareServer().getShares().get(shares.convertRowIndexToModel(shares.getSelectedRow())).getPath().getAbsolutePath());
 			openShares.setEnabled(true);
 		}
 	}
 	
-
 }
