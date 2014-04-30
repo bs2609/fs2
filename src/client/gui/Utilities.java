@@ -44,10 +44,11 @@ public class Utilities {
 			}
 			
 			File fsFile = new File("icons" + File.separator + filename);
+			Toolkit tk = Toolkit.getDefaultToolkit();
 			if (fsFile.exists()) {
-				icon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(fsFile.getPath()));
+				icon = new ImageIcon(tk.createImage(fsFile.getPath()));
 			} else {
-				icon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(Gui.class.getClassLoader().getResource("icons/" + filename)));
+				icon = new ImageIcon(tk.createImage(Gui.class.getClassLoader().getResource("icons/" + filename)));
 			}
 			cachedImages.put(filename, new WeakReference<ImageIcon>(icon));
 			return icon;
@@ -117,6 +118,8 @@ public class Utilities {
 		typeMap.put("wma", FileType.AUDIO);
 		typeMap.put("m4a", FileType.AUDIO);
 		typeMap.put("aac", FileType.AUDIO);
+		typeMap.put("ogg", FileType.AUDIO);
+		typeMap.put("mka", FileType.AUDIO);
 		typeMap.put("caf", FileType.AUDIO);
 		typeMap.put("aif", FileType.AUDIO);
 		typeMap.put("aiff", FileType.AUDIO);
@@ -131,6 +134,7 @@ public class Utilities {
 		typeMap.put("mp4", FileType.VIDEO);
 		typeMap.put("xvid", FileType.VIDEO);
 		typeMap.put("wmv", FileType.VIDEO);
+		typeMap.put("ogm", FileType.VIDEO);
 		typeMap.put("mkv", FileType.VIDEO);
 		typeMap.put("asx", FileType.VIDEO);
 		typeMap.put("asf", FileType.VIDEO);
@@ -183,7 +187,7 @@ public class Utilities {
 		typeMap.put("aspx", FileType.CODE);
 		typeMap.put("php", FileType.CODE);
 		typeMap.put("vb", FileType.CODE);
-
+		
 		// Text
 		typeMap.put("txt", FileType.TEXT);
 		typeMap.put("text", FileType.TEXT);
@@ -212,7 +216,7 @@ public class Utilities {
 		typeMap.put("bz2", FileType.ARCHIVE);
 		typeMap.put("tbz", FileType.ARCHIVE);
 		typeMap.put("xz", FileType.ARCHIVE);
-
+		
 		// Disk images
 		typeMap.put("iso", FileType.DISKIMAGE);
 		typeMap.put("mdf", FileType.DISKIMAGE);
@@ -222,12 +226,13 @@ public class Utilities {
 		typeMap.put("dmg", FileType.DISKIMAGE);
 		typeMap.put("img", FileType.DISKIMAGE);
 		typeMap.put("nrg", FileType.DISKIMAGE);
-
+		
 		// Torrent
 		typeMap.put("torrent", FileType.TORRENT);
 		
 		// Cake
 		typeMap.put("gcf", FileType.CAKE);
+		typeMap.put("vpk", FileType.CAKE);
 	}
 	
 	public ImageIcon getIconForType(FileType type) {
@@ -301,7 +306,7 @@ public class Utilities {
 		try {
 			dispatch(run);
 		} catch (Exception e) {
-			Logger.warn("During dispatch to swing: " + e);
+			Logger.warn("During dispatch to Swing: " + e);
 			Logger.log(e);
 		}
 	}
