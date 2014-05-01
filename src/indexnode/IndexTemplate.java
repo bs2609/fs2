@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 
 import javax.xml.transform.TransformerException;
 
@@ -204,7 +203,7 @@ public class IndexTemplate {
 		meta.setAttribute("content", Integer.toString(refreshInterval)+";?lastmessage="+newLastId);
 	}
 	
-	public void addChatItems(LinkedList<ChatMessage> items) {
+	public void addChatItems(Collection<ChatMessage> items) {
 		Element cr = doc.createElement("div");
 		body.appendChild(cr);
 		cr.setAttribute("id", "fs2-chatmessages");

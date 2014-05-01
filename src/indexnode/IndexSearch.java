@@ -3,9 +3,9 @@ package indexnode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 import common.FS2Constants;
 import common.HttpUtil;
@@ -31,7 +31,7 @@ public class IndexSearch implements HttpHandler {
 			IndexTemplate template = new IndexTemplate(exchange);
 			template.setTitle("Search the filesystem...");
 			
-			HashMap<String, String> args = HttpUtil.getArguments(exchange);
+			Map<String, String> args = HttpUtil.getArguments(exchange);
 			if (args.containsKey("q")) {
 				String query = args.get("q");
 				Logger.log(exchange.getRequestHeaders().getFirst("fs2-alias")+" searched for: "+query);
@@ -41,7 +41,7 @@ public class IndexSearch implements HttpHandler {
 				//now we skim off INDEXNODE_SEARCH_MAX_RESULTS results, but only keeping items if they are directories or non-identical files.
 				ArrayList<FilesystemEntry> results = new ArrayList<FilesystemEntry>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS);
 				
-				HashSet<ByteArray> alreadyHave = new HashSet<ByteArray>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS*2);
+				Set<ByteArray> alreadyHave = new HashSet<ByteArray>(FS2Constants.INDEXNODE_SEARCH_MAX_RESULTS*2);
 				
 				int itemsCopied = 0;
 				for (FilesystemEntry item : res) {
@@ -57,7 +57,7 @@ public class IndexSearch implements HttpHandler {
 				template.generateFilelist(results, false, true);
 			} else {
 				template.setSearchHeader("", 0);
-				template.generateFilelist(new LinkedList<FilesystemEntry>(), false, true);
+				template.generateFilelist(new ArrayList<FilesystemEntry>(0), false, true);
 			}
 			
 			template.sendToClient(exchange);

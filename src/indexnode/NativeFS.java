@@ -5,13 +5,18 @@ import indexnode.IndexNode.Share;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -169,9 +174,8 @@ public class NativeFS implements Filesystem {
 		}
 
 		@Override
-		public String getPath(boolean urlEncode, boolean includeOwner) throws
-				UnsupportedEncodingException {
-			LinkedList<String> pathBits = getPathBits(urlEncode);
+		public String getPath(boolean urlEncode, boolean includeOwner) throws UnsupportedEncodingException {
+			Deque<String> pathBits = getPathBits(urlEncode);
 			if (!includeOwner) pathBits.remove();
 			return Util.join(pathBits.toArray(), "/");
 		}
@@ -182,8 +186,8 @@ public class NativeFS implements Filesystem {
 		 * @return
 		 * @throws UnsupportedEncodingException 
 		 */
-		private LinkedList<String> getPathBits(boolean urlEncode) throws UnsupportedEncodingException {
-			LinkedList<String> ret = new LinkedList<String>();
+		private Deque<String> getPathBits(boolean urlEncode) throws UnsupportedEncodingException {
+			Deque<String> ret = new ArrayDeque<String>();
 			FilesystemEntry currentEntry = this;
 			while (!currentEntry.isRoot()) {
 				ret.addFirst(urlEncode ? HttpUtil.urlEncode(currentEntry.getName()) : currentEntry.getName());
@@ -238,11 +242,11 @@ public class NativeFS implements Filesystem {
 	}
 
 	/**Used to lookup files by hash quickly:*/
-	private HashMap<ByteArray, HashSet<NativeEntry>> hashIndex  = new HashMap<ByteArray, HashSet<NativeEntry>>();
+	private Map<ByteArray, Set<NativeEntry>> hashIndex  = new HashMap<ByteArray, Set<NativeEntry>>();
 	private void addHashIndex(NativeEntry entry) {
 		//Initialise this hash entry if it doesn't have a set yet:
 		synchronized (hashIndex) {
-			HashSet<NativeEntry> set = hashIndex.get(entry.hash);
+			Set<NativeEntry> set = hashIndex.get(entry.hash);
 			if (set == null) {
 				set = new HashSet<NativeEntry>();
 				hashIndex.put(entry.hash,set);
@@ -253,7 +257,7 @@ public class NativeFS implements Filesystem {
 	
 	private void removeFromHashIndex(NativeEntry entry) {
 		synchronized (hashIndex) {
-			HashSet<NativeEntry> set = hashIndex.get(entry.hash);
+			Set<NativeEntry> set = hashIndex.get(entry.hash);
 			set.remove(entry);
 			//Remove empty sets so that they may be garbage collected later:
 			if (set.size() == 0) hashIndex.remove(entry.hash);
@@ -261,7 +265,7 @@ public class NativeFS implements Filesystem {
 	}
 	
 	/** maps keywords onto sets of entries. */
-	private HashMap<String, HashSet<NativeEntry>> nameIndex  = new HashMap<String, HashSet<NativeEntry>>();
+	private Map<String, Set<NativeEntry>> nameIndex  = new HashMap<String, Set<NativeEntry>>();
 	private final String keywordSplitRegex = "\\p{Punct}|[ \\t]";
 	/**
 	 * Gets an array of keywords from a filename or a query.
@@ -278,7 +282,7 @@ public class NativeFS implements Filesystem {
 	private void addToNameIndex(NativeEntry entry) {
 		synchronized (nameIndex) {
 			for (String keyword : getKeywords(entry.getName())) {
-				HashSet<NativeEntry> set = nameIndex.get(keyword);
+				Set<NativeEntry> set = nameIndex.get(keyword);
 				if (set == null) {
 					set = new HashSet<NativeEntry>();
 					nameIndex.put(keyword, set);
@@ -295,7 +299,7 @@ public class NativeFS implements Filesystem {
 	private synchronized void removeFromNameIndex(NativeEntry entry) {
 		synchronized (nameIndex) {
 			for (String keyword : getKeywords(entry.getName())) {
-				HashSet<NativeEntry> set = nameIndex.get(keyword);
+				Set<NativeEntry> set = nameIndex.get(keyword);
 				if (set != null) {
 					set.remove(entry);
 					if (set.size() == 0) nameIndex.remove(keyword);
@@ -332,10 +336,9 @@ public class NativeFS implements Filesystem {
 		entry.erase();
 	}
 
-	class FilePopularityComparator implements Comparator<HashSet<NativeEntry>> {
+	class FilePopularityComparator implements Comparator<Set<NativeEntry>> {
 		@Override
-		public int compare(HashSet<NativeEntry> o2,
-				HashSet<NativeEntry> o1) {
+		public int compare(Set<NativeEntry> o2, Set<NativeEntry> o1) {
 			if (o1.size() == o2.size()) return 0;
 			if (o1.size() > o2.size()) return 1;
 			return -1;
@@ -347,13 +350,13 @@ public class NativeFS implements Filesystem {
 	 * Expensive! so don't do this often!
 	 */
 	public Collection<NativeEntry> getPopularFiles(int limit) {
-		LinkedList<HashSet<NativeEntry>> fileList;
+		LinkedList<Set<NativeEntry>> fileList;
 		synchronized (hashIndex) {
-			fileList = new LinkedList<HashSet<NativeEntry>>(hashIndex.values());
+			fileList = new LinkedList<Set<NativeEntry>>(hashIndex.values());
 		}
 		Collections.sort(fileList, new FilePopularityComparator());
-		LinkedList<NativeEntry> res = new LinkedList<NativeEntry>();
-		while (limit-- != 0 && fileList.size() != 0) {
+		List<NativeEntry> res = new ArrayList<NativeEntry>();
+		while (limit-- != 0 && !fileList.isEmpty()) {
 			for (NativeEntry entry : fileList.pop()) {
 				res.add(entry);
 				break;
@@ -480,18 +483,20 @@ public class NativeFS implements Filesystem {
 
 	@Override
 	public Collection<NativeEntry> searchForHash(ByteArray hash) {
+		Collection<NativeEntry> res;
 		synchronized (hashIndex) {
-			Collection<NativeEntry> res = hashIndex.get(hash);
-			return (res == null ? new LinkedList<NativeEntry>() : res);
+			res = hashIndex.get(hash);
 		}
+		if (res == null) res = Collections.emptyList();
+		return res;
 	}
 
 	@Override
 	public Collection<NativeEntry> searchForName(String query) {
-		HashSet<NativeEntry> results = new HashSet<NativeEntry>();
+		Set<NativeEntry> results = new HashSet<NativeEntry>();
 		boolean firstKeyword = true;
 		for (String keyword : getKeywords(query)) {
-			HashSet<NativeEntry> itemResults;
+			Set<NativeEntry> itemResults;
 			synchronized (nameIndex) {
 				itemResults = nameIndex.get(keyword);
 			}
@@ -527,7 +532,7 @@ public class NativeFS implements Filesystem {
 	public long uniqueSize() {
 		long ret = 0;
 		synchronized (hashIndex) {
-			for (HashSet<NativeEntry> entries : hashIndex.values()) {
+			for (Set<NativeEntry> entries : hashIndex.values()) {
 				for (NativeEntry file : entries) {
 					ret+=file.getSize();
 					break; //We only want a single item from this set.

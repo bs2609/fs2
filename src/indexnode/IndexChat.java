@@ -3,8 +3,8 @@ package indexnode;
 import indexnode.IndexNode.Client;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Deque;
+import java.util.Map;
 
 import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
@@ -28,7 +28,7 @@ public class IndexChat implements HttpHandler {
 			IndexTemplate template = new IndexTemplate(exchange);
 			template.setTitle("FS2 chat");
 			
-			HashMap<String, String> args = HttpUtil.getArguments(exchange);
+			Map<String, String> args = HttpUtil.getArguments(exchange);
 			if (args.containsKey("say")) {
 				Client cl = node.getClientFromExchange(exchange);
 				if (cl==null) {
@@ -44,7 +44,7 @@ public class IndexChat implements HttpHandler {
 			//always view the chatlog:
 			int fromId = -1;
 			if (args.containsKey("lastmessage")) fromId = Integer.parseInt(args.get("lastmessage"));
-			LinkedList<ChatMessage> items = data.getMessages(fromId);
+			Deque<ChatMessage> items = data.getMessages(fromId);
 			template.addChatItems(items);
 			template.setChatRefresh((items.isEmpty() ? fromId : items.getLast().id));
 			

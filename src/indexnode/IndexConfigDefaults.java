@@ -31,8 +31,8 @@ public class IndexConfigDefaults implements ConfigDefaults {
 		public static final String USER_DATABSE = "security/users-file";
 	}
 	
-	protected HashMap<String, String> defaults = new HashMap<String, String>();
-	protected HashMap<String, String> comments = new HashMap<String, String>();
+	protected final Map<String, String> defaults = new HashMap<String, String>();
+	protected final Map<String, String> comments = new HashMap<String, String>();
 	
 	public IndexConfigDefaults() {
 		defaults.put(IK.PORT, "1337");

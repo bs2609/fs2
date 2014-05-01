@@ -7,10 +7,11 @@ import indexnode.IndexNode.Client;
 import indexnode.IndexNode.Share;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedList;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -139,8 +140,8 @@ public class IndexStatistics implements HttpHandler {
 		}
 	}
 	
-	private LinkedList<Client> sortedClientsBySize() {
-		LinkedList<Client> ret = new LinkedList<Client>(onNode.clients.values());
+	private List<Client> sortedClientsBySize() {
+		List<Client> ret = new ArrayList<Client>(onNode.clients.values());
 		Collections.sort(ret, new ClientComparator());
 		return ret;
 	}

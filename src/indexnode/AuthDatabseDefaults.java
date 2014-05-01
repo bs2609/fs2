@@ -7,8 +7,8 @@ import common.ConfigDefaults;
 
 public class AuthDatabseDefaults implements ConfigDefaults {
 	
-	private HashMap<String, String> defaults = new HashMap<String, String>();
-	private HashMap<String, String> comments = new HashMap<String, String>();
+	private Map<String, String> defaults = new HashMap<String, String>();
+	private Map<String, String> comments = new HashMap<String, String>();
 	
 	public AuthDatabseDefaults() {
 		defaults.put("u0/alias", "fs2");     //the user's alias

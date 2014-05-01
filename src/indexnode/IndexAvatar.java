@@ -5,7 +5,7 @@ import indexnode.IndexNode.Client;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.Map;
 
 import common.Base64Coder;
 import common.FS2Constants;
@@ -47,7 +47,7 @@ public class IndexAvatar implements HttpHandler {
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
 		try {
-			HashMap<String, String> args = HttpUtil.getArguments(exchange);
+			Map<String, String> args = HttpUtil.getArguments(exchange);
 			
 			Client cl = onNode.getClientFromExchange(exchange);
 			if (cl==null) {

@@ -7,6 +7,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import indexnode.IndexConfigDefaults.IK;
 import common.Config;
@@ -22,7 +23,7 @@ import common.Logger;
  */
 public class IndexAdvertismentManager {
 
-	ArrayList<IndexAdvertiser> advertisers = new ArrayList<IndexAdvertiser>();
+	List<IndexAdvertiser> advertisers = new ArrayList<IndexAdvertiser>();
 	AdvertDataSource ads;
 	
 	/**

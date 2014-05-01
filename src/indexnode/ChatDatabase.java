@@ -2,8 +2,10 @@ package indexnode;
 
 import indexnode.IndexNode.Client;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,8 +26,8 @@ public class ChatDatabase {
 	
 	static final Pattern commandRecogniser = Pattern.compile("^/(.+?)(\\s+(.*))?$");
 	
-	//Master chat log (sent to everybody):
-	HashMap<Integer, String> log = new HashMap<Integer, String>();
+	// Master chat log (sent to everybody):
+	Map<Integer, String> log = new HashMap<Integer, String>();
 	private int oldestId=0;
 	private int nextId=0;
 	
@@ -33,7 +35,7 @@ public class ChatDatabase {
 		registerCommandable("me", new MeCommand());
 	}
 	
-	HashMap<String, ChatCommandable> commandHandlers = new HashMap<String, ChatCommandable>();
+	Map<String, ChatCommandable> commandHandlers = new HashMap<String, ChatCommandable>();
 	
 	synchronized void registerCommandable(String command, ChatCommandable handler) {
 		commandHandlers.put(command, handler);
@@ -83,8 +85,8 @@ public class ChatDatabase {
 	 * @param fromId The id of the last message recieved by the caller.
 	 * @return A list of strings, in order from oldest to most recent. They are indexed {fromId}+1 to the most recent id.
 	 */
-	synchronized LinkedList<ChatMessage> getMessages(int fromId) {
-		LinkedList<ChatMessage> ret = new LinkedList<ChatMessage>();
+	synchronized Deque<ChatMessage> getMessages(int fromId) {
+		Deque<ChatMessage> ret = new ArrayDeque<ChatMessage>();
 		
 		if (fromId>nextId) fromId = 0;
 		if (fromId<oldestId) fromId = oldestId-1;

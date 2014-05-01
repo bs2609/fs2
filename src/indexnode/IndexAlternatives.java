@@ -1,8 +1,10 @@
 package indexnode;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Set;
 
 import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
@@ -30,13 +32,13 @@ public class IndexAlternatives implements HttpHandler {
 			IndexTemplate template = new IndexTemplate(exchange);
 			template.setTitle("Alternative sources...");
 			
-			//Get a copy of the list of all files with the same hash:
-			LinkedList<FilesystemEntry> results = new LinkedList<FilesystemEntry>(fs.searchForHash(new ByteArray(Util.bytesFromHexString(HttpUtil.getPathAfterContext(exchange)))));
+			// Get a copy of the list of all files with the same hash:
+			Deque<FilesystemEntry> results = new ArrayDeque<FilesystemEntry>(fs.searchForHash(new ByteArray(Util.bytesFromHexString(HttpUtil.getPathAfterContext(exchange)))));
 			
-			//Keep track of the aliases that we've allowed into the result list...
-			final HashSet<String> seenAliases = new HashSet<String>();
+			// Keep track of the aliases that we've allowed into the result list...
+			final Set<String> seenAliases = new HashSet<String>();
 			
-			//Filter the list... neat eh?
+			// Filter the list... neat eh?
 			Util.filterList(results, new Util.Filter<FilesystemEntry>() {
 				@Override
 				public boolean accept(FilesystemEntry item) {

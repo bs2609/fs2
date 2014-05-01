@@ -22,8 +22,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -213,7 +215,7 @@ public class IndexNode {
 	public class Client {
 		private InetSocketAddress address;
 		//all of this client's shares:
-		HashMap<String,Share> shares = new HashMap<String, Share>();
+		Map<String,Share> shares = new HashMap<String, Share>();
 		private int failedLiveness = 0;
 		private URL pingURL;
 		private String alias = "";
@@ -375,7 +377,7 @@ public class IndexNode {
 				}
 				
 				//1) build a new list of all our shares
-				HashMap<String, Share> sharesToKill = new HashMap<String, Share>();
+				Map<String, Share> sharesToKill = new HashMap<String, Share>();
 				synchronized (shares) {
 					sharesToKill.putAll(shares);
 				
@@ -487,13 +489,13 @@ public class IndexNode {
 			synchronized (clients) {
 				clients.remove(address);
 			}
+			List<Share> sharesCopy;
 			synchronized (shares) {
-				//We must create a copy of the list of shares as it'll be modified each time we remove a share.
-				LinkedList<Share> sharesCopy = new LinkedList<Share>();
-				sharesCopy.addAll(shares.values());
-				for (Share share : sharesCopy) {
-					removeShare(share);
-				}
+				// We must create a copy of the list of shares as it'll be modified each time we remove a share.
+				sharesCopy = new ArrayList<Share>(shares.values());
+			}
+			for (Share share : sharesCopy) {
+				removeShare(share);
 			}
 			synchronized(clientAliases) {
 				clientAliases.remove(alias);
@@ -754,10 +756,10 @@ public class IndexNode {
 	}
 	
 	
-	//All the clients we currently know about: address->clientObject
-	HashMap<InetSocketAddress, Client> clients = new HashMap<InetSocketAddress, Client>();
-	//Keep a list of all current aliases to avoid conflicts:
-	private HashSet<String> clientAliases = new HashSet<String>();
+	// All the clients we currently know about: address->clientObject
+	Map<InetSocketAddress, Client> clients = new HashMap<InetSocketAddress, Client>();
+	// Keep a list of all current aliases to avoid conflicts:
+	private Set<String> clientAliases = new HashSet<String>();
 	
 	//This timer is used to check known clients on an interval to see if they are still alive.
 	private Timer clientLivenessTimer = new Timer(true);
@@ -765,7 +767,7 @@ public class IndexNode {
 	/**
 	 * Allows looking up of share objects from the database which only uses integers to identify them.
 	 */
-	private HashMap<Integer, Share> allShares = new HashMap<Integer, Share>();
+	private Map<Integer, Share> allShares = new HashMap<Integer, Share>();
 	
 	/**
 	 * The pool of threads for refreshing shares.
@@ -801,7 +803,7 @@ public class IndexNode {
 	private IndexAdvertismentManager advertManager;
 	
 	//used for shutdown:
-	private ArrayList<HttpServer> httpServers = new ArrayList<HttpServer>();
+	private List<HttpServer> httpServers = new ArrayList<HttpServer>();
 	
 	public Config getConf() {
 		return conf;
