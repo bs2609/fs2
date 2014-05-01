@@ -87,7 +87,7 @@ public class FS2Constants {
 	public static final int INDEXNODE_CHAT_LOG_LENGTH = 100;
 	
 	/** The port that FS2 uses for advertisements. */
-	public static final int ADVERTISMENT_DATAGRAM_PORT = 42444;
+	public static final int ADVERTISEMENT_DATAGRAM_PORT = 42444;
 	
 	/** Name of the file used for configuration on the CLIENT. */
 	public static final String CONFIGURATION_FILE_NAME = "config.xml";

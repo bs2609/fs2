@@ -38,7 +38,7 @@ public class AdvertListener extends Thread {
 	public static AdvertListener getAdvertListener(IndexNodeCommunicator indexcomms) {
 		AdvertListener n = new AdvertListener(indexcomms);
 		try {
-			n.socket = new DatagramSocket(FS2Constants.ADVERTISMENT_DATAGRAM_PORT);
+			n.socket = new DatagramSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
 			n.start();
 			Logger.log("Now listening for indexnode adverts");
 			return n;

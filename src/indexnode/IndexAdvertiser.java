@@ -68,7 +68,7 @@ public class IndexAdvertiser extends Thread {
 
 	private void sendAdvert(String message) throws UnsupportedEncodingException, UnknownHostException {
 		byte[] advert = message.getBytes("utf-8");
-		DatagramPacket packet = new DatagramPacket(advert, advert.length, (socket.getInetAddress() instanceof Inet6Address ? InetAddress.getByName("ff02::1") : InetAddress.getByName("255.255.255.255")), FS2Constants.ADVERTISMENT_DATAGRAM_PORT);
+		DatagramPacket packet = new DatagramPacket(advert, advert.length, (socket.getInetAddress() instanceof Inet6Address ? InetAddress.getByName("ff02::1") : InetAddress.getByName("255.255.255.255")), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
 		
 		try {
 			socket.send(packet);

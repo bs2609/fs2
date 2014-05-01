@@ -15,6 +15,7 @@ import common.FS2Constants;
 import common.HttpUtil;
 import common.Logger;
 import common.Sxml;
+import common.Util;
 
 /**
  * Facilitates queueing of uploads in a way that both browsers and FS2 clients will understand.

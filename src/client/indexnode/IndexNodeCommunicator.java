@@ -173,7 +173,7 @@ public class IndexNodeCommunicator implements TableModel {
 	void setupAdvertListeningIfNeeded() {
 		autodetectIndexnodes = conf.getBoolean(CK.AUTO_INDEX_NODE);
 		if ((listener = AdvertListener.getAdvertListener(this)) == null) {
-			Logger.log("Indexnode advert listener couldn't be created. Autodetection and autohosting will be unavailable.\nIt's likely the port (" + FS2Constants.ADVERTISMENT_DATAGRAM_PORT + ") is already in use,\nor you do not have permission to recieve UDP broadcasts.");
+			Logger.log("Indexnode advert listener couldn't be created. Autodetection and autohosting will be unavailable.\nIt's likely the port (" + FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + ") is already in use,\nor you do not have permission to recieve UDP broadcasts.");
 		}
 	}
 	

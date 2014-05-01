@@ -67,11 +67,11 @@ public class SingleInstanceDetector {
 	 */
 	public SingleInstanceDetector() {
 		try {
-			socket = new ServerSocket(FS2Constants.ADVERTISMENT_DATAGRAM_PORT+1, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
+			socket = new ServerSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
 			listener = new Listener();
 			listener.start();
 		} catch (IOException e) {
-			Logger.warn("FS2 is unable to detect if new instances are started by mistake! Check port "+(FS2Constants.ADVERTISMENT_DATAGRAM_PORT+1)+" is free: "+e);
+			Logger.warn("FS2 is unable to detect if new instances are started by mistake! Check port "+(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1)+" is free: "+e);
 		}
 	}
 	
@@ -105,7 +105,7 @@ public class SingleInstanceDetector {
 	
 	public static boolean notifyOtherInstance() {
 		try {
-			new Socket(InetAddress.getByAddress(new byte[] {127,0,0,1}), FS2Constants.ADVERTISMENT_DATAGRAM_PORT+1);
+			new Socket(InetAddress.getByAddress(new byte[] {127,0,0,1}), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1);
 			return true;
 		} catch (Exception e) {
 			Logger.warn("Unable to notify another instance: "+e);

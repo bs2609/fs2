@@ -19,8 +19,8 @@ import common.Util;
 public class JBytesBox extends JTextField implements KeyListener {
 
 	protected long currentValue;
-	public static Color good = new Color(200, 255, 200);
-	public static Color bad = new Color(255, 200, 100);
+	public static final Color GOOD = new Color(200, 255, 200);
+	public static final Color BAD = new Color(255, 200, 100);
 	
 	/**
 	 * Returns the value represented by this box in bytes. Will be negative if the value in the box is not valid.
@@ -37,7 +37,7 @@ public class JBytesBox extends JTextField implements KeyListener {
 		currentValue = initialValue;
 		setText(Util.niceSize(initialValue));
 		addKeyListener(this);
-		setBackground(good);
+		setBackground(GOOD);
 	}
 
 	@Override
@@ -48,9 +48,9 @@ public class JBytesBox extends JTextField implements KeyListener {
 		long oldValue = currentValue;
 		currentValue = Util.parseNiceSize(getText().trim());
 		if (currentValue==-1) {
-			setBackground(bad);
+			setBackground(BAD);
 		} else {
-			setBackground(good);
+			setBackground(GOOD);
 		}
 		if (oldValue == -1) currentValue = -2; //ensure invalid changes always issue an event.
 		firePropertyChange("value", oldValue, currentValue); //
