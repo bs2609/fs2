@@ -78,13 +78,13 @@ public class ClientConfigDefaults implements ConfigDefaults {
 		public static final String INTERNAL_INDEXNODE_ALWAYS_ON = "internal_indexnode/alwayson"; 
 	}
 	
-	protected HashMap<String, String> defaults = new HashMap<String, String>();
+	protected final Map<String, String> defaults = new HashMap<String, String>();
 	//If a key is in this map then the value will be added to the default configuration file just
 	//after that key.
-	protected HashMap<String, String> comments = new HashMap<String, String>();
+	protected final Map<String, String> comments = new HashMap<String, String>();
 	
 	public ClientConfigDefaults() {
-		defaults.put(CK.HEAPSIZE, Integer.toString(256*1024*1024));
+		defaults.put(CK.HEAPSIZE, Integer.toString(256 << 20));
 		comments.put(CK.HEAPSIZE, "defines how much Java heap (in bytes) fs2 should use at minimum. If FS2 detects that you have less than 90% of this value it will attempt to relaunch the JVM with more heap.");
 		
 		defaults.put(CK.PORT, "41234");
@@ -98,8 +98,8 @@ public class ClientConfigDefaults implements ConfigDefaults {
 		
 		defaults.put(CK.DOWNLOAD_DIRECTORY, Platform.getDefaultDownloadsDirectory().getAbsolutePath());
 		
-		defaults.put(CK.UPLOAD_BYTES_PER_SEC, Long.toString(1024l*1024l*1024l*1024l));
-		defaults.put(CK.DOWNLOAD_BYTES_PER_SEC, Long.toString(1024l*1024l*1024l*1024l));
+		defaults.put(CK.UPLOAD_BYTES_PER_SEC, Long.toString(1024L << 30));
+		defaults.put(CK.DOWNLOAD_BYTES_PER_SEC, Long.toString(1024L << 30));
 		defaults.put(CK.ACTIVE_UPLOADS, "10");
 		defaults.put(CK.ACTIVE_UPLOADS_PER_USER, "2");
 		comments.put(CK.ACTIVE_UPLOADS_PER_USER, "indicates how many upload slots a single remote client can use on their own.");

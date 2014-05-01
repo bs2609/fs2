@@ -1,13 +1,15 @@
 package client.platform.updatesources;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import client.Version;
+
 /**
  * The standard interface for a source of code updates.
  * @author gary
@@ -38,8 +40,8 @@ public abstract class UpdateSource {
 		
 		Pattern clientNamePattern = Pattern.compile("^"+Pattern.quote(Version.FS2_CLIENT_NAME)+"-((?:\\d+\\.)+)jar$");
 		
-		private LinkedList<Integer> getVersionBits(String name) {
-			LinkedList<Integer> bits = new LinkedList<Integer>();
+		private List<Integer> getVersionBits(String name) {
+			List<Integer> bits = new ArrayList<Integer>();
 			Matcher m = clientNamePattern.matcher(name);
 			if (!m.matches()) return bits;
 			for (String verItem : m.group(1).split("\\.")) {

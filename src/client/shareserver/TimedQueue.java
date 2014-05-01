@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Implements a queue where each client in the queue must continuously re-request.
@@ -24,9 +25,9 @@ import java.util.LinkedList;
  *
  */
 public class TimedQueue<E> {
-	private HashMap<E, Date> tokenExpiries = new HashMap<E, Date>();
+	private Map<E, Date> tokenExpiries = new HashMap<E, Date>();
 	private LinkedList<E> queue = new LinkedList<E>();
-	private HashMap<E, Integer> resourceUsage = new HashMap<E, Integer>();
+	private Map<E, Integer> resourceUsage = new HashMap<E, Integer>();
 	/** the number of allowed resources*/
 	private int resourceCount = 2;
 	

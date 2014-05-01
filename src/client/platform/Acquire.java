@@ -4,8 +4,10 @@ import java.awt.HeadlessException;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -109,7 +111,7 @@ public class Acquire {
 	 */
 	public CodeUpdate getLatestUpdate(URL additional) {
 		Logger.log("Checking for updates...");
-		LinkedList<UpdateSource> sources = new LinkedList<UpdateSource>();
+		List<UpdateSource> sources = new ArrayList<UpdateSource>();
 		
 		//Build a list of update sources in order:
 		sources.add(new FS2Source());

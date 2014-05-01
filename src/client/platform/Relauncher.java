@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.List;
 
 import common.FS2Constants;
 import common.Logger;
@@ -97,7 +98,7 @@ public class Relauncher {
 			Logger.log("Attempting to relaunch JVM with more heap... "+Util.niceSize(newHeapSize));
 			ClientExecutor.shutdown();
 			
-			ArrayList<String> args = new ArrayList<String>();
+			List<String> args = new ArrayList<String>();
 			args.add(jvmPath);
 			args.add("-Xmx"+newHeapSize);
 			
@@ -111,7 +112,7 @@ public class Relauncher {
 			args.add("-jar");
 			args.add(thisJarPath);
 			
-			Process newJVM = Runtime.getRuntime().exec(args.toArray(new String[] {}));
+			Process newJVM = Runtime.getRuntime().exec(args.toArray(new String[0]));
 			
 			if (pipeThrough) {
 				pipeOutput(newJVM);
