@@ -71,7 +71,7 @@ public abstract class Util {
 	}
 	
 	
-	/** Wraps a Lock so it can be closed automatically by a try-with block. */
+	/** Wraps a Lock so it can be released automatically by a try-with block. */
 	public static class LockHolder implements AutoCloseable {
 		
 		private final Lock lock;
@@ -179,7 +179,7 @@ public abstract class Util {
 		
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array) || obj instanceof byte[] && Arrays.equals(array, (byte[]) obj);
+			return obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array);
 		}
 		
 		@Override
@@ -636,7 +636,7 @@ public abstract class Util {
 		
 		if (resizeMode != ImageResizeType.NORATIO) {
 			mWidth = (int) ((double) inWidth * chosenRatio);
-			mHeight = (int) ((double) inHeight * chosenRatio);	
+			mHeight = (int) ((double) inHeight * chosenRatio);
 		}
 		
 		int oX = (outWidth - mWidth) / 2; // Offset from edge in X
@@ -652,4 +652,4 @@ public abstract class Util {
 		
 		return out;
 	}
- }
+}

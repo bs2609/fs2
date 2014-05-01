@@ -7,7 +7,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,7 +33,7 @@ public class ServerImpl extends HttpServer {
 
 	ServerSocket insecureSocket = null;
 	SSLServerSocket secureSocket = null;
-	LinkedList<ContextImpl> contexts = new LinkedList<ContextImpl>();
+	List<ContextImpl> contexts = new ArrayList<ContextImpl>();
 	ExecutorService executor = Executors.newSingleThreadExecutor(); //setup a default executor.
 	Thread insecureListener;
 	Thread secureListener;

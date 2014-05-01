@@ -1,6 +1,6 @@
 package common.httpserver.impl;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import common.httpserver.Filter;
@@ -9,7 +9,7 @@ import common.httpserver.HttpHandler;
 
 public class ContextImpl extends HttpContext {
 
-	final LinkedList<Filter> filters = new LinkedList<Filter>();
+	final List<Filter> filters = new ArrayList<Filter>();
 	String path;
 	final HttpHandler handler;
 	

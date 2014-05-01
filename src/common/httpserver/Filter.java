@@ -1,7 +1,8 @@
 package common.httpserver;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import common.httpserver.impl.ContextImpl;
 
@@ -21,11 +22,11 @@ public abstract class Filter {
 	 */
 	public static class Chain {
 		
-		LinkedList<Filter> filters;
+		Deque<Filter> filters;
 		ContextImpl context;
 		
 		public Chain(ContextImpl context) {
-			filters = new LinkedList<Filter>(context.getFilters());
+			filters = new ArrayDeque<Filter>(context.getFilters());
 			this.context = context;
 		}
 		

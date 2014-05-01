@@ -15,6 +15,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,8 +66,8 @@ public class HttpUtil {
 	 * @param exchange
 	 * @return
 	 */
-	public static HashMap<String, String> getArguments(HttpExchange exchange) {
-		HashMap<String, String> retval = new HashMap<String, String>();
+	public static Map<String, String> getArguments(HttpExchange exchange) {
+		Map<String, String> retval = new HashMap<String, String>();
 		
 		if (exchange.getRequestURI().getQuery() != null) {
 			String query = exchange.getRequestURI().getRawQuery();

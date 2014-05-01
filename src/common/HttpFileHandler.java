@@ -5,7 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.channels.ClosedByInterruptException;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
@@ -26,11 +27,12 @@ public class HttpFileHandler implements HttpHandler {
 	}
 	
 	private File servePath;
-	private LinkedList<HttpTransferInfo> transfers = new LinkedList<HttpTransferInfo>();
+	private List<HttpTransferInfo> transfers = new ArrayList<HttpTransferInfo>();
 	private int currentUID = 0;		//synchronized by transfers... (the index for any given transfer)
 	private HttpFileHandlerEvents events;
 	private ProgressTracker parentTracker;
-	public LinkedList<HttpTransferInfo> getTransferInfos() {
+	
+	public List<HttpTransferInfo> getTransferInfos() {
 		return transfers;
 	}
 	

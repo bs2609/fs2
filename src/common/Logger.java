@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -28,7 +29,7 @@ public abstract class Logger {
 	private static PrintStream accessFileStream;
 	private static Level minLoggingLevel = Level.INFO;
 	private static Level minFileLoggingLevel = Level.FINE;
-	private static HashSet<LogListener> registeredModules = new HashSet<LogListener>();
+	private static Set<LogListener> registeredModules = new HashSet<LogListener>();
 	private static Object lastMessage = "";
 	private static Level lastLevel = Level.ALL;
 	private static int suppressCount = 0;

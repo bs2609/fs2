@@ -2,8 +2,9 @@ package common.httpserver;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,7 +19,7 @@ import common.Util;
  * @author gp
  */
 @SuppressWarnings("serial")
-public class Headers extends HashMap<String,LinkedList<String>> {
+public class Headers extends HashMap<String, Deque<String>> {
 	
 	//========== Helpers specified by com.sun.net.httpserver.Headers
 	/**
@@ -27,7 +28,7 @@ public class Headers extends HashMap<String,LinkedList<String>> {
 	 * @return
 	 */
 	public String getFirst(String key) {
-		LinkedList<String> potentials = this.get(key);
+		Deque<String> potentials = this.get(key);
 		if (potentials==null) {
 			return null;
 		}else {
@@ -41,9 +42,9 @@ public class Headers extends HashMap<String,LinkedList<String>> {
 	 * @param value
 	 */
 	public void add(String key, String value) {
-		LinkedList<String> l = this.get(key);
+		Deque<String> l = this.get(key);
 		if (l==null) {
-			l = new LinkedList<String>();
+			l = new ArrayDeque<String>();
 			l.add(value);
 			this.put(key, l);
 		} else {
@@ -57,7 +58,7 @@ public class Headers extends HashMap<String,LinkedList<String>> {
 	 * @param value
 	 */
 	public void set(String key, String value) {
-		LinkedList<String> l = new LinkedList<String>();
+		Deque<String> l = new ArrayDeque<String>();
 		l.add(value);
 		this.put(key, l);
 	}
@@ -69,7 +70,7 @@ public class Headers extends HashMap<String,LinkedList<String>> {
 	public String toString() {
 		StringBuilder out = new StringBuilder();
 		
-		for (Entry<String, LinkedList<String>> header : this.entrySet()) {
+		for (Entry<String, Deque<String>> header : this.entrySet()) {
 			for (String value : header.getValue()) {
 				out.append(header.getKey());
 				out.append(": ");

@@ -1,7 +1,8 @@
 package common;
 
+import java.util.ArrayDeque;
 import java.util.Date;
-import java.util.LinkedList;
+import java.util.Deque;
 
 import common.Util.Deferrable;
 
@@ -30,7 +31,7 @@ public class ProgressTracker {
 		}
 	}
 	
-	LinkedList<Sample> samples = new LinkedList<Sample>();
+	Deque<Sample> samples = new ArrayDeque<Sample>();
 	long accumulator = 0; //the sum of all bytes transfered in the samples.
 	
 	long position = 0; //the current position in the transfer.

@@ -1,10 +1,11 @@
 package common;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -57,8 +58,8 @@ public class Config implements Savable {
 	private Sxml xml;
 	private SafeSaver saver = new SafeSaver(this, FS2Constants.CONFIG_SAVE_INTERVAL);
 	
-	//Assumption: caching key->element mappings will be faster than traversing the XML every time.
-	private HashMap<String, Element> elemCache = new HashMap<String, Element>();
+	// Assumption: caching key->element mappings will be faster than traversing the XML every time.
+	private Map<String, Element> elemCache = new HashMap<String, Element>();
 	
 	private boolean shuttingDown = false;
 	
@@ -189,10 +190,9 @@ public class Config implements Savable {
 	 * @param key
 	 * @return
 	 */
-	public LinkedList<String> getChildKeys(String key) {
+	public List<String> getChildKeys(String key) {
+		List<String> keys = new ArrayList<String>();
 		synchronized (xml) {
-			LinkedList<String> keys = new LinkedList<String>();
-			
 			Node onNode = getElement(key).getFirstChild();
 			while (onNode!=null) {
 				try {
@@ -202,9 +202,8 @@ public class Config implements Savable {
 					onNode = onNode.getNextSibling();
 				}
 			}
-			
-			return keys;
 		}
+		return keys;
 	}
 	
 	/**

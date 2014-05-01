@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,11 +29,11 @@ import common.httpserver.Filter.Chain;
  * @author gp
  *
  */
-public class ExchangeImpl extends HttpExchange{
+public class ExchangeImpl extends HttpExchange {
 
 	public final static Pattern REQUEST_LINE_PATTERN = Pattern.compile("(.*?) (.*) HTTP/1\\.(\\d)");
 	
-	public final static HashMap<Integer, String> statuses;
+	public final static Map<Integer, String> statuses;
 	
 	static {
 	  statuses = new HashMap<Integer, String>();
