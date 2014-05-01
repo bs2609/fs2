@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -122,33 +122,33 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	
 	private transient long totalUpAtLoad;
 	private transient long totalDownAtLoad;
-	private transient LinkedList<TableModelListener> modelListeners;
+	private transient List<TableModelListener> modelListeners;
 	private transient Class<?>[] columnClasses;
 	private transient String[] columnNames;
 	private transient SafeSaver saver;
-	private transient HashSet<String> toUpdate;
+	private transient Set<String> toUpdate;
 	private transient UpdateTask updater;
 	/**
 	 * Records the number of currently active downloads from each user.
 	 * This is used to make more educated decisions about which users to download from.
 	 */
-	private transient HashMap<String, Integer> dlUsed;
+	private transient Map<String, Integer> dlUsed;
 	
 	/**
 	 * Records the remote peers that we are currently remotely queued by.
 	 * again, used to make more educated download decisions when there are multiple souces.
 	 */
-	private transient HashMap<String, Integer> remoteQueued;
+	private transient Map<String, Integer> remoteQueued;
 	
 	/**
 	 * A sorted list of peers from most attractive to download from to least attractive.
 	 */
-	private transient ArrayList<PeerStats> rankedPeers;
+	private transient List<PeerStats> rankedPeers;
 	/**
 	 * A list of human-accessible rank integers. (ie: 1 for most attractive)
 	 * The indices are the same as those for the peers list.
 	 */
-	private transient ArrayList<Integer> dlRank;
+	private transient List<Integer> dlRank;
 	private transient boolean dlHappened;
 	
 	public transient static final int ALIAS_IDX=0;
@@ -330,7 +330,7 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 		int candidateRank = dlRank.get(peerIndices.get(peerOfHighStanding));
 		
 		//2) find all peers of that rank, that are eligable...
-		ArrayList<PeerStats> similarlyGreat = new ArrayList<PeerStats>();
+		List<PeerStats> similarlyGreat = new ArrayList<PeerStats>();
 		for (int i=0; i<peers.size(); i++) {
 			if (dlRank.get(i)==candidateRank && candidates.containsKey(peers.get(i).alias)) similarlyGreat.add(peers.get(i));
 		}
@@ -522,7 +522,7 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	private void setup() {
 		totalDownAtLoad = getTotalDownBytes();
 		totalUpAtLoad = getTotalUpBytes();
-		modelListeners = new LinkedList<TableModelListener>();
+		modelListeners = new ArrayList<TableModelListener>();
 		columnClasses = new Class[] {String.class, Boolean.class, FileSize.class, FileSize.class, FileSize.class, String.class, Integer.class}; //alias, fav, down, up, dlspeed, remotely queued, rank
 		columnNames = new String[] {"Alias", "Favourite", "Downloaded from", "Uploaded to", "Avg. Dl speed", "Queued Us","Rank"};
 		saver = new SafeSaver(this, FS2Constants.CLIENT_PEERSTATS_SAVE_MIN_INTERVAL);

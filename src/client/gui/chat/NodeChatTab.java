@@ -9,7 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.LinkedList;
+import java.util.Deque;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -170,7 +170,7 @@ public class NodeChatTab extends JPanel implements MouseListener, ChatListener, 
 	private int missedMessageCount = 0;
 	
 	@Override
-	public void newMessages(LinkedList<ChatMessage> messages) {
+	public void newMessages(Deque<ChatMessage> messages) {
 		ChatDocument doc = (ChatDocument)chatLog.getDocument();
 		
 		for (ChatMessage m : messages){

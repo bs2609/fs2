@@ -10,8 +10,10 @@ import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Map;
 
 import javax.swing.JPanel;
 
@@ -31,7 +33,7 @@ public class TimeGraph extends JPanel implements ComponentListener {
 	
 	private final static int numPoints = 100;	// Define how many points to remember
 	
-	private LinkedList<double[]> data = new LinkedList<double[]>();
+	private Deque<double[]> data = new ArrayDeque<double[]>();
 	private int numTraces;
 	private double max;
 	
@@ -122,7 +124,7 @@ public class TimeGraph extends JPanel implements ComponentListener {
 		
 		// Set up rendering hints
 		Graphics2D g = (Graphics2D)g2;
-		HashMap<RenderingHints.Key, Object> hints = new HashMap<RenderingHints.Key,Object>();
+		Map<RenderingHints.Key, Object> hints = new HashMap<RenderingHints.Key,Object>();
 		hints.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
 		hints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		hints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);

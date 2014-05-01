@@ -16,11 +16,13 @@ import java.awt.image.ImageObserver;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import javax.swing.ImageIcon;
@@ -252,7 +254,7 @@ public class FilesTab extends TabItem implements
 		}
 		
 		public List<FileSystemEntry> getSelectedTableEntries() {
-			ArrayList<FileSystemEntry> items = new ArrayList<FileSystemEntry>();
+			List<FileSystemEntry> items = new ArrayList<FileSystemEntry>();
 			for (int i : filesTable.getSelectedRows()) {
 				items.add(fs.getEntryForRow(filesTable.convertRowIndexToModel(i)));
 			}
@@ -311,7 +313,7 @@ public class FilesTab extends TabItem implements
 	/**
 	 * Records the time at which tree nodes were expanded so that they may be collapsed if idle after a defined period.
 	 */
-	WeakHashMap<Object, Long> expandedTimes = new WeakHashMap<Object, Long>();
+	Map<Object, Long> expandedTimes = new WeakHashMap<Object, Long>();
 	Timer collapseTimer;
 	
 	BrowseTreeCellRenderer browseTreeRenderer;
@@ -707,8 +709,9 @@ public class FilesTab extends TabItem implements
 	 * When called it will traverse all visible leaves in the browseTree and collapse them if they have been open for too long and are not selected.
 	 */
 	private void collapseOldNodes() {
-		Stack<ListableEntry> toConsider = new Stack<ListableEntry>(); //this is a stack of expanded nodes that need their children (and themselves) to be considered.
-		toConsider.push(fs.getBrowseRoot()); //we know these are always expanded, and uncollapsable.
+		// This is a stack of expanded nodes that need their children (and themselves) to be considered.
+		Deque<ListableEntry> toConsider = new ArrayDeque<ListableEntry>();
+		toConsider.push(fs.getBrowseRoot()); // We know these are always expanded, and uncollapsable.
 		toConsider.push(fs.getSearchRoot());
 		
 		//a) mark all uncollapsable nodes
@@ -722,7 +725,7 @@ public class FilesTab extends TabItem implements
 		}
 		
 		//b) collapse old expanded nodes.
-		while (!toConsider.empty()) {
+		while (!toConsider.isEmpty()) {
 			for (FileSystemEntry child : toConsider.pop().getAllChildren()) {
 				if (browseTree.isExpanded(child.getPath())) {
 					toConsider.push(child);

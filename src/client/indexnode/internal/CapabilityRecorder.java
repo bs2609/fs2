@@ -3,6 +3,7 @@ package client.indexnode.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import common.FS2Constants;
 import common.Util;
@@ -52,8 +53,8 @@ public class CapabilityRecorder {
 		}
 	}
 	
-	//Arraylist for fast iteration over a small number of records. Infrequent insertion and deletion.s
-	private ArrayList<CapabilityRecord> records = new ArrayList<CapabilityRecord>(50);
+	// ArrayList for fast iteration over a small number of records. Infrequent insertion and deletion.s
+	private List<CapabilityRecord> records = new ArrayList<CapabilityRecord>(50);
 	private CapabilityRecord us;
 	private final long ourAUID;
 	

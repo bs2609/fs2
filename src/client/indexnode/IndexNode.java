@@ -7,13 +7,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -225,8 +229,8 @@ public class IndexNode {
 			});
 		}
 		
-		private LinkedList<ChatMessage> getMessagesFromXml(Sxml xml) {
-			LinkedList<ChatMessage> outmsgs = new LinkedList<ChatMessage>();
+		private Deque<ChatMessage> getMessagesFromXml(Sxml xml) {
+			Deque<ChatMessage> outmsgs = new ArrayDeque<ChatMessage>();
 			//3) process into ChatMessages
 			Element messages = xml.getElementById("fs2-chatmessages");
 			Node onNode = messages.getFirstChild();
@@ -254,7 +258,7 @@ public class IndexNode {
 		 * @throws InvocationTargetException
 		 */
 		private int dispatchNewMessagesFromXml(Sxml xml) throws InterruptedException, InvocationTargetException {
-			final LinkedList<ChatMessage> outmsgs = getMessagesFromXml(xml);
+			final Deque<ChatMessage> outmsgs = getMessagesFromXml(xml);
 			
 			if (outmsgs.isEmpty()) {
 				return -1;
@@ -274,7 +278,7 @@ public class IndexNode {
 		}
 	}
 	
-	private HashSet<ChatListener> chatListeners = new HashSet<ChatListener>();
+	private Set<ChatListener> chatListeners = new HashSet<ChatListener>();
 	private boolean isAutomaticNode; //true iff this node was automatically started.
 	
 	public void registerChatListener(ChatListener l) {
@@ -657,7 +661,7 @@ public class IndexNode {
 		return stats;
 	}
 	
-	HashSet<StatsListener> statsListeners = new HashSet<StatsListener>();
+	Set<StatsListener> statsListeners = new HashSet<StatsListener>();
 	
 	/**
 	 * Register a new stats listener with this indexnode.
@@ -773,7 +777,7 @@ public class IndexNode {
 					stats.uniqueSize = getStatisticValue(xml, "total-unique-size");
 					
 					Element clients = xml.getElementById("clients");
-					HashSet<String> knownAliases = new HashSet<String>(stats.peers.keySet());
+					Set<String> knownAliases = new HashSet<String>(stats.peers.keySet());
 					
 					boolean newPeers = false;
 					
@@ -831,7 +835,7 @@ public class IndexNode {
 	 * @return The UNSORTED list of children for the given parent.
 	 */
 	Collection<FileSystemEntry> lookupChildren(FileSystemEntry parent) {
-		LinkedList<FileSystemEntry> ret = new LinkedList<FileSystemEntry>();
+		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
 		try {
 			//1) Generate a string to represent the query URL for the indexnode
 			URL query;
@@ -858,7 +862,7 @@ public class IndexNode {
 		return ret;
 	}
 	
-	private void addFileListItemsToList(Sxml xml, LinkedList<FileSystemEntry> ret, FileSystemEntry parent) {
+	private void addFileListItemsToList(Sxml xml, List<FileSystemEntry> list, FileSystemEntry parent) {
 		Element filelist = xml.getElementById("fs2-filelist");
 		
 		Node onNode = filelist.getFirstChild();
@@ -901,9 +905,9 @@ public class IndexNode {
 				}
 				
 				if (isDirectory) {
-					ret.add(parent.generateUninitialisedChildDirectory(name, this, linkCount, path, size));
+					list.add(parent.generateUninitialisedChildDirectory(name, this, linkCount, path, size));
 				} else {
-					ret.add(parent.generateChildFile(name, this, size, hash, clientAlias, alternativesCount));
+					list.add(parent.generateChildFile(name, this, size, hash, clientAlias, alternativesCount));
 				}
 				
 			} finally {

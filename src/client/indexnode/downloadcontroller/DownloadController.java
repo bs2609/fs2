@@ -4,6 +4,8 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -195,8 +197,8 @@ public class DownloadController implements TableModel {
 		
 	}
 	
+	Set<DownloadChunk> chunksToUpdate = new HashSet<DownloadChunk>();
 	
-	HashSet<DownloadChunk> chunksToUpdate = new HashSet<DownloadChunk>();
 	/**
 	 * Indicates that a chunk has changed and that the gui must be updated, but this will be done at some point in the future.
 	 * All chunks changed between now and then will be updated at once.
@@ -235,8 +237,8 @@ public class DownloadController implements TableModel {
 	}
 	
 	DownloadEvents events = new ControllerEvents();
-	ArrayList<TableModelListener> listeners = new ArrayList<TableModelListener>();
-	ArrayList<DownloadChunk> tableChunks = new ArrayList<DownloadChunk>(); //the data to drive the table model.
+	List<TableModelListener> listeners = new ArrayList<TableModelListener>();
+	List<DownloadChunk> tableChunks = new ArrayList<DownloadChunk>(); // The data to drive the table model.
 	String[] columnNames = {"File name", "Peer", "Status", "Progress", "Speed", "ETR"};
 	Class<?>[] columnClasses = {String.class, String.class, String.class, DownloadChunk.class, FileSize.class, String.class};
 	public static final int FILENAME_IDX = 0;

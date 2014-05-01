@@ -1,7 +1,8 @@
 package client.indexnode;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 import common.httpserver.Filter;
 import common.httpserver.HttpExchange;
@@ -34,7 +35,7 @@ public class IndexNodeOnlyFilter extends Filter {
 			//and hope this works because there is a very good chance that
 			//whatever caused the indexnode to be poking us has a lock on the node list already
 			//(and taking it here just causes deadlock). grumbles.
-			LinkedList<IndexNode> nodes = new LinkedList<IndexNode>(comm.getRegisteredIndexNodes());
+			List<IndexNode> nodes = new ArrayList<IndexNode>(comm.getRegisteredIndexNodes());
 			for (IndexNode node : nodes) {
 				if (node.fromThisIndexnode(ex)) { //If an indexnode client accepts this indexnode then the request may be served.
 					canContinue = true;

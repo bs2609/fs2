@@ -1,9 +1,11 @@
 package client.indexnode;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.TimerTask;
 import java.util.Map.Entry;
 
@@ -59,11 +61,11 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 				if (childDirectories==null) return; //shouldn't take the mutex whilst looking up children. if childDirectories is null then it means this node is no longer needed.
 				
 				//Get the new list: (this might take a while!)
-				final LinkedList<FileSystemEntry> newChildren = fs.comm.lookupChildren(FileSystemEntry.this);
+				final List<FileSystemEntry> newChildren = fs.comm.lookupChildren(FileSystemEntry.this);
 				
 				//Separate it into the component lists (files and directories)
-				final ArrayList<FileSystemEntry> newFiles = new ArrayList<FileSystemEntry>();
-				final ArrayList<FileSystemEntry> newDirs = new ArrayList<FileSystemEntry>();
+				final List<FileSystemEntry> newFiles = new ArrayList<FileSystemEntry>();
+				final List<FileSystemEntry> newDirs = new ArrayList<FileSystemEntry>();
 				
 				//This next section must be done in the swing thread to avoid deadlocks :)
 				Utilities.dispatch(new Runnable() {
@@ -153,7 +155,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 					 * @param insDirIndices
 					 */
 					private void generateTreeNodeInsertionEvent(
-							final ArrayList<FileSystemEntry> newDirs,
+							final List<FileSystemEntry> newDirs,
 							LinkedHashMap<FileSystemEntry, Integer> inserted,
 							TreeNode[] insDirs, int[] insDirIndices) {
 						if (!inserted.isEmpty()) {
@@ -190,7 +192,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 							}
 							
 							//Re-assemble the childDirectories but without the deleted nodes... 
-							ArrayList<FileSystemEntry> cdp = new ArrayList<FileSystemEntry>();
+							List<FileSystemEntry> cdp = new ArrayList<FileSystemEntry>();
 							counter = 0;
 							childDirectoryIndices.clear();
 							for (FileSystemEntry f : childDirectories) {
@@ -270,9 +272,9 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	private TreeNode parent;
 
 	private Object childrenMutex = new Object();
-	private ArrayList<FileSystemEntry> childDirectories; //the sorted list of children. This is left null until the node is initialised.
+	private List<FileSystemEntry> childDirectories; //the sorted list of children. This is left null until the node is initialised.
 	private LinkedHashMap<FileSystemEntry, Integer> childDirectoryIndices;  //provides constant time lookup of indices for child directories, conviniently it will also iterate in order if filled in order. (This is needed for awkward swing events)
-	private ArrayList<FileSystemEntry> childFiles; //The files within this directory.
+	private List<FileSystemEntry> childFiles; //The files within this directory.
 	
 	private boolean directory = false;  //true iff this entry represents a directory.
 	private boolean search = false;     //true iff this entry represents a search.
@@ -465,18 +467,18 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	}
 	
 	/**
-	 * Returns an arraylist of all children nodes. This is expensive, don't do it often.
+	 * Returns a list of all children nodes. This is expensive, don't do it often.
 	 * @return
 	 */
-	public ArrayList<FileSystemEntry> getAllChildren() {
+	public List<FileSystemEntry> getAllChildren() {
+		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
 		synchronized (childrenMutex) {
-			ArrayList<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
-			if (childDirectories!=null) {
+			if (childDirectories != null) {
 				ret.addAll(childDirectories);
 				ret.addAll(childFiles);
 			}
-			return ret;
 		}
+		return ret;
 	}
 	
 	@Override
@@ -537,7 +539,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Gets the files contained within this directory, or null if uninitialised.
 	 * @return
 	 */
-	public ArrayList<FileSystemEntry> getFiles() {
+	public List<FileSystemEntry> getFiles() {
 		return childFiles;
 	}
 	
@@ -679,7 +681,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 */
 	public TreePath getPath() {
 		if (cachedPath!=null) return cachedPath;
-		LinkedList<Object> path = new LinkedList<Object>();
+		Deque<Object> path = new ArrayDeque<Object>();
 		
 		path.push(this);
 		

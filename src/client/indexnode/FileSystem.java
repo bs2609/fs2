@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +21,6 @@ import javax.swing.tree.TreePath;
 
 import client.gui.Utilities;
 import client.indexnode.FileSystem.FileSystemRoot.SearchesRoot;
-
 
 import common.FS2Constants;
 import common.Logger;
@@ -58,7 +58,7 @@ public class FileSystem implements TreeModel, TableModel {
 	 */
 	public class FileSystemRoot implements TreeNode {
 
-		ArrayList<TreeNode> subtrees = new ArrayList<TreeNode>();
+		List<TreeNode> subtrees = new ArrayList<TreeNode>();
 		private FileSystemEntry root = FileSystemEntry.generateBrowseRoot(this, FileSystem.this);
 		SearchesRoot searches = new SearchesRoot();
 		
@@ -70,7 +70,7 @@ public class FileSystem implements TreeModel, TableModel {
 
 			private SearchesRoot() {}
 			
-			ArrayList<FileSystemEntry> searches = new ArrayList<FileSystemEntry>();
+			List<FileSystemEntry> searches = new ArrayList<FileSystemEntry>();
 			
 			@Override
 			public Enumeration<TreeNode> children() {
@@ -263,7 +263,7 @@ public class FileSystem implements TreeModel, TableModel {
 	Timer cacheExpirer = new Timer("FileSystem Cache Expirer", true);
 	ExecutorService updatePool = Executors.newFixedThreadPool(FS2Constants.CLIENT_MAX_CONCURRENT_FILESYSTEM_REQUESTS, new NamedThreadFactory(true, "Indexnode FileSystem Request"));
 	IndexNodeCommunicator comm;
-	HashSet<TreeModelListener> listeners = new HashSet<TreeModelListener>();
+	Set<TreeModelListener> listeners = new HashSet<TreeModelListener>();
 	FileSystemRoot root = new FileSystemRoot();
 	PathRequired pathRequired;
 	
@@ -542,7 +542,7 @@ public class FileSystem implements TreeModel, TableModel {
 		throw new UnsupportedOperationException("Table not editable");
 	}
 	
-	HashSet<TableModelListener> tableModelListeners = new HashSet<TableModelListener>();
+	Set<TableModelListener> tableModelListeners = new HashSet<TableModelListener>();
 	
 	void tableChanged(final TableModelEvent e) {
 		try {

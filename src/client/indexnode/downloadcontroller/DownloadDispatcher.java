@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -75,7 +76,7 @@ public class DownloadDispatcher {
 	DispatchEvents events = new DispatchEvents();
 	private ExecutorService downloadThreadPool = Executors.newCachedThreadPool(new NamedThreadFactory(true, "download"));
 	
-	HashSet<DownloadWorker> workers = new HashSet<DownloadWorker>();
+	Set<DownloadWorker> workers = new HashSet<DownloadWorker>();
 	
 	/**
 	 * Tests to see if the specified worker has no active chunks and cleans it up if it is idle.

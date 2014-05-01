@@ -5,7 +5,8 @@ import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -78,7 +79,7 @@ public class PeersTab extends TabItem implements ActionListener {
 				ps.addPeer(alias);
 			}
 		} else if (e.getSource()==removePeers) {
-			LinkedList<String> aliasesToGo = new LinkedList<String>();
+			List<String> aliasesToGo = new ArrayList<String>();
 			for (int i : peers.getSelectedRows()) {
 				aliasesToGo.add((String) ps.getValueAt(peers.convertRowIndexToModel(i), PeerStatsCollector.ALIAS_IDX));
 			}

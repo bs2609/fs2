@@ -3,7 +3,7 @@ package client.gui;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JCheckBox;
@@ -72,7 +72,7 @@ public class ChatTab extends TabItem implements TableModelListener {
 	
 	JTabbedPane chatTabs;
 	IndexNodeCommunicator comm = frame.gui.ssvr.getIndexNodeCommunicator();
-	LinkedList<NodeChatTab> nodeTabs = new LinkedList<NodeChatTab>();
+	List<NodeChatTab> nodeTabs = new ArrayList<NodeChatTab>();
 	
 	private JTabbedPane createChatPane(){
 		chatTabs = new JTabbedPane();;

@@ -108,7 +108,7 @@ public class PieChart extends JPanel implements ComponentListener {
 		
 		// Set up rendering hints
 		Graphics2D g = (Graphics2D)g2;
-		HashMap<RenderingHints.Key, Object> hints = new HashMap<RenderingHints.Key,Object>();
+		Map<RenderingHints.Key, Object> hints = new HashMap<RenderingHints.Key,Object>();
 		hints.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
 		hints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		hints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);

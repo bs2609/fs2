@@ -2,6 +2,7 @@ package client.indexnode.downloadcontroller;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 import client.indexnode.downloadcontroller.DownloadQueue.DownloadFile;
 
@@ -65,7 +66,7 @@ public class DownloadInfo implements Serializable {
 		return file.size-bytesDownloaded();
 	}
 	
-	public ArrayList<DownloadChunk> getChunks() {
+	public List<DownloadChunk> getChunks() {
 		return chunks;
 	}
 	

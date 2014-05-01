@@ -13,6 +13,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -344,9 +345,9 @@ public class DownloadsTab extends TabItem implements TreeExpansionListener, Acti
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource()==removeAll) {
-			//copy the array to avoid weirdness:
-			ArrayList<DownloadItem> items = new ArrayList<DownloadItem>(q.getRootDownloadDirectories());
+		if (e.getSource() == removeAll) {
+			// Copy the array to avoid weirdness:
+			List<DownloadItem> items = new ArrayList<DownloadItem>(q.getRootDownloadDirectories());
 			for (DownloadItem d : items) {
 				d.cancel();
 			}

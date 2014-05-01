@@ -8,9 +8,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -135,7 +136,7 @@ public class StatsTab extends TabItem implements PropertyChangeListener, TableMo
 	}
 	
 	void updatePie() {
-		LinkedList<IndexNodeClient> clients = new LinkedList<IndexNodeClient>();
+		List<IndexNodeClient> clients = new ArrayList<IndexNodeClient>();
 		IndexNodeCommunicator comm = frame.gui.ssvr.getIndexNodeCommunicator();
 		if (indexnodes.getSelectedRowCount()>0) {
 			for (int i : indexnodes.getSelectedRows()) {

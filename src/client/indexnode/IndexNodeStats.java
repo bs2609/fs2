@@ -4,8 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * A container to represent stats about an indexnode.
@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 public class IndexNodeStats {
 	
 	public static class IndexNodeClient implements Comparable<IndexNodeClient> {
+		
 		private final String alias;
 		private Long totalShareSize;
 		private String avatarhash;
@@ -55,6 +56,7 @@ public class IndexNodeStats {
 		public String getAlias() {
 			return alias;
 		}
+		
 		public long getTotalShareSize() {
 			return totalShareSize;
 		}
@@ -87,20 +89,24 @@ public class IndexNodeStats {
 	long totalRequestedBytes = 0l;
 	long size = 0;
 	long uniqueSize = 0;
-	HashMap<String, IndexNodeClient> peers = new LinkedHashMap<String, IndexNodeClient>();
+	Map<String, IndexNodeClient> peers = new LinkedHashMap<String, IndexNodeClient>();
 	
 	public int getIndexedFiles() {
 		return indexedFiles;
 	}
-	public HashMap<String, IndexNodeClient> getPeers() {
+	
+	public Map<String, IndexNodeClient> getPeers() {
 		return peers;
 	}
+	
 	public Date getStarted() {
 		return started;
 	}
+	
 	public long getTotalRequestedBytes() {
 		return totalRequestedBytes;
 	}
+	
 	public int getUniqueFiles() {
 		return uniqueFiles;
 	}

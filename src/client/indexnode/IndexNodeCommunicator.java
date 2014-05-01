@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -67,9 +66,9 @@ public class IndexNodeCommunicator implements TableModel {
 	Config conf;
 	FileSystem fs = new FileSystem(this);
 	ExecutorService chatRequestPool = Executors.newFixedThreadPool(FS2Constants.CLIENT_MAX_CONCURRENT_CHAT_REQUESTS, new NamedThreadFactory(true, "Chat request"));
-	ArrayList<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
+	List<TableModelListener> modelListeners = new ArrayList<TableModelListener>();
 	IndexNodeStatsTableModel statsTable = new IndexNodeStatsTableModel(this);
-	ArrayList<NewPeerListener> newPeerListeners = new ArrayList<NewPeerListener>();
+	List<NewPeerListener> newPeerListeners = new ArrayList<NewPeerListener>();
 	
 	//Our own personal indexnode:
 	InternalIndexnodeManager iim;
@@ -329,23 +328,25 @@ public class IndexNodeCommunicator implements TableModel {
 	 * The utility in it being public is that it can be used as a lightweight way to query an indexnode synchronously and without caching.
 	 * (ie, for queueing thousands of nested downloads without using the non-blocking FileSystem infrastructure)
 	 */
-	public LinkedList<FileSystemEntry> lookupChildren(FileSystemEntry parent) {
-		LinkedList<FileSystemEntry> ret = new LinkedList<FileSystemEntry>();
-		//If the indexnode is null then the result is the merge of all indexnodes we're registered with.
-		if (parent.getIndexNode()==null) {
-			LinkedList<IndexNode> cachedNodeList = new LinkedList<IndexNode>();
-			synchronized (nodes) { //Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
-				cachedNodeList.addAll(nodes);
+	public List<FileSystemEntry> lookupChildren(FileSystemEntry parent) {
+		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
+		// If the indexnode is null then the result is the merge of all indexnodes we're registered with.
+		if (parent.getIndexNode() == null) {
+			List<IndexNode> cachedNodeList;
+			// Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
+			synchronized (nodes) {
+				cachedNodeList = new ArrayList<IndexNode>(nodes);
 			}
 			if (parent.isSearch()) {
 				for (IndexNode n : cachedNodeList) {
 					if (n.isReadable()) {
 						ret.addAll(n.lookupChildren(parent));
 					}
-				}	
+				}
 			} else {
-				HashMap<String, FileSystemEntry> deduped = new HashMap<String, FileSystemEntry>(); //remove duplicate aliases if this is a browse query with no indexnode (ie: root of all indexnodes)
-				//the assumption is that aliases are globally unique... weak (read: impossible and certainly false)  but very convinient!
+				// Remove duplicate aliases if this is a browse query with no indexnode (ie: root of all indexnodes)
+				Map<String, FileSystemEntry> deduped = new HashMap<String, FileSystemEntry>();
+				// The assumption is that aliases are globally unique... weak (read: impossible and certainly false)  but very convinient!
 				for (IndexNode n : cachedNodeList) {
 					if (n.isReadable()) {
 						for (FileSystemEntry e : n.lookupChildren(parent)) {
@@ -391,9 +392,10 @@ public class IndexNodeCommunicator implements TableModel {
 	 */
 	public Map<String, DownloadSource> getSourcesForFile(ByteArray hash) {
 		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
-		LinkedList<IndexNode> cachedNodeList = new LinkedList<IndexNode>();
-		synchronized (nodes) { //Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
-			cachedNodeList.addAll(nodes);
+		List<IndexNode> cachedNodeList;
+		// Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
+		synchronized (nodes) {
+			cachedNodeList = new ArrayList<IndexNode>(nodes);
 		}
 		for (IndexNode n : cachedNodeList) {
 			if (n.isReadable()) sources.putAll(n.getSources(hash));
@@ -420,19 +422,16 @@ public class IndexNodeCommunicator implements TableModel {
 		Thread asynchronousNotifier = new Thread(new Runnable() {
 			@Override
 			public void run() {
-		
-				//1) build a new filelist.xml
+				// 1) build a new filelist.xml
 				buildShareListXML();
-				//2) notify each indexnode.
-				List<IndexNode> nodesCopy = new ArrayList<IndexNode>();
+				// 2) notify each indexnode.
+				List<IndexNode> nodesCopy;
 				synchronized (nodes) {
-					nodesCopy.addAll(nodes);
+					nodesCopy = new ArrayList<IndexNode>(nodes);
 				}
 				for (IndexNode node : nodesCopy) {
 					node.notifyIndexNode();
 				}
-				
-				
 			}
 		});
 		asynchronousNotifier.setDaemon(true);

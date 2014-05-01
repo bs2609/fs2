@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashSet;
+import java.util.Set;
 
 import common.FS2Constants;
 import common.Logger;
@@ -79,7 +80,7 @@ public class SingleInstanceDetector {
 		public void newInstanceStarted();
 	}
 	
-	HashSet<InstanceNotifiable> interesteds = new HashSet<InstanceNotifiable>(4);
+	Set<InstanceNotifiable> interesteds = new HashSet<InstanceNotifiable>(4);
 	
 	public void addNotifiable(InstanceNotifiable n) {
 		synchronized (interesteds) {

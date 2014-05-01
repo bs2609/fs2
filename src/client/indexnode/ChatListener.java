@@ -1,6 +1,6 @@
 package client.indexnode;
 
-import java.util.LinkedList;
+import java.util.Deque;
 
 import common.ChatMessage;
 
@@ -14,7 +14,7 @@ public interface ChatListener {
 	 * This will be called when there are new messages from the indexnode.
 	 * @param messages
 	 */
-	void newMessages(LinkedList<ChatMessage> messages);
+	void newMessages(Deque<ChatMessage> messages);
 	
 	/**
 	 * This will be called when a message has been sent to the indexnode.

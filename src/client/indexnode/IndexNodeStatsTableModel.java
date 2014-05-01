@@ -2,6 +2,8 @@ package client.indexnode;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -24,7 +26,7 @@ public class IndexNodeStatsTableModel implements TableModel, TableModelListener 
 		this.comm.addTableModelListener(this);
 	}
 	
-	HashSet<IndexNode> knownNodes = new HashSet<IndexNode>();
+	Set<IndexNode> knownNodes = new HashSet<IndexNode>();
 	
 	/**
 	 * We piggyback of the indexnode communicator tablemodel to get notified when events happen.
@@ -60,7 +62,7 @@ public class IndexNodeStatsTableModel implements TableModel, TableModelListener 
 		}
 	}
 	
-	ArrayList<TableModelListener> listeners = new ArrayList<TableModelListener>();
+	List<TableModelListener> listeners = new ArrayList<TableModelListener>();
 	
 	@Override
 	public void addTableModelListener(TableModelListener l) {

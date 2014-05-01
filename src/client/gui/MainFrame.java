@@ -7,6 +7,8 @@ import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import javax.swing.ImageIcon;
@@ -90,10 +92,10 @@ public class MainFrame extends JFrame implements ComponentListener, WindowListen
 	StatusBar status;
 	JPanel content;
 	JTabbedPane tabs;
-	HashMap<FS2Tab, TabItem> openTabs = new HashMap<FS2Tab, TabItem>();
-	HashMap<FS2Tab, TabItem> instantiatedTabs = new HashMap<FS2Tab, TabItem>();
+	Map<FS2Tab, TabItem> openTabs = new HashMap<FS2Tab, TabItem>();
+	Map<FS2Tab, TabItem> instantiatedTabs = new HashMap<FS2Tab, TabItem>();
 	
-	public HashMap<FS2Tab, TabItem> getInstantiatedTabs() {
+	public Map<FS2Tab, TabItem> getInstantiatedTabs() {
 		return instantiatedTabs;
 	}
 	
@@ -196,7 +198,7 @@ public class MainFrame extends JFrame implements ComponentListener, WindowListen
 	}
 	
 	void loadSavedTabs() {
-		TreeMap<Integer, FS2Tab> tabs = new TreeMap<Integer, FS2Tab>();
+		SortedMap<Integer, FS2Tab> tabs = new TreeMap<Integer, FS2Tab>();
 		try {
 			//Build a map of tabs sorted by their indices:
 			for (String key : gui.conf.getChildKeys(CK.OPEN_TABS)) {
