@@ -241,14 +241,15 @@ public class NativeFS implements Filesystem {
 
 	}
 
-	/**Used to lookup files by hash quickly:*/
-	private Map<ByteArray, Set<NativeEntry>> hashIndex  = new HashMap<ByteArray, Set<NativeEntry>>();
+	/** Used to lookup files by hash quickly: */
+	private Map<ByteArray, Set<NativeEntry>> hashIndex = new HashMap<ByteArray, Set<NativeEntry>>();
+	
 	private void addHashIndex(NativeEntry entry) {
-		//Initialise this hash entry if it doesn't have a set yet:
+		// Initialise this hash entry if it doesn't have a set yet:
 		synchronized (hashIndex) {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
 			if (set == null) {
-				set = new HashSet<NativeEntry>();
+				set = new HashSet<NativeEntry>(1);
 				hashIndex.put(entry.hash,set);
 			}
 			set.add(entry);
@@ -259,14 +260,16 @@ public class NativeFS implements Filesystem {
 		synchronized (hashIndex) {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
 			set.remove(entry);
-			//Remove empty sets so that they may be garbage collected later:
-			if (set.size() == 0) hashIndex.remove(entry.hash);
+			// Remove empty sets so that they may be garbage collected later:
+			if (set.isEmpty()) hashIndex.remove(entry.hash);
 		}
 	}
 	
-	/** maps keywords onto sets of entries. */
-	private Map<String, Set<NativeEntry>> nameIndex  = new HashMap<String, Set<NativeEntry>>();
+	/** Maps keywords onto sets of entries. */
+	private Map<String, Set<NativeEntry>> nameIndex = new HashMap<String, Set<NativeEntry>>();
+	
 	private final String keywordSplitRegex = "\\p{Punct}|[ \\t]";
+	
 	/**
 	 * Gets an array of keywords from a filename or a query.
 	 * @param input
@@ -275,6 +278,7 @@ public class NativeFS implements Filesystem {
 	private String[] getKeywords(String input) {
 		return input.toLowerCase().split(keywordSplitRegex);
 	}
+	
 	/**
 	 * Adds the keywords expressed by the filename of this entry to the keyword index.
 	 * @param entry
@@ -284,7 +288,7 @@ public class NativeFS implements Filesystem {
 			for (String keyword : getKeywords(entry.getName())) {
 				Set<NativeEntry> set = nameIndex.get(keyword);
 				if (set == null) {
-					set = new HashSet<NativeEntry>();
+					set = new HashSet<NativeEntry>(1);
 					nameIndex.put(keyword, set);
 				}
 				set.add(entry);
@@ -302,7 +306,7 @@ public class NativeFS implements Filesystem {
 				Set<NativeEntry> set = nameIndex.get(keyword);
 				if (set != null) {
 					set.remove(entry);
-					if (set.size() == 0) nameIndex.remove(keyword);
+					if (set.isEmpty()) nameIndex.remove(keyword);
 				}
 			}
 		}
@@ -378,7 +382,6 @@ public class NativeFS implements Filesystem {
 		share.getOwner().getFilesystemRoot().adjustSize(shareRoot.getSize());
 		this.root.adjustSize(shareRoot.getSize());
 	}
-
 
 	@Override
 	public void importShare(Item root, Share share) {
