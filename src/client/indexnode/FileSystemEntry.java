@@ -6,8 +6,8 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.TimerTask;
 import java.util.Map.Entry;
+import java.util.TimerTask;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TreeModelEvent;
@@ -25,8 +25,8 @@ import common.Util.ByteArray;
  * A class to represent a file or directory available on some indexnode.
  * 
  * This class is more sophisticated than a mere filesystem node:
- * 1) It provides cached access to this item on the indexnode,
- * 2) access to cached, sorted child entries.
+ * 1) It provides cached access to this item on the indexnode.
+ * 2) Access to cached, sorted child entries.
  * 3) Support for callbacks if it is likely that children are going to change in the near future.
  * 4) Supplies events to the filesystem's main treemodel. (for efficient representation using a JTree)
  * 
@@ -34,8 +34,7 @@ import common.Util.ByteArray;
  * </br>
  * Note: This class has a natural ordering inconsistent with equals. This is because items are sorted by filename but equality depends on other attributes.
  * 
- * @author gary
- *
+ * @author Gary
  */
 public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, ListableEntry {
 	
@@ -52,30 +51,34 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * The removal event is computed, the children structures are made consistent,
 	 * then the insertion event is computed.
 	 * 
-	 * @author gary
+	 * @author Gary
 	 */
 	private class UpdateNode implements Runnable {
 		@Override
 		public void run() {
 			try {
-				if (childDirectories==null) return; //shouldn't take the mutex whilst looking up children. if childDirectories is null then it means this node is no longer needed.
+				// Shouldn't take the mutex whilst looking up children. If childDirectories is null then it means this node is no longer needed.
+				if (!initialised) return;
 				
-				//Get the new list: (this might take a while!)
+				// Get the new list: (this might take a while!)
 				final List<FileSystemEntry> newChildren = fs.comm.lookupChildren(FileSystemEntry.this);
 				
-				//Separate it into the component lists (files and directories)
+				// Separate it into the component lists (files and directories)
 				final List<FileSystemEntry> newFiles = new ArrayList<FileSystemEntry>();
 				final List<FileSystemEntry> newDirs = new ArrayList<FileSystemEntry>();
 				
-				//This next section must be done in the swing thread to avoid deadlocks :)
+				// This next section must be done in the Swing thread to avoid deadlocks :)
 				Utilities.dispatch(new Runnable() {
 					@Override
 					public void run() {
-						//rather than do this a clever, efficient one-pass way, i'm going to do it a brain-lazy but simple way with hash tables.
-						// why do something in one pass when you can do it in five...
-						synchronized (childrenMutex) {  //We're gonna hold this lock for a long while!
-							if (childDirectories==null) return; //test again as the fetch may have taken a clock cycle ;)
-							
+						// Rather than do this a clever, efficient one-pass way, I'm going to do it a brain-lazy but simple way with hash tables.
+						// Why do something in one pass when you can do it in five...
+						
+						// Test again as the fetch may have taken a clock cycle ;)
+						if (!initialised) return;
+						
+						// We're gonna hold this lock for a long while!
+						synchronized (childrenMutex) {
 							LinkedHashMap<FileSystemEntry, Integer> toDeleteDirs = new LinkedHashMap<FileSystemEntry, Integer>(childDirectoryIndices);
 							LinkedHashMap<FileSystemEntry, Integer> toDeleteFiles = new LinkedHashMap<FileSystemEntry, Integer>();
 							int c = childDirectories.size();
@@ -83,81 +86,75 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 								toDeleteFiles.put(f, c++);
 							}
 							
-							//1) build lists of new files and directories:
+							// 1) Build lists of new files and directories:
 							for (FileSystemEntry f : newChildren) {
 								if (f.isDirectory()) {
 									newDirs.add(f);
-	
-									//It was here already, so remove it from the delete list:
-									//but keep it on the list if the old entry was a leaf (no children) but the new one isn't.
-									// This way the gui/interactive layer will know to update.
+									
+									// It was here already, so remove it from the delete list;
+									// but keep it on the list if the old entry was a leaf (no children) but the new one isn't.
+									// This way the GUI/interactive layer will know to update.
 									Integer onIndex = toDeleteDirs.get(f);
-									if (onIndex!=null && !(childDirectories.get(onIndex).linkcount==2
-										&& f.linkcount>2)) {
+									if (onIndex != null && !(childDirectories.get(onIndex).linkcount == 2 && f.linkcount > 2)) {
 										toDeleteDirs.remove(f);
 									}
-									//If we already knew about this item, then update its size (which may have changed for directories)
-									if (onIndex!=null) {
+									// If we already knew about this item, then update its size. (which may have changed for directories)
+									if (onIndex != null) {
 										childDirectories.get(onIndex).size = f.size;
 									}
 								} else {
 									newFiles.add(f);
-									
 									toDeleteFiles.remove(f);
 								}
 							}
-
+							
 							Boolean reloadTable = false;
 							if (!childFiles.equals(newFiles)) {
 								reloadTable = true;
 								childFiles = newFiles;
 							}
 							
-							
-							//Generate arrays needed for treenode removal event, and table removal event:
+							// Generate arrays needed for treenode removal event, and table removal event:
 							TreeNode[] deadDirs = new TreeNode[toDeleteDirs.size()];
 							int[] deadDirIndices = new int[toDeleteDirs.size()];
 							
-							generateTreeNodeRemovalEvent(toDeleteDirs,
-									deadDirs, deadDirIndices);
+							generateTreeNodeRemovalEvent(toDeleteDirs, deadDirs, deadDirIndices);
 							
-							//Now find the insertions:
+							// Now find the insertions:
 							LinkedHashMap<FileSystemEntry, Integer> insertedDirs = new LinkedHashMap<FileSystemEntry, Integer>();
-							for (int i=0; i<newDirs.size(); i++) {
+							for (int i = 0; i < newDirs.size(); i++) {
 								if (!childDirectoryIndices.containsKey(newDirs.get(i))) insertedDirs.put(newDirs.get(i), i);
 							}
 							
-							//Generate arrays needed for the event:
+							// Generate arrays needed for the event:
 							TreeNode[] insDirs = new TreeNode[insertedDirs.size()];
 							int[] insDirIndices = new int[insertedDirs.size()];
 							
-							generateTreeNodeInsertionEvent(newDirs, insertedDirs,
-									insDirs, insDirIndices);
+							generateTreeNodeInsertionEvent(newDirs, insertedDirs, insDirs, insDirIndices);
 							
 							if (reloadTable || !toDeleteDirs.isEmpty() || !insertedDirs.isEmpty()) {
-								if (fs.selected==FileSystemEntry.this) fs.tableChanged(new TableModelEvent(fs));
+								if (fs.selected == FileSystemEntry.this) fs.tableChanged(new TableModelEvent(fs));
 							}
 							
 							reconsiderer = new ReconsiderTask();
 							try {
 								fs.cacheExpirer.schedule(reconsiderer, FS2Constants.CLIENT_REFRESH_FILESYSTEM_CACHE_INTERVAL);
 							} catch (IllegalStateException e) {
-								Logger.warn("Couldn't schedule cache reconsideration on cancelled timer: "+e);
+								Logger.warn("Couldn't schedule cache reconsideration on cancelled timer: " + e);
 							}
 						} 
 					}
 					
 					/**
-					 * Creates arrays of child dirs inserted and then issues the events.
+					 * Creates arrays of child directories inserted and then issues the events.
 					 * @param newDirs
 					 * @param inserted
 					 * @param insDirs
 					 * @param insDirIndices
 					 */
-					private void generateTreeNodeInsertionEvent(
-							final List<FileSystemEntry> newDirs,
-							LinkedHashMap<FileSystemEntry, Integer> inserted,
-							TreeNode[] insDirs, int[] insDirIndices) {
+					private void generateTreeNodeInsertionEvent(final List<FileSystemEntry> newDirs,
+						LinkedHashMap<FileSystemEntry, Integer> inserted, TreeNode[] insDirs, int[] insDirIndices)
+					{
 						if (!inserted.isEmpty()) {
 							int counter = 0;
 							for (Entry<FileSystemEntry, Integer> e : inserted.entrySet()) {
@@ -165,25 +162,25 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 								insDirIndices[counter++] = e.getValue();
 							}
 							
-							//Make the structures consistent:
+							// Make the structures consistent:
 							childDirectoryIndices.clear();
-							for (int i = 0; i<newDirs.size(); i++) {
+							for (int i = 0; i < newDirs.size(); i++) {
 								childDirectoryIndices.put(newDirs.get(i), i);
 							}
 							childDirectories.clear();
 							childDirectories.addAll(newDirs);
 							
-							//Trigger the insertion event:
+							// Trigger the insertion event:
 							fs.treeNodesInserted(new TreeModelEvent(FileSystemEntry.this, getPath(), insDirIndices, insDirs));
 						}
 					}
 					
 					/**
-					 * Creates arrays of dirs that are going to go, issue the events and update the childDirectories structures.
+					 * Creates arrays of directories that are going to go, issues the events and updates the childDirectories structures.
 					 */
-					private void generateTreeNodeRemovalEvent(
-							LinkedHashMap<FileSystemEntry, Integer> toDeleteDirs,
-							TreeNode[] deadDirs, int[] deadDirIndices) {
+					private void generateTreeNodeRemovalEvent
+						(LinkedHashMap<FileSystemEntry, Integer> toDeleteDirs, TreeNode[] deadDirs, int[] deadDirIndices)
+					{
 						if (!toDeleteDirs.isEmpty()) {
 							int counter = 0;
 							for (Entry<FileSystemEntry, Integer> e : toDeleteDirs.entrySet()) {
@@ -191,7 +188,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 								deadDirIndices[counter++] = e.getValue();
 							}
 							
-							//Re-assemble the childDirectories but without the deleted nodes... 
+							// Re-assemble the childDirectories but without the deleted nodes... 
 							List<FileSystemEntry> cdp = new ArrayList<FileSystemEntry>();
 							counter = 0;
 							childDirectoryIndices.clear();
@@ -201,21 +198,21 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 									childDirectoryIndices.put(f, counter++);
 								}
 							}
-							//Now re-fill childDirectories with cdp:
+							// Now re-fill childDirectories with cdp:
 							childDirectories.clear();
 							childDirectories.addAll(cdp);
 							
-							//Trigger the nodes removed event...
+							// Trigger the nodes removed event...
 							fs.treeNodesRemoved(new TreeModelEvent(FileSystemEntry.this, getPath(), deadDirIndices, deadDirs));
 							for (FileSystemEntry f : toDeleteDirs.keySet()) {
-								f.purge();  //prevent them from performing future updates.
+								f.purge(); // Prevent them from performing future updates.
 							}
 						}
 					}
 				});
-			} catch (Exception t) {
-				Logger.warn("Exception caught in indexnode query thread: "+t);
-				Logger.log(t);
+			} catch (Exception e) {
+				Logger.warn("Exception caught in indexnode query thread: " + e);
+				Logger.log(e);
 			}
 		}
 	}
@@ -225,23 +222,20 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Update this directory or purge it from the cache?
 	 * 
 	 * We might want to update the cache rather than trash it if it is the CWD of a processes or visible in a tree, for example.
-	 * 
-	 * @author gary
-	 *
+	 * @author Gary
 	 */
 	private class ReconsiderTask extends TimerTask {
 		
 		@Override
 		public void run() {
-			//to be on the safe side of things (although these tasks should not be scheduled periodically anyway:
+			// To be on the safe side of things (although these tasks should not be scheduled periodically anyway:
 			this.cancel();
 			
 			if (fs.pathRequired(getPath())) {
-				//This path is still in active use, so refresh it.
+				// This path is still in active use, so refresh it.
 				fs.updatePool.submit(new UpdateNode());
-				//Logger.log("Indexnode Request Queue: "+((ThreadPoolExecutor)fs.updatePool).getQueue().size());
 			} else {
-				//purge it, this has to happen in the swing thread due to it causing events that need locking.
+				// Purge it, this has to happen in the Swing thread due to it causing events that need locking.
 				try {
 					Utilities.dispatch(new Runnable() {
 						@Override
@@ -250,47 +244,72 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 						}
 					});
 				} catch (Exception e) {
-					Logger.warn("Exception during purge() dispatch: "+e);
+					Logger.warn("Exception during purge() dispatch: " + e);
 					Logger.log(e);
 				}
 			}
 		}
-		
 	}
 	
 	/** The indexnode that this item resides on. (if any) */
 	private IndexNode node; 
 	
-	/**The main filesystem that this item belongs to.
-	 * used to help with cache expiry choices
-	 * and for notification when things change.
+	/** The main filesystem that this item belongs to.
+	 *  Used to help with cache expiry choices,
+	 *  and for notification when things change.
 	 */
 	private FileSystem fs;
 	
 	private ReconsiderTask reconsiderer;
 	
 	private TreeNode parent;
-
-	private Object childrenMutex = new Object();
-	private List<FileSystemEntry> childDirectories; //the sorted list of children. This is left null until the node is initialised.
-	private LinkedHashMap<FileSystemEntry, Integer> childDirectoryIndices;  //provides constant time lookup of indices for child directories, conviniently it will also iterate in order if filled in order. (This is needed for awkward swing events)
-	private List<FileSystemEntry> childFiles; //The files within this directory.
 	
-	private boolean directory = false;  //true iff this entry represents a directory.
-	private boolean search = false;     //true iff this entry represents a search.
-	private String name;     //this entry's textual representation: unique within its parent. This can be the search terms if this is a search.
-	private ByteArray hash; 	 //for files the pseudo-unique identifier for this file.
-	private long size;       //for files their size in bytes.
+	/** Has this node been initialised? (and not purged) */
+	private volatile boolean initialised = false;
+	
+	private Object childrenMutex;
+	
+	/** The sorted list of children. This is left null until the node is initialised. */
+	private List<FileSystemEntry> childDirectories;
+	
+	/** Provides constant time lookup of indices for child directories, conveniently it will also iterate in order if filled in order. (This is needed for awkward Swing events) */
+	private LinkedHashMap<FileSystemEntry, Integer> childDirectoryIndices;
+	
+	/** The files within this directory. */
+	private List<FileSystemEntry> childFiles;
+	
+	/** True iff this entry represents a directory. */
+	private boolean directory = false;
+	
+	/** True iff this entry represents a search. */
+	private boolean search = false;
+	
+	/** This entry's textual representation: unique within its parent. This can be the search terms if this is a search. */
+	private String name;
+	
+	/** For files the pseudo-unique identifier for this file. */
+	private ByteArray hash;
+	
+	/** For files their size in bytes. */
+	private long size;
+	
 	/**
-	 * for directories the number of child directories it contains+2;
-	 * In the tree model this is just used to determine if there are child directories, not the precice number.
+	 * For directories the number of child directories it contains + 2;
+	 * In the tree model this is just used to determine if there are child directories, not the precise number.
 	 * 
 	 * This should only be used to poll if a directory is empty without having to download a list of its children.
 	 */
-	private int linkcount;   
-	private String oneAlias = ""; //The single client alias returned by the indexnode for this file.
-	private int altCount;    //The number of alternatives 
-	private String indexNodePath; //The path to this directory on its indexnode.
+	private int linkcount;
+	
+	/** The single client alias returned by the indexnode for this file. */
+	private String oneAlias = "";
+	
+	/** The number of alternatives. */
+	private int altCount;
+	
+	/** The path to this directory on its indexnode. */
+	private String indexNodePath;
+	
 	public boolean isLoadingNode = false;
 	
 	/**
@@ -313,6 +332,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Returns the name of this node.
 	 * @return
 	 */
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -327,7 +347,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	}
 	
 	/**
-	 * Returns the hash of this file as a string.
+	 * Returns the hash of this file as a byte array.
 	 * @return
 	 */
 	public ByteArray getHash() {
@@ -348,40 +368,37 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Returns the size in bytes of this item if it is a file, or the recursive size of this directory.
 	 * @return
 	 */
+	@Override
 	public long getSize() {
-		if ((isDirectory() && indexNodePath.equals("")) || isSearch()) {
+		if (isDirectory() && indexNodePath.equals("") || isSearch()) {
 			long ret = 0;
-			
-			synchronized (childrenMutex) {
-				if (childDirectories!=null) {
+			if (initialised) {
+				synchronized (childrenMutex) {
 					for (FileSystemEntry fse : childDirectories) {
-						ret+=fse.getSize();
+						ret += fse.getSize();
 					}
 					for (FileSystemEntry fse : childFiles) {
-						ret+=fse.getSize();
+						ret += fse.getSize();
 					}
 				}
 			}
-			
 			return ret;
-		} else {
-			return size;
 		}
+		return size;
 	}
 	
 	/**
-	 * Returns the link count of this directory. Although not very meaningful in FS2 it retains its unix meaning
+	 * Returns the link count of this directory. Although not very meaningful in FS2 it retains its Unix meaning
 	 * of 2+number of child directories. This is useful for determining if the directory has children without
-	 * actually querying the indexnode ( as getChildCount() would ).
+	 * actually querying the indexnode (as getChildCount() would).
 	 * 
-	 * Unless you have a compelling reason to use this (such as drawing a partial tree structure interactively), dont.
-	 * 
+	 * Unless you have a compelling reason to use this (such as drawing a partial tree structure interactively), don't.
 	 * @return
 	 */
 	public long getLinkCount() {
 		if (!directory) throw new IllegalStateException("getLinkCount() is only defined for directories.");
-		if (childDirectories!=null) {
-			return childDirectories.size()+2;
+		if (initialised) {
+			return childDirectories.size() + 2;
 		}
 		return linkcount;
 	}
@@ -407,9 +424,10 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * This method generates a '(loading)' child node and schedules a refresh from the indexnode.
 	 */
 	void initialiseNode() {
+		if (initialised) return;
+		childrenMutex = new Object();
 		synchronized (childrenMutex) {
 			childDirectories = new ArrayList<FileSystemEntry>();
-		
 			childDirectoryIndices = new LinkedHashMap<FileSystemEntry, Integer>();
 			childFiles = new ArrayList<FileSystemEntry>();
 			
@@ -417,10 +435,11 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 			childDirectories.add(lc);
 			childDirectoryIndices.put(lc, 0);
 			
+			initialised = true;
+			
 			fs.updatePool.submit(new UpdateNode());
-
 			fs.treeNodesInserted(new TreeModelEvent(this, getPath(), new int[] {0}, new TreeNode[] {childDirectories.get(0)}));
-			if (fs.selected==this) fs.tableChanged(new TableModelEvent(fs));
+			if (fs.selected == this) fs.tableChanged(new TableModelEvent(fs));
 		}
 	}
 	
@@ -429,13 +448,13 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * This will effectively cancel the cache-refresh for this node and submit the refresh task to the pool immediately.
 	 */
 	void updateNow() {
-		if (reconsiderer!=null) reconsiderer.run();
+		if (reconsiderer != null) reconsiderer.run();
 	}
 	
 	@Override
 	public Enumeration<FileSystemEntry> children() {
+		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
-			if (childDirectories==null) initialiseNode();
 			return new Util.EnumerationWrapper<FileSystemEntry>(new ArrayList<FileSystemEntry>(childDirectories));
 		}
 	}
@@ -447,22 +466,18 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * @return the entry at this index.
 	 * @throws IndexOutOfBoundsException if the request is not within the acceptable range.
 	 */
+	@Override
 	public FileSystemEntry getFromAllChildren(int index) {
+		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
-//			try {
-				if (childDirectories==null) initialiseNode();
-				if (index<0) throw new IndexOutOfBoundsException("Request: "+index+", have: "+(childDirectories.size()+childFiles.size()));
-				if (index<childDirectories.size()) {
-					return childDirectories.get(index);
-				} else if (index<childFiles.size()+childDirectories.size()) {
-					return childFiles.get(index-childDirectories.size());
-				} else {
-					throw new IndexOutOfBoundsException("Request: "+index+", have: "+(childDirectories.size()+childFiles.size()));
-				}
-//			} catch (IndexOutOfBoundsException e) {
-//				Logger.warn("filesTable: "+e);
-//				return null;
-//			}
+			if (index < 0) throw new IndexOutOfBoundsException("Request: " + index + ", have: " + (childDirectories.size() + childFiles.size()));
+			if (index < childDirectories.size()) {
+				return childDirectories.get(index);
+			} else if (index < childFiles.size() + childDirectories.size()) {
+				return childFiles.get(index - childDirectories.size());
+			} else {
+				throw new IndexOutOfBoundsException("Request: " + index + ", have: " + (childDirectories.size() + childFiles.size()));
+			}
 		}
 	}
 	
@@ -470,10 +485,11 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * Returns a list of all children nodes. This is expensive, don't do it often.
 	 * @return
 	 */
+	@Override
 	public List<FileSystemEntry> getAllChildren() {
 		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
-		synchronized (childrenMutex) {
-			if (childDirectories != null) {
+		if (initialised) {
+			synchronized (childrenMutex) {
 				ret.addAll(childDirectories);
 				ret.addAll(childFiles);
 			}
@@ -488,40 +504,40 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	
 	@Override
 	public int getChildCount() {
+		if (linkcount == 2) return 0;
+		if (!initialised) {
+			if (fs.pathRequired(getPath())) initialiseNode(); else return 1;
+		}
 		synchronized (childrenMutex) {
-			if (linkcount==2) return 0; else {
-				if (childDirectories==null) {
-					if (fs.pathRequired(getPath())) initialiseNode(); else return 1; //
-				}
-				return childDirectories.size();
-			}
+			return childDirectories.size();
 		}
 	}
 	
 	/**
-	 * Returns the number of child directories+ the number of files.
+	 * Returns the number of child directories + the number of files.
 	 * @return
 	 */
+	@Override
 	public int getAllChildrenCount() {
+		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
-			if (childDirectories==null) initialiseNode();
-			return childDirectories.size()+childFiles.size();
+			return childDirectories.size() + childFiles.size();
 		}
 	}
 	
 	@Override
 	public TreeNode getChildAt(int childIndex) {
+		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
-			if (childDirectories==null) initialiseNode();
 			return childDirectories.get(childIndex);
 		}
 	}
 	
 	@Override
 	public int getIndex(TreeNode node) {
+		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
-			if (childDirectories==null) initialiseNode();
-			return (childDirectoryIndices.containsKey(node) ? childDirectoryIndices.get(node) : -1);
+			return childDirectoryIndices.containsKey(node) ? childDirectoryIndices.get(node) : -1;
 		}
 	}
 	
@@ -532,7 +548,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	
 	@Override
 	public boolean isLeaf() {
-		return (linkcount==2);
+		return linkcount == 2;
 	}
 	
 	/**
@@ -556,7 +572,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 		FileSystemEntry node = new FileSystemEntry();
 		node.name = "(everything)";
 		node.directory = true;
-		node.linkcount = 3; //It is expandable always.
+		node.linkcount = 3; // It is expandable always.
 		node.parent = parent;
 		node.fs = fs;
 		node.indexNodePath = "";
@@ -576,7 +592,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 		node.name = terms;
 		node.directory = true;
 		node.search = true;
-		node.linkcount = 3; //It is expandable always.
+		node.linkcount = 3; // It is expandable always.
 		node.parent = parent;
 		node.fs = fs;
 		node.indexNodePath = "";
@@ -590,7 +606,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	}
 	
 	/**
-	 * Returns a new child directory of this node that is uninitialised (ie, has no children nor scheduled children checks yet)
+	 * Returns a new child directory of this node that is uninitialised. (i.e. has no children nor scheduled children checks yet)
 	 * @return
 	 */
 	FileSystemEntry generateUninitialisedChildDirectory(String name, IndexNode onNode, int linkCount, String path, long size) {
@@ -631,23 +647,22 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	
 	@Override
 	/**
-	 * Determines if this filesystem entry is equal to another in a filesystem sense, rather than a java object sense.
+	 * Determines if this filesystem entry is equal to another in a filesystem sense, rather than a Java object sense.
 	 * 
 	 * Directories are equal if their names, indexnodes, and finally, indexnodepaths are equal.
 	 * Note: two identical searches are not permitted! :)
 	 * 
-	 * Files are 'equal' if their fs2-hashes match.
+	 * Files are 'equal' if their FS2-hashes match.
 	 */
 	public boolean equals(Object obj) {
-		if (obj==this) return true;
-		if (obj==null) return false;
+		if (obj == this) return true;
+		if (obj == null) return false;
 		if (!(obj instanceof FileSystemEntry)) return false;
 		FileSystemEntry other = (FileSystemEntry) obj;
 		
-		if (other.directory!=this.directory) return false;
+		if (other.directory != this.directory) return false;
 		if (directory) {
-			//return this.node==other.node && samePath(this.getPath(), other.getPath());
-			return this.name.equals(other.name) && this.node==other.node && this.indexNodePath.equals(other.indexNodePath);
+			return this.name.equals(other.name) && this.node == other.node && this.indexNodePath.equals(other.indexNodePath);
 		} else {
 			return this.hash.equals(other.hash);
 		}
@@ -657,7 +672,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	public int hashCode() {
 		int out;
 		if (directory) {
-			out = (node!=null ? node.hashCode() : 1);
+			out = (node != null ? node.hashCode() : 1);
 			out *= 127;
 			out += System.identityHashCode(parent);
 			out *= 127;
@@ -668,6 +683,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 		return out;
 	}
 	
+	@Override
 	public String toString() {
 		return this.getName();
 	};
@@ -677,16 +693,17 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	/**
 	 * Gets the tree path that represents the path to this node from the root of the tree model.
 	 * This is MORE than just the path in FS2 as the treemodel adds a 'master root' to contain searches as subtrees too.
-	 * @return the path to this filesystem node in the treemodel.
+	 * @return The path to this filesystem node in the treemodel.
 	 */
+	@Override
 	public TreePath getPath() {
-		if (cachedPath!=null) return cachedPath;
-		Deque<Object> path = new ArrayDeque<Object>();
+		if (cachedPath != null) return cachedPath;
+		Deque<TreeNode> path = new ArrayDeque<TreeNode>();
 		
 		path.push(this);
 		
 		TreeNode p = parent;
-		while (p!=null) {
+		while (p != null) {
 			path.push(p);
 			p = p.getParent();
 		}
@@ -696,36 +713,40 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	}
 
 	/**
-	 * Recurse through all child directories (depth first search) and cancel any refresh timers, and clear children (dirs and files) hash tables, arrays etc.
+	 * Recurses through all child directories (depth first search) and cancel any refresh timers, and clear children (dirs and files) hash tables, arrays etc.
 	 * This node will become 'uninitialised' again, and the children will become orphans (and hopefully garbage collected).
 	 */
 	void purge() {
-		synchronized (childrenMutex) {
-			if (reconsiderer!=null) reconsiderer.cancel();
-			if (childDirectories!=null) {
-				for (FileSystemEntry f : childDirectories) {
-					f.purge();
-				}
-				
-				int[] deadIndices = new int[childDirectoryIndices.size()];
-				TreeNode[] deadNodes = childDirectories.toArray(new TreeNode[] {});
-				for (int i=0; i<deadIndices.length; i++) deadIndices[i]=i;
-				
-				fs.treeNodesRemoved(new TreeModelEvent(this, getPath(), deadIndices, deadNodes));
-				
-				childDirectories.clear();
-				childDirectoryIndices.clear();
-				childFiles.clear();
-				
-				if (fs.selected==this) fs.tableChanged(new TableModelEvent(fs));
-				
-				childDirectories = null;
-				childDirectoryIndices = null;
-				childFiles = null;
-			}
+		if (!initialised) return;
+		if (reconsiderer != null) {
+			reconsiderer.cancel();
+			reconsiderer = null;
 		}
+		synchronized (childrenMutex) {
+			for (FileSystemEntry f : childDirectories) {
+				f.purge();
+			}
+			
+			int[] deadIndices = new int[childDirectoryIndices.size()];
+			TreeNode[] deadNodes = childDirectories.toArray(new TreeNode[0]);
+			for (int i = 0; i < deadIndices.length; i++) deadIndices[i] = i;
+			
+			fs.treeNodesRemoved(new TreeModelEvent(this, getPath(), deadIndices, deadNodes));
+			
+			childDirectories.clear();
+			childDirectoryIndices.clear();
+			childFiles.clear();
+			
+			if (fs.selected == this) fs.tableChanged(new TableModelEvent(fs));
+			
+			childDirectories = null;
+			childDirectoryIndices = null;
+			childFiles = null;
+		}
+		childrenMutex = null;
+		initialised = false;
 	}
-
+	
 	@Override
 	public int compareTo(FileSystemEntry o) {
 		return this.name.compareToIgnoreCase(o.name);
