@@ -1,8 +1,5 @@
 package indexnode;
 
-import indexnode.IndexNode.Client;
-import indexnode.IndexNode.Share;
-
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
@@ -28,25 +25,24 @@ import common.Logger;
 import common.Util;
 import common.Util.ByteArray;
 
+import indexnode.IndexNode.Client;
+import indexnode.IndexNode.Share;
+
 /**
- * An implementation of a FS2 filesystem that uses native java objects for storage and search.
- * 
- * TODO: remove grand mutexes and replace with ReadWriteLocks. (mostly for indices)
- * 
- * @author gary
- *
+ * An implementation of an FS2 filesystem that uses native Java objects for storage and search.
+ * TODO: Remove grand mutexes and replace with ReadWriteLocks. (mostly for indices)
+ * @author Gary
  */
 public class NativeFS implements Filesystem {
 
 	/**
-	 * An implementation of Filesystem entry that does not involve SQL.
+	 * An implementation of FilesystemEntry that does not involve SQL.
 	 * It contains links to all its children and its parent.
-	 * @author gary
-	 *
+	 * @author Gary
 	 */
 	public class NativeEntry implements FilesystemEntry {
 
-		private HashMap<String, NativeEntry> children = new HashMap<String, NativeEntry>();
+		private Map<String, NativeEntry> children = Collections.emptyMap();
 		private String name = "";
 		private long size = 0L;
 		private int linkCount = 2;
@@ -74,30 +70,31 @@ public class NativeFS implements Filesystem {
 		}
 
 		@Override
-		//Does not update sizes or link counts!
-		public synchronized FilesystemEntry createChildEntry(String name, ByteArray hash,
-				long size, int links, Share share) {
+		// Does not update sizes or link counts!
+		public synchronized FilesystemEntry createChildEntry(String name, ByteArray hash, long size, int links, Share share) {
 			NativeEntry newChild = new NativeEntry(this);
 			newChild.hash = hash;
 			newChild.name = name;
 			newChild.size = size;
 			newChild.linkCount = links;
 			newChild.share = share;
+			
 			synchronized (children) {
+				if (children.equals(Collections.emptyMap())) {
+					children = new HashMap<String, NativeEntry>();
+				}
 				children.put(name, newChild);
 			}
 			
-			//Now update the indices for this filesystem:
+			// Now update the indices for this filesystem:
 			if (!newChild.isDirectory()) {
 				addHashIndex(newChild);
-				synchronized(count) {
+				synchronized (count) {
 					count++;
 				}
 			}
-			
 			addToNameIndex(newChild);
-			
-			//Child is now in the filesystem.
+			// Child is now in the filesystem.
 			
 			return newChild;
 		}
@@ -113,13 +110,13 @@ public class NativeFS implements Filesystem {
 			}
 			removeFromNameIndex(this);
 			if (isDirectory()) {
-				Object[] childs = null;
-				//Copy the list of children because they will remove themselves from our hashtable when they are erased.
+				NativeEntry[] childs = new NativeEntry[0];
+				// Copy the list of children because they will remove themselves from our hashtable when they are erased.
 				synchronized (children) {
-					childs = children.values().toArray();
+					childs = children.values().toArray(childs);
 				}
-				for (Object child : childs) {
-					((NativeEntry) child).erase();
+				for (NativeEntry child : childs) {
+					child.erase();
 				}
 			} else {
 				removeFromHashIndex(this);
@@ -181,7 +178,7 @@ public class NativeFS implements Filesystem {
 		}
 		
 		/**
-		 * returns a collection of path elements for this entry.
+		 * Returns a collection of path elements for this entry.
 		 * @param urlEncode
 		 * @return
 		 * @throws UnsupportedEncodingException 
@@ -225,7 +222,7 @@ public class NativeFS implements Filesystem {
 
 		@Override
 		public boolean isRoot() {
-			return parent==null;
+			return parent == null;
 		}
 
 		@Override
@@ -238,7 +235,6 @@ public class NativeFS implements Filesystem {
 			name = newName;
 			addToNameIndex(this);
 		}
-
 	}
 
 	/** Used to lookup files by hash quickly: */
@@ -250,7 +246,7 @@ public class NativeFS implements Filesystem {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
 			if (set == null) {
 				set = new HashSet<NativeEntry>(1);
-				hashIndex.put(entry.hash,set);
+				hashIndex.put(entry.hash, set);
 			}
 			set.add(entry);
 		}
@@ -300,7 +296,7 @@ public class NativeFS implements Filesystem {
 	 * Removes this entry from the name index.
 	 * @param entry
 	 */
-	private synchronized void removeFromNameIndex(NativeEntry entry) {
+	private void removeFromNameIndex(NativeEntry entry) {
 		synchronized (nameIndex) {
 			for (String keyword : getKeywords(entry.getName())) {
 				Set<NativeEntry> set = nameIndex.get(keyword);
@@ -313,20 +309,20 @@ public class NativeFS implements Filesystem {
 	}
 	
 	private NativeEntry root = new NativeEntry(null);
-	private Integer count = new Integer(0);
+	private Integer count = 0;
 	
 	@Override
 	public int countFiles() {
-		return count;
+		synchronized (count) {
+			return count;
+		}
 	}
 
 	@Override
 	public void delistShare(Share share) {
-		//Logger.log("Delisting share: "+share.getName());
-		
 		FilesystemEntry clientRoot = share.getOwner().getFilesystemRoot();
 		FilesystemEntry shareRoot = clientRoot.getNamedChild(share.getName());
-		//Decrease the client's total sharesize:
+		// Decrease the client's total sharesize:
 		clientRoot.adjustSize(-shareRoot.getSize());
 		clientRoot.adjustLinkCount(-1);
 		root.adjustSize(-shareRoot.getSize());
@@ -360,7 +356,7 @@ public class NativeFS implements Filesystem {
 		}
 		Collections.sort(fileList, new FilePopularityComparator());
 		List<NativeEntry> res = new ArrayList<NativeEntry>();
-		while (limit-- != 0 && !fileList.isEmpty()) {
+		while (limit --> 0 && !fileList.isEmpty()) {
 			for (NativeEntry entry : fileList.pop()) {
 				res.add(entry);
 				break;
@@ -385,7 +381,6 @@ public class NativeFS implements Filesystem {
 
 	@Override
 	public void importShare(Item root, Share share) {
-		//Logger.log("Adding to filesystem:"+root.name);
 		FilesystemEntry shareRoot = share.getOwner().getFilesystemRoot().createChildDirectory(share.getName(), share);
 		importFileListIntoFilesystem(root, shareRoot, share);
 		share.getOwner().getFilesystemRoot().adjustLinkCount(1);
@@ -394,7 +389,7 @@ public class NativeFS implements Filesystem {
 	}
 	
 	/**
-	 * Returns the filesize size of all items it contains.
+	 * Returns the total filesize of all items it contains.
 	 * @param onItem
 	 * @param fsItem
 	 * @return
@@ -421,7 +416,7 @@ public class NativeFS implements Filesystem {
 	}
 	
 	/**
-	 * Returns the filesize size of all items it contains.
+	 * Returns the total filesize of all items it contains.
 	 * @param xmlItem
 	 * @param fsItem
 	 * @return
@@ -468,7 +463,7 @@ public class NativeFS implements Filesystem {
 					continue;
 				}
 				ret = ret.getNamedChild(splitString[onIndex]);
-				//If any path element is not found then just return "not found"
+				// If any path element is not found then just return "not found".
 				if (ret == null) return null;
 			} finally {
 				onIndex++;
@@ -479,9 +474,9 @@ public class NativeFS implements Filesystem {
 	}
 
 	@Override
-	public FilesystemEntry registerClient(Client client){
+	public FilesystemEntry registerClient(Client client) {
 		root.adjustLinkCount(1);
-		return root.createChildDirectory(client.getAlias(),null);
+		return root.createChildDirectory(client.getAlias(), null);
 	}
 
 	@Override
@@ -496,14 +491,14 @@ public class NativeFS implements Filesystem {
 
 	@Override
 	public Collection<NativeEntry> searchForName(String query) {
-		Set<NativeEntry> results = new HashSet<NativeEntry>();
+		Set<NativeEntry> results = new HashSet<NativeEntry>(0);
 		boolean firstKeyword = true;
 		for (String keyword : getKeywords(query)) {
 			Set<NativeEntry> itemResults;
 			synchronized (nameIndex) {
 				itemResults = nameIndex.get(keyword);
 			}
-			//Null indicates this keyword matched nothing at all.
+			// Null indicates this keyword matched nothing at all.
 			if (itemResults == null) {
 				results.clear();
 				return results;
@@ -531,14 +526,14 @@ public class NativeFS implements Filesystem {
 	}
 
 	@Override
-	//Pretty expensive really!
+	// Pretty expensive really!
 	public long uniqueSize() {
 		long ret = 0;
 		synchronized (hashIndex) {
 			for (Set<NativeEntry> entries : hashIndex.values()) {
 				for (NativeEntry file : entries) {
-					ret+=file.getSize();
-					break; //We only want a single item from this set.
+					ret += file.getSize();
+					break; // We only want a single item from this set.
 				}
 			}
 		}
@@ -557,7 +552,7 @@ public class NativeFS implements Filesystem {
 	@Override
 	public void incrementSent(long addSize) {
 		synchronized (estimatedTransfer) {
-			estimatedTransfer+=addSize;
+			estimatedTransfer += addSize;
 		}
 	}
 
