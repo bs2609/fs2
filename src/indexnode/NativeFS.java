@@ -339,9 +339,7 @@ public class NativeFS implements Filesystem {
 	class FilePopularityComparator implements Comparator<Set<NativeEntry>> {
 		@Override
 		public int compare(Set<NativeEntry> o2, Set<NativeEntry> o1) {
-			if (o1.size() == o2.size()) return 0;
-			if (o1.size() > o2.size()) return 1;
-			return -1;
+			return Integer.compare(o1.size(), o2.size());
 		}
 	}
 	
@@ -425,6 +423,7 @@ public class NativeFS implements Filesystem {
 	private long importXMLIntoFilesystem(Element xmlItem, FilesystemEntry fsItem, Share share) {
 		int linksAcc = 0;
 		long sizeAcc = 0L;
+		
 		Node onNode = xmlItem.getFirstChild();
 		while (onNode != null) {
 			try {
@@ -446,6 +445,7 @@ public class NativeFS implements Filesystem {
 				onNode = onNode.getNextSibling();
 			}
 		}
+		
 		fsItem.adjustLinkCount(linksAcc);
 		fsItem.adjustSize(sizeAcc);
 		return sizeAcc;
