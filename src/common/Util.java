@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyManagementException;
@@ -40,14 +42,14 @@ import common.HttpUtil.SimpleDownloadProgress;
 
 /**
  * All kinds of useful stuff that Java should just have already.
- * @author gary
+ * @author Gary
  */
 public abstract class Util {
 
 	/**
 	 * Describes an object that can filter items.
 	 * @param <T> The type of object that can be filtered by this.
-	 * @author gary
+	 * @author Gary
 	 */
 	public interface Filter<T> {
 		
@@ -76,7 +78,7 @@ public abstract class Util {
 		
 		private final Lock lock;
 		
-		private LockHolder (Lock lock) {
+		private LockHolder(Lock lock) {
 			this.lock = lock;
 			lock.lock();
 		}
@@ -93,7 +95,7 @@ public abstract class Util {
 	
 	/**
 	 * Allows an iterator to pretend to be an enumeration.
-	 * @author gary
+	 * @author Gary
 	 */
 	public static class EnumerationWrapper<T> implements Enumeration<T> {
 		
@@ -193,33 +195,35 @@ public abstract class Util {
 		}
 	}
 	
+	public static final Pattern hexStrPattern = Pattern.compile("[0-9a-fA-F]*");
+	
 	public static String bytesToHexString(byte[] bytes) {
-		StringBuilder sb = new StringBuilder();
+		CharBuffer cb = CharBuffer.allocate(bytes.length * 2);
 		
 		char[] hexChars = ("0123456789abcdef").toCharArray();
 		for (byte b : bytes) {
-			sb.append(hexChars[(b & 0xF0)>>4]);
-			sb.append(hexChars[(b & 0x0F)]);
+			cb.put(hexChars[(b & 0xF0)>>4]);
+			cb.put(hexChars[(b & 0x0F)]);
 		}
 		
-		return sb.toString();
+		return cb.toString();
 	}
 	
 	public static byte[] bytesFromHexString(String str) {
-		if (!str.matches("[0-9a-fA-F]*")) throw new IllegalArgumentException("Not a valid hexadecimal string.");
+		if (!hexStrPattern.matcher(str).matches()) throw new IllegalArgumentException("Not a valid hexadecimal string.");
 		if (str.length() % 2 != 0) return bytesFromHexString("0" + str);
 		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ByteBuffer buf = ByteBuffer.allocate(str.length() / 2);
 		char[] ch = str.toLowerCase().toCharArray();
 		
 		String hexChars = "0123456789abcdef";
 		for (int i = 0; i < ch.length; i += 2) {
 			int b = hexChars.indexOf(ch[i]) << 4;
 			b |= hexChars.indexOf(ch[i+1]);
-			baos.write(b);
+			buf.put((byte) b);
 		}
 		
-		return baos.toByteArray();
+		return buf.array();
 	}
 	
 	public static void copyFile(File src, File dst) throws IOException {
@@ -442,7 +446,7 @@ public abstract class Util {
 	
 	/**
 	 * Used to represent tasks that can be deferred but does not imply they will be executed in another thread.
-	 * @author gary
+	 * @author Gary
 	 */
 	public interface Deferrable extends Runnable {
 		
@@ -548,6 +552,7 @@ public abstract class Util {
 	 * 
 	 * This is because the only reasonable way to do a decently secure, authenticated, standard crypto is with a PKI.
 	 * Future FS2 protocols may use a PKI or clever authentication scheme to prevent MITM attacks...
+	 * 
 	 * @throws NoSuchAlgorithmException If crypto is unsupported on this system.
 	 * @throws KeyManagementException 
 	 */
