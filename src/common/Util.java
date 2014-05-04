@@ -72,7 +72,6 @@ public abstract class Util {
 		}
 	}
 	
-	
 	/** Wraps a Lock so it can be released automatically by a try-with block. */
 	public static class LockHolder implements AutoCloseable {
 		
@@ -124,9 +123,9 @@ public abstract class Util {
 	 */
 	public static String join(Object[] items, String delim) {
 		if (items.length == 0) return "";
-		StringBuilder sb = new StringBuilder(items[0].toString());
+		StringBuilder sb = new StringBuilder(String.valueOf(items[0]));
 		int i = 1;
-		while (i < items.length) sb.append(delim).append(items[i++].toString());
+		while (i < items.length) sb.append(delim).append(items[i++]);
 		return sb.toString();
 	}
 	
@@ -210,7 +209,9 @@ public abstract class Util {
 	}
 	
 	public static byte[] bytesFromHexString(String str) {
-		if (!hexStrPattern.matcher(str).matches()) throw new IllegalArgumentException("Not a valid hexadecimal string.");
+		if (!hexStrPattern.matcher(str).matches()) {
+			throw new IllegalArgumentException("Not a valid hexadecimal string.");
+		}
 		if (str.length() % 2 != 0) return bytesFromHexString("0" + str);
 		
 		ByteBuffer buf = ByteBuffer.allocate(str.length() / 2);
@@ -591,7 +592,7 @@ public abstract class Util {
 	 * NORATIO will just resize to the new dimensions without ratio preservation 
 	 * and NONE will not resize.
 	 */
-	public static enum ImageResizeType {INNER, OUTER, NORATIO, NONE};
+	public enum ImageResizeType {INNER, OUTER, NORATIO, NONE};
 	
 	/**
 	 * Encodes a supplied image (in an InputStream) into a specified format and size.
