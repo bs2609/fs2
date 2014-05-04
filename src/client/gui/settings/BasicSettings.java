@@ -177,7 +177,7 @@ public class BasicSettings extends SettingsPanel implements KeyListener {
 				setIcon();
 			}
 		});
-		registerHint(avatarButton, new StatusHint(frame.getGui().getUtil().getImage("type-image"), "Click this button to set your avatar"));
+		registerHint(avatarButton, new StatusHint(frame.getGui().getUtil().getImage("avatar"), "Click this button to set your avatar"));
 		panel0.add(avatarButton, BorderLayout.WEST);
 		
 		return aliasPanel;
