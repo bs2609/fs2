@@ -1,5 +1,6 @@
 package common.httpserver;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,13 +9,10 @@ import java.net.URI;
 
 /**
  * A class to represent HTTP requests from clients.
- * 
  * This includes access to streams and headers.
- * 
  * @author gp
- *
  */
-public abstract class HttpExchange {
+public abstract class HttpExchange implements Closeable {
 
 	/**
 	 * Ensures that all resources used by this exchange are freed.
@@ -38,20 +36,20 @@ public abstract class HttpExchange {
 	 * Get the URI for this request. This the URI as specified by the client, not the URL to the file on the server.
 	 * For example, for /cow/moo.wav this method would return just that, not http://cowsounds.org/cow/moo.wav
 	 * 
-	 * This will include any context prefix, as it is the uri as requested.
+	 * This will include any context prefix, as it is the URI as requested.
 	 * 
 	 * @return
 	 */
 	public abstract URI getRequestURI();
 
 	/**
-	 * Return the inputstream from the client.
+	 * Return the InputStream from the client.
 	 * @return
 	 */
 	public abstract InputStream getRequestBody();
 	
 	/**
-	 * Return the outputstream from us to the client.
+	 * Return the OutputStream from us to the client.
 	 * @return
 	 */
 	public abstract OutputStream getResponseBody();
@@ -97,4 +95,5 @@ public abstract class HttpExchange {
 	 * @return
 	 */
 	public abstract boolean isSecure();
+	
 }
