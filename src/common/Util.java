@@ -205,7 +205,7 @@ public abstract class Util {
 			cb.put(hexChars.charAt(b & 0x0F));
 		}
 		
-		return cb.toString();
+		return cb.flip().toString();
 	}
 	
 	public static byte[] bytesFromHexString(String str) {
