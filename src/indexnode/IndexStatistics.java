@@ -1,10 +1,4 @@
-/**
- * 
- */
 package indexnode;
-
-import indexnode.IndexNode.Client;
-import indexnode.IndexNode.Share;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +16,9 @@ import common.Logger;
 import common.Util;
 import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
+
+import indexnode.IndexNode.Client;
+import indexnode.IndexNode.Share;
 
 /**
  * A fugly hacked together statistics page for the indexnode.
@@ -47,7 +44,7 @@ public class IndexStatistics implements HttpHandler {
 	
 	public void handle(HttpExchange exchange) throws IOException {
 		synchronized (genMutex) {
-			if ((System.currentTimeMillis()-lastGenerated > FS2Constants.INDEXNODE_CACHE_STATISTICS_DURATION) && !generating) {
+			if (System.currentTimeMillis() - lastGenerated > FS2Constants.INDEXNODE_CACHE_STATISTICS_DURATION && !generating) {
 				generating = true;
 				generateStatistics();
 			}
@@ -59,7 +56,6 @@ public class IndexStatistics implements HttpHandler {
 	
 	public void generateStatistics() {
 		Thread worker = new Thread(new Runnable() {
-			
 			@Override
 			public void run() {
 				try {
@@ -72,36 +68,35 @@ public class IndexStatistics implements HttpHandler {
 					template.getHeaderElement().appendChild(heading);
 					Element general = addSection("General", "general");
 					Element memory = addSection("Memory Usage", "memory");
-					//Uptime
+					// Uptime:
 					Date startDate = IndexStatistics.this.onNode.startedDate;
 					addStatistic("Indexnode started", Util.formatDate(startDate), Long.toString(startDate.getTime()), "indexnode-started", general);
-					//Memory usage:
-					addStatistic("Maximum heap",Util.niceSize(Runtime.getRuntime().maxMemory()), Long.toString(Runtime.getRuntime().maxMemory()) , "indexnode-maxheap", memory);
-					addStatistic("Used heap",Util.niceSize(Runtime.getRuntime().totalMemory()), Long.toString(Runtime.getRuntime().totalMemory()) , "indexnode-usedheap", memory);
-					addStatistic("Available heap",Util.niceSize(Runtime.getRuntime().freeMemory()), Long.toString(Runtime.getRuntime().freeMemory()) , "indexnode-freeheap", memory);
-					
-					//number of files
+					// Memory usage:
+					Runtime rt = Runtime.getRuntime();
+					addStatistic("Maximum heap", Util.niceSize(rt.maxMemory()), Long.toString(rt.maxMemory()), "indexnode-maxheap", memory);
+					addStatistic("Used heap", Util.niceSize(rt.totalMemory()), Long.toString(rt.totalMemory()), "indexnode-usedheap", memory);
+					addStatistic("Available heap", Util.niceSize(rt.freeMemory()), Long.toString(rt.freeMemory()), "indexnode-freeheap", memory);
+					// Number of files:
 					int fileCount = IndexStatistics.this.onNode.fs.countFiles();
-					addStatistic("Indexed files", Long.toString(fileCount),Long.toString(fileCount), "file-count", general);
-					//number of unique files
+					addStatistic("Indexed files", Long.toString(fileCount), Long.toString(fileCount), "file-count", general);
+					// Number of unique files:
 					int uniqueCount = IndexStatistics.this.onNode.fs.countUniqueFiles();
-					addStatistic("Unique files", Long.toString(uniqueCount),Long.toString(uniqueCount), "unique-file-count", general);
-					//total size
+					addStatistic("Unique files", Long.toString(uniqueCount), Long.toString(uniqueCount), "unique-file-count", general);
+					// Total size:
 					long totalSize = IndexStatistics.this.onNode.fs.totalSize();
 					addStatistic("Total size", Util.niceSize(totalSize), Long.toString(totalSize), "total-size", general);
-					//Total unique size
+					// Total unique size:
 					long uniqueSize = IndexStatistics.this.onNode.fs.uniqueSize();
 					addStatistic("Size of unique files", Util.niceSize(uniqueSize), Long.toString(uniqueSize), "total-unique-size", general);
-					//Total estimated transfer
+					// Total estimated transfer:
 					long totalTransfer = IndexStatistics.this.onNode.fs.getEstimatedTransfer();
 					addStatistic("Total bytes for all requested files", Util.niceSize(totalTransfer), Long.toString(totalTransfer), "total-transfer", general);
-					
-					
-					//number of clients
-					addStatistic("Connected clients", Integer.toString(IndexStatistics.this.onNode.clients.size()), Integer.toString(IndexStatistics.this.onNode.clients.size()),"client-count", general);
-					//clients by sharesize,
+					// Number of clients:
+					int numClients = IndexStatistics.this.onNode.clients.size();
+					addStatistic("Connected clients", Integer.toString(numClients), Integer.toString(numClients), "client-count", general);
+					// Clients by sharesize:
 					clientSizes(addSection("Clients", "clients"));
-					//top ten popular files
+					// Top ten popular files:
 					template.generateFilelist(IndexStatistics.this.onNode.fs.getPopularFiles(100), false, true, addSection("Most popular files", "popular-files"));
 					synchronized (cachedStatsPage) {
 						cachedStatsPage = template.toString();
@@ -110,6 +105,7 @@ public class IndexStatistics implements HttpHandler {
 					
 				} catch (Exception e) {
 					Logger.log(e);
+					
 				} finally {
 					synchronized (genMutex) {
 						generating = false;
@@ -122,21 +118,20 @@ public class IndexStatistics implements HttpHandler {
 	}
 	
 	public long getTotalClientSize(Client c) {
-		long ret = 0;
+		long ret = 0L;
 		for (Share share : c.shares.values()) {
-			ret+=share.getSize();
+			ret += share.getSize();
 		}
 		return ret;
 	}
 	
-	//A comparator for descending sort of client's total share size.
+	/** A comparator for descending sort of client's total share size. */
 	class ClientComparator implements Comparator<Client> {
+		@Override
 		public int compare(Client o2, Client o1) {
-			Long o1s = getTotalClientSize(o1);
-			Long o2s = getTotalClientSize(o2);
-			if (o1s == o2s) return 0;
-			else if (o1s > o2s) return 1;
-			else return -1;
+			long o1s = getTotalClientSize(o1);
+			long o2s = getTotalClientSize(o2);
+			return Long.compare(o1s, o2s);
 		}
 	}
 	
@@ -149,25 +144,25 @@ public class IndexStatistics implements HttpHandler {
 	private void clientSizes(Element section) {
 		int rank = 1;
 		for (Client client : sortedClientsBySize()) {
-			addClientStatistic(Integer.toString(rank++)+") "+client.getAlias(), Util.niceSize(getTotalClientSize(client)),Long.toString(getTotalClientSize(client)),"client-"+client.getAlias()+"-size", section, client.getAlias(), client.getAvatarHash());
+			addClientStatistic(Integer.toString(rank++) + ") " + client.getAlias(), Util.niceSize(getTotalClientSize(client)), Long.toString(getTotalClientSize(client)), "client-" + client.getAlias() + "-size", section, client.getAlias(), client.getAvatarHash());
 		}
 	}
 	
 	private void addClientStatistic(String name, String content, String machineReadableValue, String id, Element section, String alias, String avatarhash) {
-		if (avatarhash!=null && !avatarhash.equals("")) {
+		if (avatarhash != null && !avatarhash.equals("")) {
 			Element img = doc.createElement("img");
-			img.setAttribute("src", "/avatars/"+avatarhash+".png");
+			img.setAttribute("src", "/avatars/" + avatarhash + ".png");
 			section.appendChild(img);
 		}
 		Element b = doc.createElement("b");
-		b.setTextContent(name+": ");
+		b.setTextContent(name + ": ");
 		section.appendChild(b);
 		Element c = doc.createElement("span");
 		c.setTextContent(content);
 		c.setAttribute("id", id);
 		c.setAttribute("value", machineReadableValue);
-		if (avatarhash!=null) c.setAttribute("fs2-avatarhash", avatarhash);
-		if (alias!=null) c.setAttribute("fs2-clientalias", alias);
+		if (avatarhash != null) c.setAttribute("fs2-avatarhash", avatarhash);
+		if (alias != null) c.setAttribute("fs2-clientalias", alias);
 		section.appendChild(c);
 		section.appendChild(doc.createElement("br"));
 	}
