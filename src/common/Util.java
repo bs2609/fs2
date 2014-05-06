@@ -180,7 +180,7 @@ public abstract class Util {
 		
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array);
+			return obj == this || obj instanceof ByteArray && Arrays.equals(array, ((ByteArray) obj).array);
 		}
 		
 		@Override
@@ -199,10 +199,10 @@ public abstract class Util {
 	public static String bytesToHexString(byte[] bytes) {
 		CharBuffer cb = CharBuffer.allocate(bytes.length * 2);
 		
-		char[] hexChars = ("0123456789abcdef").toCharArray();
+		String hexChars = "0123456789abcdef";
 		for (byte b : bytes) {
-			cb.put(hexChars[(b & 0xF0)>>4]);
-			cb.put(hexChars[(b & 0x0F)]);
+			cb.put(hexChars.charAt((b & 0xF0) >> 4));
+			cb.put(hexChars.charAt(b & 0x0F));
 		}
 		
 		return cb.toString();
@@ -210,21 +210,47 @@ public abstract class Util {
 	
 	public static byte[] bytesFromHexString(String str) {
 		if (!hexStrPattern.matcher(str).matches()) {
-			throw new IllegalArgumentException("Not a valid hexadecimal string.");
+			throw new IllegalArgumentException("Not a valid hexadecimal string");
 		}
 		if (str.length() % 2 != 0) return bytesFromHexString("0" + str);
 		
 		ByteBuffer buf = ByteBuffer.allocate(str.length() / 2);
-		char[] ch = str.toLowerCase().toCharArray();
 		
-		String hexChars = "0123456789abcdef";
-		for (int i = 0; i < ch.length; i += 2) {
-			int b = hexChars.indexOf(ch[i]) << 4;
-			b |= hexChars.indexOf(ch[i+1]);
+		for (int i = 0; i < str.length(); i += 2) {
+			int b = asHex(str.charAt(i)) << 4;
+			b |= asHex(str.charAt(i+1));
 			buf.put((byte) b);
 		}
 		
 		return buf.array();
+	}
+	
+	public static int asHex(char c) {
+		switch (c) {
+			case '0': return 0x0;
+			case '1': return 0x1;
+			case '2': return 0x2;
+			case '3': return 0x3;
+			case '4': return 0x4;
+			case '5': return 0x5;
+			case '6': return 0x6;
+			case '7': return 0x7;
+			case '8': return 0x8;
+			case '9': return 0x9;
+			case 'a': return 0xa;
+			case 'A': return 0xA;
+			case 'b': return 0xb;
+			case 'B': return 0xB;
+			case 'c': return 0xc;
+			case 'C': return 0xC;
+			case 'd': return 0xd;
+			case 'D': return 0xD;
+			case 'e': return 0xe;
+			case 'E': return 0xE;
+			case 'f': return 0xf;
+			case 'F': return 0xF;
+		}
+		throw new IllegalArgumentException("Invalid hex digit");
 	}
 	
 	public static void copyFile(File src, File dst) throws IOException {
@@ -512,19 +538,16 @@ public abstract class Util {
 	 * @return
 	 */
 	public static boolean isValidFileName(File toTest) {
-		if (toTest.exists()) return true;
+		Path path = toTest.toPath();
+		if (Files.exists(path)) return true;
 		try {
-			if (toTest.createNewFile()) {
-				toTest.delete();
-				return true;
-			}
+			return Files.deleteIfExists(Files.createFile(path));
 			
 		} catch (IOException e) {
 			Logger.warn("Failed to test " + toTest + " for validity: " + e);
 			Logger.log(e);
 			return false;
 		}
-		return false;
 	}
 	
 	/**
