@@ -58,14 +58,14 @@ import common.httpserver.HttpServer;
  * This is the second major implementation of the ShareServer subsystem.
  * 
  * The ShareServer is responsible for:
- * 1) managing shares (filelist creation, hashing, etc)
- * 2) exporting shares to other FS2 clients. (A webserver)
+ * 1) Managing shares (filelist creation, hashing, etc).
+ * 2) Exporting shares to other FS2 clients. (A webserver)
  * 
  * This is the top-level class for the ShareServer.
  * 
- * A table model is also implemented so this can drive a swing table with ease.
+ * A table model is also implemented so this can drive a Swing table with ease.
  * 
- * @author gary
+ * @author Gary
  */
 public class ShareServer implements TableModel {
 
@@ -270,10 +270,10 @@ public class ShareServer implements TableModel {
 	
 	/**
 	 * Handles events from the file serving contexts.
-	 * 1) notifies PeerStatsCollector
-	 * 2) updates current uploads table
+	 * 1) Notifies PeerStatsCollector.
+	 * 2) Updates current uploads table.
 	 * 
-	 * @author gary
+	 * @author Gary
 	 */
 	private class HttpEventsImpl extends HttpFileHandlerEvents {
 		
@@ -369,7 +369,7 @@ public class ShareServer implements TableModel {
 		
 		// Share the filelists:
 		HttpContext flc = http.createContext("/filelists", new HttpFileHandler(filelistDir, httpEvents, uploadTracker));
-		// Make the filelists talk correctly.
+		// Make the filelists talk correctly:
 		flc.getFilters().add(fs2Filter);
 		flc.getFilters().add(communicator.getIndexNodeOnlyFilter()); // Only indexnode and localhost may access them.
 		
@@ -381,14 +381,16 @@ public class ShareServer implements TableModel {
 		setSlotsFromConf();
 		
 		// Setup share refresh pool:
-		new Thread(new Runnable() {
+		Thread async = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				synchronized (shareRefreshPoolLock) {
-					shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread."));
+					shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread"));
 				}
 			}
-		}).start();
+		}, "Share refresh pool initialiser");
+		async.setDaemon(true);
+		async.start();
 		
 		// Now add shares specified in the config:
 		restartConfigShares();
@@ -495,7 +497,6 @@ public class ShareServer implements TableModel {
 	private void setSlotsFromConf() {
 		tq.setClientLimit(conf.getInt(CK.ACTIVE_UPLOADS_PER_USER));
 		tq.setResourceCount(conf.getInt(CK.ACTIVE_UPLOADS));
-		
 	}
 	
 	public void setUploadSlots(int slots) {
@@ -515,7 +516,7 @@ public class ShareServer implements TableModel {
 		synchronized (shareRefreshPoolLock) {
 			shareRefreshPool.shutdown();
 		}
-		//) Shutdown each share as they might be refreshing:
+		// Shutdown each share as they might be refreshing:
 		synchronized (shares) {
 			for (final Share s : shares) {
 				s.shutdown();
@@ -523,7 +524,7 @@ public class ShareServer implements TableModel {
 				s.list = null;
 			}
 		}
-		//) Shutdown the communicator.
+		// Shutdown the communicator:
 		communicator.shutdown();
 		
 		http.stop();
@@ -600,7 +601,7 @@ public class ShareServer implements TableModel {
 	}
 	
 	/**
-	 * Called on startup to load shares from config file:
+	 * Called on startup to load shares from config file.
 	 */
 	private void restartConfigShares() {
 		ExecutorService shareLoader = Executors.newSingleThreadExecutor();
@@ -758,7 +759,6 @@ public class ShareServer implements TableModel {
 
 	/**
 	 * Determines the seconds until the share specified should be refreshed.
-	 * 
 	 * If the refresh is overdue this still returns zero.
 	 * 
 	 * @param share
