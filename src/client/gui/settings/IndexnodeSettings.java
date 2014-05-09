@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -212,9 +213,8 @@ public class IndexnodeSettings extends SettingsPanel {
 				public void run() {
 					comm.registerNewIndexNode(resURL);
 				}
-			});
+			}, "Add new indexnode thread");
 			elsewhere.setDaemon(true);
-			elsewhere.setName("Add new indexnode thread");
 			elsewhere.start();
 			frame.setStatusHint("Added: " + result + "... It might take a few seconds to show up...");
 			
@@ -235,8 +235,10 @@ public class IndexnodeSettings extends SettingsPanel {
 	
 	private void setPassword() {
 		JPasswordField password = new JPasswordField();
-		if (JOptionPane.showConfirmDialog(null, new Object[] {new JLabel("<html><b>Enter this indexnode's password carefully.</b><br>The indexnode may create you an account if you do not already have one.<html>"), password}, "Password:", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-			comm.getRegisteredIndexNodes().get(nodesTable.convertRowIndexToModel(nodesTable.getSelectedRow())).setPassword(Util.md5(FS2Constants.FS2_USER_PASSWORD_SALT + new String(password.getPassword())));
+		JLabel label = new JLabel("<html><b>Enter this indexnode's password carefully.</b><br>The indexnode may create you an account if you do not already have one.</html>");
+		if (JOptionPane.showConfirmDialog(null, new Object[] {label, password}, "Password:", JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+			IndexNode node = comm.getRegisteredIndexNodes().get(nodesTable.convertRowIndexToModel(nodesTable.getSelectedRow()));
+			node.setPassword(Util.md5(FS2Constants.FS2_USER_PASSWORD_SALT + CharBuffer.wrap(password.getPassword())));
 			for (int i = 0; i < password.getPassword().length; i++) password.getPassword()[i] = 0; // Null out password from memory.
 		}
 	}
