@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -89,9 +91,7 @@ public class NativeFS implements Filesystem {
 			// Now update the indices for this filesystem:
 			if (!newChild.isDirectory()) {
 				addHashIndex(newChild);
-				synchronized (count) {
-					count++;
-				}
+				count.incrementAndGet();
 			}
 			addToNameIndex(newChild);
 			// Child is now in the filesystem.
@@ -120,9 +120,7 @@ public class NativeFS implements Filesystem {
 				}
 			} else {
 				removeFromHashIndex(this);
-				synchronized (count) {
-					count--;
-				}
+				count.decrementAndGet();
 			}
 		}
 
@@ -309,13 +307,11 @@ public class NativeFS implements Filesystem {
 	}
 	
 	private NativeEntry root = new NativeEntry(null);
-	private Integer count = 0;
+	private AtomicInteger count = new AtomicInteger();
 	
 	@Override
 	public int countFiles() {
-		synchronized (count) {
-			return count;
-		}
+		return count.get();
 	}
 
 	@Override
@@ -540,20 +536,16 @@ public class NativeFS implements Filesystem {
 		return ret;
 	}
 
-	private Long estimatedTransfer = 0L;
+	private AtomicLong estimatedTransfer = new AtomicLong();
 	
 	@Override
 	public long getEstimatedTransfer() {
-		synchronized (estimatedTransfer) {
-			return estimatedTransfer;
-		}
+		return estimatedTransfer.get();
 	}
 
 	@Override
 	public void incrementSent(long addSize) {
-		synchronized (estimatedTransfer) {
-			estimatedTransfer += addSize;
-		}
+		estimatedTransfer.addAndGet(addSize);
 	}
 
 }
