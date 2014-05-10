@@ -446,14 +446,6 @@ public class IndexNode {
 				return false;
 			}
 		}
-//		
-//		/**
-//		 * Returns true if this client is still actively registered with the indexnode.
-//		 * @return
-//		 */
-//		public boolean stillAlive() {
-//			return failedLiveness <= FS2Constants.INDEXNODE_CLIENT_MAX_FAILED_LIVENESSES;
-//		}
 		
 		/**
 		 * Establish a connection to the client's ping URL and return the inputstream.
@@ -849,10 +841,10 @@ public class IndexNode {
 		onPort = conf.getInt(IK.PORT);
 		
 		// Load users database:
-		users = new UserDatabase(new File(pathPrefix+conf.getString(IK.USER_DATABSE)), this);
+		users = new UserDatabase(new File(pathPrefix+conf.getString(IK.USER_DATABASE)), this);
 		
 		// Security things:
-		dhanonUsed = conf.getBoolean(IK.DHANON_TLS);
+		dhanonUsed = conf.getBoolean(IK.DH_ANON_TLS);
 		useSecure = conf.getBoolean(IK.SECURE_MODE);
 		if (dhanonUsed) Util.enableDHanonCipherSuite();
 		sslcontext = SSLContext.getInstance("TLS");
