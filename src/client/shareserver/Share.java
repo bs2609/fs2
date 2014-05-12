@@ -49,9 +49,9 @@ public class Share {
 			@Override
 			public boolean accept(Path entry) throws IOException {
 				
-				if (entry.getFileName().toString().endsWith(".incomplete")) return false;
-				if (Files.isSymbolicLink(entry) && (Files.isDirectory(entry) || !entry.toRealPath().startsWith(canonicalLocation))) return false;
 				if (Files.isHidden(entry) && !Files.isDirectory(entry)) return false;
+				if (Files.isSymbolicLink(entry) && (Files.isDirectory(entry) || !entry.toRealPath().startsWith(canonicalLocation))) return false;
+				if (entry.getFileName().toString().endsWith(".incomplete")) return false;
 				
 				return true;
 			}
@@ -234,8 +234,7 @@ public class Share {
 		}
 		
 		/**
-		 * A file counter which just recurses directories in order to find out how many
-		 * files are within it.
+		 * Recursively counts how many files a directory contains.
 		 * @author r4abigman
 		 */
 		private class FileCounter implements Runnable {
