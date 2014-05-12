@@ -236,7 +236,7 @@ public class NativeFS implements Filesystem {
 	}
 
 	/** Used to lookup files by hash quickly: */
-	private Map<ByteArray, Set<NativeEntry>> hashIndex = new HashMap<ByteArray, Set<NativeEntry>>();
+	private final Map<ByteArray, Set<NativeEntry>> hashIndex = new HashMap<ByteArray, Set<NativeEntry>>();
 	
 	private void addHashIndex(NativeEntry entry) {
 		// Initialise this hash entry if it doesn't have a set yet:
@@ -260,7 +260,7 @@ public class NativeFS implements Filesystem {
 	}
 	
 	/** Maps keywords onto sets of entries. */
-	private Map<String, Set<NativeEntry>> nameIndex = new HashMap<String, Set<NativeEntry>>();
+	private final Map<String, Set<NativeEntry>> nameIndex = new HashMap<String, Set<NativeEntry>>();
 	
 	private final String keywordSplitRegex = "\\p{Punct}|[ \\t]";
 	
@@ -306,8 +306,8 @@ public class NativeFS implements Filesystem {
 		}
 	}
 	
-	private NativeEntry root = new NativeEntry(null);
-	private AtomicInteger count = new AtomicInteger();
+	private final NativeEntry root = new NativeEntry(null);
+	private final AtomicInteger count = new AtomicInteger();
 	
 	@Override
 	public int countFiles() {
@@ -536,7 +536,7 @@ public class NativeFS implements Filesystem {
 		return ret;
 	}
 
-	private AtomicLong estimatedTransfer = new AtomicLong();
+	private final AtomicLong estimatedTransfer = new AtomicLong();
 	
 	@Override
 	public long getEstimatedTransfer() {
