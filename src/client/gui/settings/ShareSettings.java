@@ -128,7 +128,10 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		shares.getSelectionModel().addListSelectionListener(this);
 		shares.getColumn(frame.getGui().getShareServer().getColumnName(0)).setCellRenderer(new ShareNameCellRenderer());
 		
-		add(new JLabel("Your shared folders: ", frame.getGui().getUtil().getImage("shares"), JLabel.LEFT), BorderLayout.NORTH);
+		JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+		titlePanel.add(new JLabel("Your shared folders: ", frame.getGui().getUtil().getImage("shares"), JLabel.LEFT));
+		
+		add(titlePanel, BorderLayout.NORTH);
 		add(new JScrollPane(shares), BorderLayout.CENTER);
 		
 		JPanel topbp = new JPanel(new FlowLayout());
@@ -136,7 +139,7 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 		
 		JPanel buttonsPanel = new JPanel(new BorderLayout());
 		buttonsPanel.add(topbp, BorderLayout.NORTH);
-		buttonsPanel.add(bottombp, BorderLayout.CENTER);
+		buttonsPanel.add(bottombp, BorderLayout.SOUTH);
 		
 		add(buttonsPanel, BorderLayout.SOUTH);
 		
