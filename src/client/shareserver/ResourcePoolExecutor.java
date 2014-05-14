@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +94,9 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 			Object resource = user.getResource();
 			if (resourceMap.containsKey(resource)) {
 				resourceMap.get(resource).execute(user);
+				return;
 			}
 		}
+		throw new RejectedExecutionException("Resource not found or undefined");
 	}
 }
