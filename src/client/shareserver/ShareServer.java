@@ -20,6 +20,8 @@ import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.SSLContext;
 import javax.swing.event.TableModelEvent;
@@ -50,6 +52,7 @@ import common.SimpleHttpHandler;
 import common.Util;
 import common.Util.Deferrable;
 import common.Util.FileSize;
+import common.Util.LockHolder;
 import common.Util.NiceMagnitude;
 import common.httpserver.HttpContext;
 import common.httpserver.HttpServer;
@@ -309,7 +312,7 @@ public class ShareServer implements TableModel {
 	private Timer shareRefreshTimer;
 	private Config conf;
 	private ExecutorService shareRefreshPool;
-	private Object shareRefreshPoolLock = new Object();
+	private Lock shareRefreshPoolLock = new ReentrantLock();
 	private HttpEventsImpl httpEvents = new HttpEventsImpl();
 	private PeerStatsCollector peerstats;
 	private Notifications notify;
@@ -384,7 +387,7 @@ public class ShareServer implements TableModel {
 		Thread async = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (shareRefreshPoolLock) {
+				try (LockHolder lock = LockHolder.hold(shareRefreshPoolLock)) {
 					shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread"));
 				}
 			}
@@ -513,8 +516,12 @@ public class ShareServer implements TableModel {
 		// Shutdown the refresh timer:
 		shareRefreshTimer.cancel();
 		// Shutdown the refresh pool:
-		synchronized (shareRefreshPoolLock) {
-			shareRefreshPool.shutdown();
+		if (shareRefreshPoolLock.tryLock()) {
+			try {
+				shareRefreshPool.shutdown();
+			} finally {
+				shareRefreshPoolLock.unlock();
+			}
 		}
 		// Shutdown each share as they might be refreshing:
 		synchronized (shares) {
@@ -668,7 +675,7 @@ public class ShareServer implements TableModel {
 	}
 	
 	Executor getShareRefreshPool() {
-		synchronized (shareRefreshPoolLock) {
+		try (LockHolder lock = LockHolder.hold(shareRefreshPoolLock)) {
 			return shareRefreshPool;
 		}
 	}
