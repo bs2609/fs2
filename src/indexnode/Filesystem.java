@@ -31,7 +31,6 @@ public interface Filesystem {
 	/**
 	 * Removes the specified share from the filesystem.
 	 * @param share
-	 * @throws SQLException 
 	 */
 	public abstract void delistShare(Share share);
 

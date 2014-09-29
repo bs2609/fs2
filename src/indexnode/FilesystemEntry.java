@@ -50,8 +50,7 @@ public interface FilesystemEntry {
 	 * @return a / separated path from the root of fs2 to this file.
 	 * @throws UnsupportedEncodingException 
 	 */
-	public abstract String getPath(boolean urlEncode, boolean includeOwner) throws
-			UnsupportedEncodingException;
+	public abstract String getPath(boolean urlEncode, boolean includeOwner) throws UnsupportedEncodingException;
 
 	/**
 	 * Generate a URL to the file on the client hosting this.
@@ -64,7 +63,6 @@ public interface FilesystemEntry {
 	 * Directories have the size that is the sum of all their file descendants.
 	 * Atomic.
 	 * @param value
-	 * @throws SQLException 
 	 */
 	public abstract void adjustSize(long size);
 
@@ -74,7 +72,6 @@ public interface FilesystemEntry {
 	 * Files always have 1 in FS2.
 	 * Atomic.
 	 * @param count the value to add to the current link count. 
-	 * @throws SQLException 
 	 */
 	public abstract void adjustLinkCount(int count);
 
@@ -87,8 +84,7 @@ public interface FilesystemEntry {
 	 * @param share The share that this item belongs to.
 	 * @return the new entry
 	 */
-	public abstract FilesystemEntry createChildEntry(String name, ByteArray hash, long size,
-			int links, Share share);
+	public abstract FilesystemEntry createChildEntry(String name, ByteArray hash, long size, int links, Share share);
 
 	public abstract FilesystemEntry createChildDirectory(String name, Share share);
 

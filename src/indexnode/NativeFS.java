@@ -1,7 +1,6 @@
 package indexnode;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -414,7 +413,6 @@ public class NativeFS implements Filesystem {
 	 * @param xmlItem
 	 * @param fsItem
 	 * @return
-	 * @throws SQLException 
 	 */
 	private long importXMLIntoFilesystem(Element xmlItem, FilesystemEntry fsItem, Share share) {
 		int linksAcc = 0;
