@@ -98,7 +98,6 @@ public class FS2Filter extends Filter {
 	 * 
 	 * @param insecureURL
 	 * @return new URL or null if impossible.
-	 * @throws MalformedURLException 
 	 */
 	public static URL getFS2SecureURL(URL insecureURL) {
 		try {

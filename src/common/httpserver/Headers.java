@@ -87,8 +87,8 @@ public class Headers extends HashMap<String, Deque<String>> {
 	 */
 	public Headers() {}
 	
-	public class InvalidHttpHeaderFormat extends Exception {
-		public InvalidHttpHeaderFormat(String description) {
+	public class InvalidHttpHeaderFormatException extends Exception {
+		public InvalidHttpHeaderFormatException(String description) {
 			super(description);
 		}
 	}
@@ -99,14 +99,14 @@ public class Headers extends HashMap<String, Deque<String>> {
 	 * Builds a new collection of headers from an HTTP formatted stream.
 	 * @throws IOException 
 	 */
-	public Headers(InputStream in) throws InvalidHttpHeaderFormat, IOException {
+	public Headers(InputStream in) throws InvalidHttpHeaderFormatException, IOException {
 		String lastKey = null;
 		while (true) {
 			byte[] read = Util.readLine(in);
 			String rStr = new String(read).trim();
 			if (rStr.equals("")) return; //end of headers.
 			if (read[0] == ' ' || read[1] == '\t') {
-				if (lastKey == null) throw new InvalidHttpHeaderFormat("An LWS was specified without a preceding header.");
+				if (lastKey == null) throw new InvalidHttpHeaderFormatException("An LWS was specified without a preceding header.");
 				
 				//append the LWS to the last header value created with this key.
 				String lastValue = this.get(lastKey).removeLast();
@@ -115,7 +115,7 @@ public class Headers extends HashMap<String, Deque<String>> {
 			} else {
 				//attempt to match the header (which may be incomplete) with the regex:
 				Matcher headm = HEADER_PATTERN.matcher(rStr);
-				if (!headm.matches()) throw new InvalidHttpHeaderFormat("Header line does not conform to header-line format: "+rStr);
+				if (!headm.matches()) throw new InvalidHttpHeaderFormatException("Header line does not conform to header-line format: "+rStr);
 				this.add(lastKey = headm.group(1), headm.group(3));
 			}
 		}

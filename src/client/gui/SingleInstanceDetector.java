@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,7 +19,7 @@ import common.Logger;
  * The intension is not to prevent multiple FS2 clients but to allow the natural behaviour that if the user
  * launches the jar twice the second time simply unhides the already executing FS2.
  * 
- * Without this the second (accidental) invokation would just crash anyway due to a bind exception.
+ * Without this the second (accidental) invocation would just crash anyway due to a bind exception.
  * 
  * @author gary
  */
@@ -62,17 +61,15 @@ public class SingleInstanceDetector {
 	}
 	
 	/**
-	 * construct this to create a listener. This will notify the GUI if a second instance tried to launch but failed due to a bind exception.
-	 * @throws IOException 
-	 * @throws UnknownHostException 
+	 * Construct this to create a listener. This will notify the GUI if a second instance tried to launch but failed due to a bind exception.
 	 */
 	public SingleInstanceDetector() {
 		try {
-			socket = new ServerSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
+			socket = new ServerSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
 			listener = new Listener();
 			listener.start();
 		} catch (IOException e) {
-			Logger.warn("FS2 is unable to detect if new instances are started by mistake! Check port "+(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1)+" is free: "+e);
+			Logger.warn("FS2 is unable to detect if new instances are started by mistake! Check port " + (FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1) + " is free: " + e);
 		}
 	}
 	

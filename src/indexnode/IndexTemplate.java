@@ -269,18 +269,17 @@ public class IndexTemplate {
 	 * Send this template to the client with a success code and close the connections.
 	 * @param exchange
 	 * @throws IOException
-	 * @throws TransformerException
 	 */
 	public void sendToClient(HttpExchange exchange) throws IOException {
-		HttpUtil.simpleResponse(exchange, toString(), 200);
+		HttpUtil.simpleResponse(exchange, this.toString(), 200);
 	}
 	
 	public String toString() {
-		String generationTime = ", generation time: " + dateFormat.format(new Date((new Date()).getTime() - startedGeneration.getTime())) +"s";
+		String generationTime = ", generation time: " + dateFormat.format(new Date((new Date()).getTime() - startedGeneration.getTime())) + "s";
 		this.generationTime.setTextContent(generationTime);
 		try {
 			return xml.generateString(true);
-		} catch (Exception e) {
+		} catch (TransformerException e) {
 			Logger.log(e);
 			return "";
 		}
