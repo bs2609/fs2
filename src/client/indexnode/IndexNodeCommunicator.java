@@ -207,27 +207,27 @@ public class IndexNodeCommunicator implements TableModel {
 	}
 	
 	/**
-	 * Registers a new indexnode, as specified by it's URL
+	 * Registers a new indexnode, as specified by its URL.
 	 * Also places it into the configuration file.
-	 * @param nodeURL the location of the new node.
+	 * @param nodeURL - The location of the new node.
 	 */
 	public void registerNewIndexNode(URL nodeURL) {
-		registerNewIndexNode(nodeURL, 0, CK.INDEX_NODES+"/i"+nodeURL.hashCode());
+		registerNewIndexNode(nodeURL, 0, CK.INDEX_NODES + "/i" + nodeURL.toString().hashCode());
 	}
 
 	/**
 	 * Registers an indexnode.
 	 * @param nodeURL
-	 * @param advertuid the advertisment id of this indexnode, zero if it was manually/config added.
+	 * @param advertuid - The advertisement ID of this indexnode, zero if it was manually/config added.
 	 */
 	private void registerNewIndexNode(URL nodeURL, long advertuid) {
-		registerNewIndexNode(nodeURL, advertuid, CK.INDEX_NODES+"/i"+nodeURL.hashCode());
+		registerNewIndexNode(nodeURL, advertuid, CK.INDEX_NODES + "/i" + nodeURL.toString().hashCode());
 	}
 	
 	private void registerNewIndexNode(URL nodeURL, long advertuid, String configurationKey) {
-		if (advertuid==0) conf.putString(configurationKey+"/path", nodeURL.toString()); //if it wasn't advertised.
-		//due to awkwardness of the fs2 registration protocol the indexnode will add itself to the list of indexnodes.
-		//(this is because the constructor registers with the server, which will call back, the indexnode server handler will reject unknown indexnodes however)
+		if (advertuid == 0) conf.putString(configurationKey + "/path", nodeURL.toString()); // If it wasn't advertised.
+		// Due to the awkwardness of the FS2 registration protocol, the indexnode will add itself to the list of indexnodes.
+		// (this is because the constructor registers with the server, which will call back, the indexnode server handler will reject unknown indexnodes however)
 		new IndexNode(nodeURL, advertuid, ssvr, configurationKey);
 		fs.notifyNewIndexnode();
 	}
