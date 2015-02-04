@@ -16,7 +16,7 @@ public class IndexNodeStats {
 	public static class IndexNodeClient implements Comparable<IndexNodeClient> {
 		
 		private final String alias;
-		private Long totalShareSize;
+		private long totalShareSize;
 		private String avatarhash;
 		private BufferedImage cachedAvatar;
 		private final IndexNode onNode;
@@ -61,7 +61,7 @@ public class IndexNodeStats {
 			return totalShareSize;
 		}
 		
-		//enable meaningful set membership:
+		// Enable meaningful set membership:
 		@Override
 		public int hashCode() {
 			return alias.hashCode();
@@ -69,12 +69,12 @@ public class IndexNodeStats {
 		
 		@Override
 		public boolean equals(Object obj) {
-			return alias.equals(((IndexNodeClient)obj).alias);
+			return alias.equals(((IndexNodeClient) obj).alias);
 		}
 		
 		@Override
 		public int compareTo(IndexNodeClient o) {
-			return this.totalShareSize.compareTo(o.totalShareSize);
+			return Long.compare(totalShareSize, o.totalShareSize);
 		}
 		
 		@Override

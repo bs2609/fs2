@@ -446,22 +446,23 @@ public class FileSystem implements TreeModel, TableModel {
 	}
 	
 	public class Source implements Comparable<Source> {
-		Integer sourcesCount;
-		String oneAlias;
+		
+		private int sourcesCount;
+		private String oneAlias;
 		
 		public Source(int count, String oneAlias) {
-			this.oneAlias = oneAlias;
 			this.sourcesCount = count;
+			this.oneAlias = oneAlias;
 		}
 		
 		@Override
 		public int compareTo(Source o) {
-			return sourcesCount.compareTo(o.sourcesCount);
+			return Integer.compare(sourcesCount, o.sourcesCount);
 		}
 		
 		@Override
 		public String toString() {
-			return (sourcesCount>1 ? sourcesCount.toString()+" sources" : oneAlias);
+			return sourcesCount > 1 ? Integer.toString(sourcesCount) + " sources" : oneAlias;
 		}
 	}
 	

@@ -344,7 +344,7 @@ public abstract class Util {
 	
 	public static class FileSize implements Comparable<FileSize> {
 		
-		private final Long size;
+		private final long size;
 		private final boolean speed;
 		
 		public long getSize() {
@@ -368,7 +368,7 @@ public abstract class Util {
 		
 		@Override
 		public int compareTo(FileSize o) {
-			return size.compareTo(o.size);
+			return Long.compare(size, o.size);
 		}
 		
 		@Override
@@ -385,7 +385,7 @@ public abstract class Util {
 	 */
 	public static class NiceMagnitude implements Comparable<NiceMagnitude> {
 
-		private final Long magnitude;
+		private final long magnitude;
 		private final String suffix;
 		
 		public NiceMagnitude(long magnitude, String suffix) {
@@ -407,7 +407,7 @@ public abstract class Util {
 		
 		@Override
 		public int compareTo(NiceMagnitude o) {
-			return magnitude.compareTo(o.magnitude);
+			return Long.compare(magnitude, o.magnitude);
 		}
 	}
 	

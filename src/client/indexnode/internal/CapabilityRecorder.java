@@ -11,15 +11,14 @@ import common.Util.Deferrable;
 
 /**
  * Given adverts from other autoindexnode capable clients this class will store them to allow the current best autoindexnode to be determined.
- * 
  * @author gp
- *
  */
 public class CapabilityRecorder {
 
 	private class CapabilityRecord implements Comparable<CapabilityRecord> {
-		Long capability;
+		
 		final long advertuid;
+		long capability;
 		long lastReceived;
 		
 		public CapabilityRecord(long advertuid, long capability) {
@@ -29,27 +28,27 @@ public class CapabilityRecorder {
 		}
 		
 		public void update(long newCapability) {
-			this.lastReceived = System.currentTimeMillis();
-			this.capability = newCapability;
+			capability = newCapability;
+			lastReceived = System.currentTimeMillis();
 		}
 		
 		/**
 		 * Determines if this record has expired.
-		 * It is expired if it is older than five advertisment durations.
+		 * It is expired if it is older than five advertisement durations.
 		 * @return
 		 */
 		public boolean isExpired() {
-			return lastReceived < (System.currentTimeMillis()-FS2Constants.INDEXNODE_CAPABILITY_TABLE_DECAY);
+			return lastReceived < (System.currentTimeMillis() - FS2Constants.INDEXNODE_CAPABILITY_TABLE_DECAY);
 		}
 		
 		@Override
 		public String toString() {
-			return "[c:"+capability+"]";
+			return "[c:" + capability + "]";
 		}
 
 		@Override
 		public int compareTo(CapabilityRecord o) {
-			return o.capability.compareTo(capability);
+			return Long.compare(o.capability, capability);
 		}
 	}
 	
