@@ -97,7 +97,7 @@ public class Share {
 				if (!location.exists()) {
 					setStatus(Status.ERROR);
 					cause = ErrorCause.NOTFOUND;
-					Logger.warn("Share " + getName() + " (" + location.getName() + ") doesn't exist on disk!");
+					Logger.warn("Share '" + getName() + "' (" + location.getName() + ") doesn't exist on disk!");
 					return;
 				}
 				// Start on a canonical file.
