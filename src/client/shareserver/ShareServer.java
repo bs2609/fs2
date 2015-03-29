@@ -410,6 +410,8 @@ public class ShareServer implements TableModel {
 			Signal.handle(new Signal("USR1"), new RefreshSignalHandler());
 		} catch (IllegalArgumentException e) {
 			Logger.warn("Couldn't attach a signal handler for share refreshes.");
+		} catch (NoClassDefFoundError e) {
+			Logger.warn("Couldn't attach a signal handler for share refreshes.");
 		}
 		
 		Logger.log("Now exporting shares on port " + onPort);
