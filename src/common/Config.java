@@ -9,15 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.transform.TransformerException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.sun.org.apache.xpath.internal.XPathAPI;
 
 import common.SafeSaver.Savable;
 import common.Sxml.SXMLException;
@@ -225,14 +226,15 @@ public class Config implements Savable {
 			for (String bit : key.split("/")) {
 				if (bit.length() == 0) continue;
 				try {
-					Node nextNode = XPathAPI.selectSingleNode(onNode, bit);
+					XPath xPath = XPathFactory.newInstance().newXPath();
+					Node nextNode = (Node) xPath.evaluate("./" + bit, onNode, XPathConstants.NODE);
 					if (nextNode == null) {
 						nextNode = doc.createElement(bit);
 						onNode.appendChild(nextNode);
 					}
 					onNode = nextNode;
 					
-				} catch (TransformerException e) {
+				} catch (XPathExpressionException e) {
 					Logger.severe("Exception processing configuration: " + e);
 					Logger.log(e);
 					return null;

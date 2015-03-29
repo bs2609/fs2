@@ -5,9 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -21,17 +19,18 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
-import com.sun.org.apache.xpath.internal.XPathAPI;
-
 /**
  * A helper class to make playing with XML using a DOM more friendly.
- * 
  * This only understands UTF-8 (for files) correctly at the moment.
  */
 public class Sxml {
@@ -49,7 +48,7 @@ public class Sxml {
 	
 	private File hardcopy = null;
 	private Document xml;
-	//Was this file new this time?
+	/** Was this file new this time? */
 	private boolean fresh = false;
 	private String doctypeSystem = "";
 	private String doctypePublic = "";
@@ -66,9 +65,10 @@ public class Sxml {
 
 	public static Element getElementById(Node context, String id) {
 		try {
-			return (Element) XPathAPI.selectSingleNode(context, "//*[@id='" + id + "']");
+			XPath xPath = XPathFactory.newInstance().newXPath();
+			return (Element) xPath.evaluate("//*[@id='" + id + "']", context, XPathConstants.NODE);
 			
-		} catch (TransformerException e) {
+		} catch (XPathExpressionException e) {
 			Logger.log(e);
 			return null;
 		}
@@ -79,18 +79,18 @@ public class Sxml {
 	}
 	
 	/**
-	 * Constucts a new empty XML document attached to no file.
+	 * Constructs a new empty XML document attached to no file.
+	 * @throws SXMLException
 	 */
 	public Sxml() throws SXMLException {
-		construct(null,null);
+		construct(null, null);
 	}
 	
 	/**
 	 * Constructs a new XML document parsed from the input stream supplied.
-	 * 
 	 * This will buffer the stream so that it may be used directly on socket input streams.
-	 * 
 	 * @param inStream The stream with XML to parse in it.
+	 * @throws SXMLException
 	 */
 	public Sxml(InputStream inStream) throws SXMLException {
 		construct(null, new BufferedInputStream(inStream));
@@ -99,12 +99,11 @@ public class Sxml {
 	/**
 	 * Constructs a new XML document parsed from the file if it exists, and a blank new document otherwise.
 	 * @param path The XML file to parse in and save to. Will be created on save() if this doesn't exist already.
+	 * @throws SXMLException
 	 */
 	public Sxml(File path) throws SXMLException {
 		construct(path, null);
 	}
-	
-	
 	
 	private void construct(File path, InputStream fromStream) throws SXMLException {
 		try {
@@ -165,9 +164,7 @@ public class Sxml {
 	
 	/**
 	 * Saves this SXML document back to the hardcopy file.
-	 * @throws TransformerException
-	 * @throws FileNotFoundException
-	 * @throws IOException
+	 * @throws SXMLException
 	 */
 	public void save() throws SXMLException {
 		save(true);
@@ -176,9 +173,7 @@ public class Sxml {
 	/**
 	 * Saves this SXML document back to the hardcopy file.
 	 * @param indent Should the output be pretty-printed?
-	 * @throws TransformerException
-	 * @throws FileNotFoundException
-	 * @throws IOException
+	 * @throws SXMLException
 	 */
 	public void save(boolean indent) throws SXMLException {
 		if (hardcopy != null) {
@@ -192,6 +187,7 @@ public class Sxml {
 	 * Serialises this document to an output stream. 
 	 * @param outStream the destination stream.
 	 * @param indent Pretty-print?
+	 * @throws SXMLException
 	 */
 	public void save(OutputStream outStream, boolean indent) throws SXMLException {
 		outputXML(null, outStream, indent);
@@ -201,6 +197,7 @@ public class Sxml {
 	 * Saves this document to a file other than the hardcopy.
 	 * @param tofile the destination file.
 	 * @param indent Pretty-print?
+	 * @throws SXMLException
 	 */
 	public void save(File tofile, boolean indent) throws SXMLException {
 		outputXML(tofile, null, indent);
@@ -238,6 +235,7 @@ public class Sxml {
 	 * Returns a string that represents this XML document.
 	 * @param indent Pretty-print the document?
 	 * @return the XML document as a string.
+	 * @throws TransformerException
 	 */
 	public String generateString(boolean indent) throws TransformerException {
 		TransformerFactory tf;
@@ -296,7 +294,7 @@ public class Sxml {
 	}
 
 	/**
-	 * Iterates through the XML document removing uneeded whitespace nodes.
+	 * Iterates through the XML document removing unneeded whitespace nodes.
 	 */
 	public void clean() {
 		clean(getDocument());
