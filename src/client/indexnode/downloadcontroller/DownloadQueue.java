@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -126,9 +127,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 		 * This means that this item will no longer be considered as necessarily sharing peers with the current dispatch ID.
 		 */
 		public void resetDispatchId() {
-			synchronized (nextDispatchId) {
-				resetDispatchId(nextDispatchId++);
-			}
+			resetDispatchId(nextDispatchId.getAndIncrement());
 		}
 		
 		/**
@@ -919,7 +918,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 	
 	// Members:
 	QueueRoot root = new QueueRoot();
-	Integer nextDispatchId = 0;
+	AtomicInteger nextDispatchId = new AtomicInteger();
 	
 	// Transient members:
 	transient List<TreeModelListener> listeners;
@@ -1051,11 +1050,8 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 				DownloadDirectory todir = root.getDownloadDirectory(toDirectory);
 				// Put everything into a directory if specified.
 				if (intoDirectory != null) todir = todir.getChildDirectory(intoDirectory);
-				Integer toUse;
-				synchronized (nextDispatchId) {
-					// Grab a dispatch ID for this...
-					toUse = nextDispatchId++;
-				}
+				// Grab a dispatch ID for this...
+				Integer toUse = nextDispatchId.getAndIncrement();
 				todir.submit(files, listener, toUse);
 				fireSubmitCompleteEvent(listener);
 			}

@@ -55,11 +55,11 @@ public class Sxml {
 	private boolean standalone = false;
 	private Integer indentAmount = 4;
 	
-	public Integer getIndentAmount() {
+	public int getIndentAmount() {
 		return indentAmount;
 	}
 
-	public void setIndentAmount(Integer indentAmount) {
+	public void setIndentAmount(int indentAmount) {
 		this.indentAmount = indentAmount;
 	}
 

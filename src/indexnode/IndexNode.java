@@ -30,6 +30,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 
@@ -572,21 +573,18 @@ public class IndexNode {
 		private Client owner;
 		private int revision = 0;
 		private int pendingRevision = 0;
-		private int shareUID; //In the database, filesystem objects with this ID belong to this share.
-		
+		/** In the database, filesystem objects with this ID belong to this share. */
+		private int shareUID;
 		private boolean listed = false;
-		//Once delisted this share is defunct and may not be refreshed.
+		/** Once delisted, this share is defunct and may not be refreshed. */
 		private boolean delisted = false;
 		
 		Share(String inname, Client inowner, ShareType type) {
 			name = inname;
 			owner = inowner;
 			this.type = type;
-			synchronized (nextShareUID) {
-				shareUID = nextShareUID;
-				nextShareUID +=1;
-			}
-			Logger.log("Share "+name+" on "+owner.alias+" has been created and now must be refreshed...");
+			shareUID = nextShareUID.getAndIncrement();
+			Logger.log("Share " + name + " on " + owner.alias + " has been created and now must be refreshed...");
 		}
 		
 		public int getShareUID() {
@@ -770,7 +768,7 @@ public class IndexNode {
 	private ExecutorService clientPingPool = Executors.newCachedThreadPool(new NamedThreadFactory(true, "Client ping"));
 	private ExecutorService httpServicePool = Executors.newCachedThreadPool(new NamedThreadFactory(true, "http service"));
 	
-	private Integer nextShareUID = 1;
+	private AtomicInteger nextShareUID = new AtomicInteger(1);
 	private FS2Filter fs2Filter;
 	private IndexAuthFilter authFilter = null;
 	Date startedDate = new Date();
