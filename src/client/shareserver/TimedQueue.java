@@ -34,8 +34,8 @@ public class TimedQueue<E> {
 	/** the number of resources per client */
 	private int clientLimit = 1;
 	
-	/** the number of milliseconds before a client's token is removed*/
-	private Long queueTimeoutMS = 10*1000L;
+	/** The number of milliseconds before a client's token is removed. */
+	private long queueTimeoutMS = 10*1000L;
 	
 	/**
 	 * Attempts to take a resource.
@@ -149,7 +149,7 @@ public class TimedQueue<E> {
 	}
 	
 	private boolean hasExpired(E token) {
-		return ((new Date()).getTime()-tokenExpiries.get(token).getTime()) > queueTimeoutMS;
+		return (System.currentTimeMillis() - tokenExpiries.get(token).getTime()) > queueTimeoutMS;
 	}
 	
 	public synchronized int getFreeResourceCount() {
@@ -167,13 +167,16 @@ public class TimedQueue<E> {
 	public synchronized int getResourceCount() {
 		return resourceCount;
 	}
+	
 	public synchronized void setResourceCount(int resourceCount) {
 		this.resourceCount = resourceCount;
 	}
-	public synchronized Long getQueueTimeoutMS() {
+	
+	public synchronized long getQueueTimeoutMS() {
 		return queueTimeoutMS;
 	}
-	public synchronized void setQueueTimeoutMS(Long queueTimeoutMS) {
+	
+	public synchronized void setQueueTimeoutMS(long queueTimeoutMS) {
 		this.queueTimeoutMS = queueTimeoutMS;
 	}
 	
@@ -184,6 +187,4 @@ public class TimedQueue<E> {
 	public synchronized void setClientLimit(int clientLimit) {
 		this.clientLimit = clientLimit;
 	}
-	
-	
 }

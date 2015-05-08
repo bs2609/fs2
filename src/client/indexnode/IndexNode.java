@@ -82,9 +82,9 @@ public class IndexNode {
 	private ShareServer ssvr;
 	private IndexNodeStats stats = new IndexNodeStats();
 	private StatsUpdateTask statsUpdater = new StatsUpdateTask();
-	private Date lastSeen = new Date(0);
-	/** cltoken is used to ensure that only indexnodes we have registered with may access our file list */
-	private final Long cltoken = (new Random()).nextLong();
+	private Date lastSeen = new Date(0L);
+	/** cltoken is used to ensure that only indexnodes we have registered with may access our file list. */
+	private final long cltoken = (new Random()).nextLong();
 	String confKey = "";
 	int lastId = -1;
 	long advertuid;
@@ -416,7 +416,7 @@ public class IndexNode {
 			Logger.warn("Indexnode didn't supply any verification token.");
 			return false;
 		}
-		if (ex.getRequestHeaders().getFirst("fs2-verify").equals(cltoken.toString())) {
+		if (ex.getRequestHeaders().getFirst("fs2-verify").equals(Long.toString(cltoken))) {
 			
 			//we've established it's the correct indexnode, but is it secure?
 			if (secure && !ex.isSecure()) {

@@ -20,15 +20,15 @@ public class FS2Filter extends Filter {
 	/**
 	 * 
 	 * @param conn The connection to add fs2 headers to.
-	 * @param cltoken only needed chen communicating with the indexnode
+	 * @param cltoken Only needed when communicating with the indexnode.
 	 */
-	public void fs2FixupURLConnectionForClient(HttpURLConnection conn, Long cltoken) {
+	public void fs2FixupURLConnectionForClient(HttpURLConnection conn, long cltoken) {
 		fs2FixupCommon(conn);
 		conn.setReadTimeout(FS2Constants.CLIENT_URL_CONNECTION_TIMEOUT_MS);
 		conn.setConnectTimeout(FS2Constants.CLIENT_URL_CONNECTION_TIMEOUT_MS);
 		conn.addRequestProperty("fs2-port", Integer.toString(port));
 		conn.addRequestProperty("Cookie", "fs2-token="+Long.toString(queuetoken));
-		conn.addRequestProperty("fs2-cltoken", cltoken.toString());
+		conn.addRequestProperty("fs2-cltoken", Long.toString(cltoken));
 	}
 	
 	/**
@@ -44,11 +44,11 @@ public class FS2Filter extends Filter {
 	 * @param conn
 	 * @param cltoken
 	 */
-	public void fs2FixupURLConnectionForIndexNode(HttpURLConnection conn, Long cltoken) {
+	public void fs2FixupURLConnectionForIndexNode(HttpURLConnection conn, long cltoken) {
 		fs2FixupCommon(conn);
 		conn.setReadTimeout(FS2Constants.SERVER_URL_CONNECTION_TIMEOUT_MS);
 		conn.setConnectTimeout(FS2Constants.SERVER_URL_CONNECTION_TIMEOUT_MS);
-		conn.addRequestProperty("fs2-verify", cltoken.toString());
+		conn.addRequestProperty("fs2-verify", Long.toString(cltoken));
 	}
 	
 	private void fs2FixupCommon(HttpURLConnection conn) {
