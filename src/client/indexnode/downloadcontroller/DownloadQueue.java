@@ -66,7 +66,7 @@ import common.Util.LockHolder;
  */
 public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerListener {
 	
-	private static final long serialVersionUID = -1072524270763008208L;
+	private static final long serialVersionUID = 2630705870997404062L;
 	
 	// Nested classes:
 	
