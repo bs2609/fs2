@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -261,7 +262,7 @@ public class NativeFS implements Filesystem {
 	/** Maps keywords onto sets of entries. */
 	private final Map<String, Set<NativeEntry>> nameIndex = new HashMap<String, Set<NativeEntry>>();
 	
-	private final String keywordSplitRegex = "\\p{Punct}|[ \\t]";
+	private final Pattern keywordSplitter = Pattern.compile("\\p{Punct}|\\p{Blank}");
 	
 	/**
 	 * Gets an array of keywords from a filename or a query.
@@ -269,7 +270,7 @@ public class NativeFS implements Filesystem {
 	 * @return
 	 */
 	private String[] getKeywords(String input) {
-		return input.toLowerCase().split(keywordSplitRegex);
+		return keywordSplitter.split(input.toLowerCase());
 	}
 	
 	/**
