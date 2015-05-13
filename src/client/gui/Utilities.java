@@ -23,7 +23,7 @@ import common.Logger;
 
 public class Utilities {
 	
-	Map<String, Reference<ImageIcon>> cachedImages = new HashMap<String, Reference<ImageIcon>>();
+	private final Map<String, Reference<ImageIcon>> cachedImages = new HashMap<String, Reference<ImageIcon>>();
 	
 	/**
 	 * Gets an {@link Image} of an icon, preferably from the filesystem,
@@ -84,7 +84,7 @@ public class Utilities {
 		}
 	}
 	
-	public enum FileType {UNKNOWN, APPLICATION, AUDIO, VIDEO, IMAGE, PDF, HTML, JAVA, CODE, TEXT, DOCUMENT, ARCHIVE, DISKIMAGE, TORRENT, CAKE};
+	public enum FileType {UNKNOWN, APPLICATION, AUDIO, VIDEO, IMAGE, PDF, FLASH, HTML, JAVA, CODE, TEXT, DOCUMENT, ARCHIVE, DISKIMAGE, TORRENT, CAKE};
 	
 	/**
 	 * This will attempt to guess the MIME type of a file based on its extension.
@@ -105,7 +105,7 @@ public class Utilities {
 		return FileType.UNKNOWN;
 	}
 	
-	Map<String, FileType> typeMap = new HashMap<String, FileType>();
+	private final Map<String, FileType> typeMap = new HashMap<String, FileType>();
 	
 	public Utilities() {
 		// Applications
@@ -158,6 +158,9 @@ public class Utilities {
 		
 		// PDF
 		typeMap.put("pdf", FileType.PDF);
+		
+		// Flash
+		typeMap.put("swf", FileType.FLASH);
 		
 		// HTML
 		typeMap.put("htm", FileType.HTML);
