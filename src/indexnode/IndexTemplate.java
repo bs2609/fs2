@@ -1,15 +1,12 @@
 package indexnode;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 
 import javax.xml.transform.TransformerException;
 
-import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -46,7 +43,7 @@ public class IndexTemplate {
 	}
 	
 	public IndexTemplate() throws SXMLException {
-		//Setup the document that will be output:
+		// Setup the document that will be output:
 		xml = new Sxml();
 		xml.setStandalone(true);
 		xml.setDoctypeSystem("http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
@@ -73,7 +70,7 @@ public class IndexTemplate {
 		htmlbody.appendChild(footer);
 		footer.setAttribute("id", "fs2-footer");
 		footer.appendChild(doc.createElement("hr"));
-		//Find the link base:
+		// Find the link base:
 		generationTime = doc.createElement("span");
 		footer.appendChild(generationTime);
 	}
@@ -86,15 +83,15 @@ public class IndexTemplate {
 		title.setTextContent(newTitle);
 	}
 	
-	public void setSimpleHeader(String text){
+	public void setSimpleHeader(String text) {
 		header.setTextContent(text);
 	}
 	
-	public Element getHeaderElement(){
+	public Element getHeaderElement() {
 		return header;
 	}
 	
-	public void setFileHeader(FilesystemEntry entry) throws SQLException, UnsupportedEncodingException {
+	public void setFileHeader(FilesystemEntry entry) {
 		String name = entry.getName();
 		if (entry.isRoot()) name = "Root of fs2";
 		Element h3 = doc.createElement("h3");
@@ -118,14 +115,12 @@ public class IndexTemplate {
 	}
 	
 	/**
-	 * returns a blank 'a' tag to a node.
-	 * @param nodeID the ID of the node to link to.
-	 * @param directURLs generate links to client machines directly
+	 * Returns a blank 'a' tag to a node.
+	 * @param entry
+	 * @param directURLs - Generate links to client machines directly?
 	 * @return
-	 * @throws UnsupportedEncodingException  
-	 * @throws DOMException 
 	 */
-	public Element linkToEntry(FilesystemEntry entry, boolean directURLs) throws UnsupportedEncodingException {
+	public Element linkToEntry(FilesystemEntry entry, boolean directURLs) {
 		Element retElem = doc.createElement("a");
 		if (entry.isDirectory()) {
 			String entryPath = entry.getPath(true, true);
@@ -178,10 +173,9 @@ public class IndexTemplate {
 	/**
 	 * Append a fileList to the body of the page:
 	 */
-	public void generateFilelist(Collection<? extends FilesystemEntry> collection, boolean directDownload, boolean parentLinkForEach) throws DOMException, UnsupportedEncodingException, SQLException {
+	public void generateFilelist(Collection<? extends FilesystemEntry> collection, boolean directDownload, boolean parentLinkForEach) {
 		generateFilelist(collection, directDownload, parentLinkForEach, body);
 	}
-	
 
 	/**
 	 * Adds the result of a command to a chat return.
@@ -222,9 +216,8 @@ public class IndexTemplate {
 	 * @param directDownload Direct links to clients if this is true
 	 * @param parentLinkForEach Each item has a link to its parents if this is true.
 	 * @param inSection the section to add the list to.
-	 * @throws UnsupportedEncodingException 
 	 */
-	public void generateFilelist(Collection<? extends FilesystemEntry> collection, boolean directDownload, boolean parentLinkForEach, Element inSection) throws UnsupportedEncodingException  {
+	public void generateFilelist(Collection<? extends FilesystemEntry> collection, boolean directDownload, boolean parentLinkForEach, Element inSection) {
 		Element fl = doc.createElement("div");
 		inSection.appendChild(fl);
 		fl.setAttribute("id", "fs2-filelist");

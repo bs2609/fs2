@@ -1,6 +1,5 @@
 package indexnode;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -169,7 +168,7 @@ public class NativeFS implements Filesystem {
 		}
 
 		@Override
-		public String getPath(boolean urlEncode, boolean includeOwner) throws UnsupportedEncodingException {
+		public String getPath(boolean urlEncode, boolean includeOwner) {
 			Deque<String> pathBits = getPathBits(urlEncode);
 			if (!includeOwner) pathBits.remove();
 			return Util.join(pathBits.toArray(), "/");
@@ -179,9 +178,8 @@ public class NativeFS implements Filesystem {
 		 * Returns a collection of path elements for this entry.
 		 * @param urlEncode
 		 * @return
-		 * @throws UnsupportedEncodingException 
 		 */
-		private Deque<String> getPathBits(boolean urlEncode) throws UnsupportedEncodingException {
+		private Deque<String> getPathBits(boolean urlEncode) {
 			Deque<String> ret = new ArrayDeque<String>();
 			FilesystemEntry currentEntry = this;
 			while (!currentEntry.isRoot()) {

@@ -14,7 +14,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -65,11 +64,10 @@ public class IndexNode {
 	 * by requesting the /hello address.
 	 * 
 	 * 'secure' clients will have been dropped before this handler unless their credentials were accepted.
-	 * 
 	 */
 	private class HelloHandler implements HttpHandler {
+		
 		public void handle(HttpExchange exchange) throws IOException {
-			
 			//Simple test to catch out web browsers:
 			if (!exchange.getRequestHeaders().containsKey("fs2-version")) {
 				Logger.log(exchange.getRemoteAddress().getAddress().getHostAddress()+" likely web-browser registration attempt.");
@@ -125,12 +123,14 @@ public class IndexNode {
 	 * @author gary
 	 */
 	public final class SimpleClientInfo {
+		
 		final InetSocketAddress clientAddressID;
 		final boolean local;
 		final int port;
 		final long cltoken;
 		final String alias;
 		final boolean secure;
+		
 		public SimpleClientInfo(InetSocketAddress cai, boolean local, int port, long cltoken, String alias, boolean secure) {
 			this.port = port;
 			this.local = local;
@@ -214,6 +214,7 @@ public class IndexNode {
 	 * @author gary
 	 */
 	public class Client {
+		
 		private InetSocketAddress address;
 		//all of this client's shares:
 		Map<String,Share> shares = new HashMap<String, Share>();
@@ -245,6 +246,7 @@ public class IndexNode {
 		
 		@SuppressWarnings("serial")
 		public class RegistrationException extends Exception {
+			
 			public RegistrationException(String message) {
 				super(message);
 			}
@@ -282,7 +284,9 @@ public class IndexNode {
 		}
 		
 		private boolean aliveQuerySubmitted = false;
+		
 		private class AliveTimerTask extends TimerTask {
+			
 			public void run() {
 				synchronized (Client.this) {
 					if (aliveQuerySubmitted) {
@@ -568,6 +572,7 @@ public class IndexNode {
 	 * It's run from a threadpool to refresh it.
 	 */
 	public class Share implements Runnable {
+		
 		private ShareType type;
 		private String name;
 		private Client owner;
@@ -744,7 +749,6 @@ public class IndexNode {
 			}
 		}
 	}
-	
 	
 	// All the clients we currently know about: address->clientObject
 	Map<InetSocketAddress, Client> clients = new HashMap<InetSocketAddress, Client>();
@@ -947,7 +951,7 @@ public class IndexNode {
 		clientLivenessTimer.cancel();
 	}
 	
-	private void listenOnInterface(NetworkInterface if0) throws IOException, SocketException {
+	private void listenOnInterface(NetworkInterface if0) {
 		InetSocketAddress addr;
 		Enumeration<InetAddress> addrs = if0.getInetAddresses();
 		if (addrs.hasMoreElements()) {
@@ -962,14 +966,10 @@ public class IndexNode {
 	}
 
 	/**
-	 * Binds the indexnode to the addr supplied and advertises too.
-	 * @param advertiseOn Set this to null or equal to addr to advertsise on addr's address.
-	 * @param addr
-	 * @throws IOException
-	 * @throws SocketException
+	 * Binds the indexnode to the address supplied and advertises too.
+	 * @param addr - Set this to null or equal to addr to advertise on addr's address.
 	 */
-	private void bindToAddress(InetSocketAddress addr)
-			throws IOException, SocketException {
+	private void bindToAddress(InetSocketAddress addr) {
 		//Setup and bind the http server:
 		HttpServer http = startHttpServer(addr);
 		if (http==null) return;

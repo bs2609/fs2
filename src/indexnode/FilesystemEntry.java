@@ -1,12 +1,11 @@
 package indexnode;
 
-import indexnode.IndexNode.Share;
-
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Map;
 
 import common.Util.ByteArray;
+
+import indexnode.IndexNode.Share;
 
 public interface FilesystemEntry {
 
@@ -47,10 +46,9 @@ public interface FilesystemEntry {
 
 	/**
 	 * Returns the string path to this file in the filesystem.
-	 * @return a / separated path from the root of fs2 to this file.
-	 * @throws UnsupportedEncodingException 
+	 * @return A '/' separated path from the root of fs2 to this file.
 	 */
-	public abstract String getPath(boolean urlEncode, boolean includeOwner) throws UnsupportedEncodingException;
+	public abstract String getPath(boolean urlEncode, boolean includeOwner);
 
 	/**
 	 * Generate a URL to the file on the client hosting this.
