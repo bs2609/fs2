@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -124,7 +125,7 @@ public class Sxml {
 			} else if (path != null && path.exists()) {
 				FileInputStream fis = new FileInputStream(hardcopy);
 				try {
-					InputSource is = new InputSource(new BufferedReader(new InputStreamReader(fis,"UTF-8")));
+					InputSource is = new InputSource(new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8)));
 					xml = db.parse(is);
 				} finally {
 					fis.close();
@@ -210,7 +211,7 @@ public class Sxml {
 	        	workingFile = new File(file.getCanonicalPath()+".working");
 	        	stream = new BufferedOutputStream(new FileOutputStream(workingFile));
 	        }
-	        stream.write(generateString(indent).getBytes("UTF-8"));
+	        stream.write(generateString(indent).getBytes(StandardCharsets.UTF_8));
 	        if (file != null) {
 	        	//by using a temporary file then moving it to a target
 	        	//we hope to get as close to atomicity as possible in a cross platform way.

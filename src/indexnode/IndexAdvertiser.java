@@ -1,7 +1,6 @@
 package indexnode;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet6Address;
@@ -9,6 +8,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 import common.FS2Constants;
 import common.Logger;
@@ -66,12 +66,12 @@ public class IndexAdvertiser extends Thread {
 		}
 	}
 
-	private void sendAdvert(String message) throws UnsupportedEncodingException, UnknownHostException {
-		byte[] advert = message.getBytes("utf-8");
+	private void sendAdvert(String message) throws UnknownHostException {
+		byte[] advert = message.getBytes(StandardCharsets.UTF_8);
 		DatagramPacket packet = new DatagramPacket(advert, advert.length, (socket.getInetAddress() instanceof Inet6Address ? InetAddress.getByName("ff02::1") : InetAddress.getByName("255.255.255.255")), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
-		
 		try {
 			socket.send(packet);
+			
 		} catch (IOException e) {
 			if (!warned) {
 				Logger.warn("Failed to send an advertisment on: "+sock.toString()+", Retrying silently now. Why? "+e.toString());

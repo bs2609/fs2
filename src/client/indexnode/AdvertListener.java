@@ -1,12 +1,12 @@
 package client.indexnode;
 
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet6Address;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import common.FS2Constants;
 import common.Logger;
@@ -60,7 +60,7 @@ public class AdvertListener extends Thread {
 					
 					if (mustShutdown) return;
 					
-					String[] splitAdvert = (new String(packet.getData(),0,packet.getLength(), "utf-8")).split(":");
+					String[] splitAdvert = (new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8)).split(":");
 					//Both types of advert have more than two fields:
 					if (splitAdvert.length < 2) {
 						continue;
@@ -92,13 +92,12 @@ public class AdvertListener extends Thread {
 	}
 	
 	/**
-	 * attempts to recieve an activity advert.
+	 * Attempts to receive an activity advert.
 	 * @param splitAdvert
 	 * @param packet
-	 * @throws UnsupportedEncodingException 
 	 * @throws MalformedURLException 
 	 */
-	private void attemptActivityRX(String[] splitAdvert, DatagramPacket packet) throws UnsupportedEncodingException, MalformedURLException {
+	private void attemptActivityRX(String[] splitAdvert, DatagramPacket packet) throws MalformedURLException {
 		int indexNodePort = 0;
 		try {
 			indexNodePort = Integer.parseInt(splitAdvert[1]);
@@ -114,7 +113,7 @@ public class AdvertListener extends Thread {
 			advertuid = Long.parseLong(splitAdvert[2]);
 		} catch (Exception e) {
 			Logger.warn("A supposedly compatible indexnode is providing no advert ID, ignoring.");
-			Logger.log("Advert: "+new String(packet.getData(),0,packet.getLength(), "utf-8"));
+			Logger.log("Advert: " + new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8));
 			return;
 		}
 		if (advertuid==0) {

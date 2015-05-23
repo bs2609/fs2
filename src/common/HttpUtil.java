@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +91,7 @@ public abstract class HttpUtil {
 	 * @throws IOException
 	 */
 	public static void simpleResponse(HttpExchange exchange, String msg, int statusCode) throws IOException {
-		simpleBinaryResponse(exchange, msg.getBytes("UTF-8"), statusCode);
+		simpleBinaryResponse(exchange, msg.getBytes(StandardCharsets.UTF_8), statusCode);
 	}
 	
 	/**

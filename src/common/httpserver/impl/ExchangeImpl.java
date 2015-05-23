@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -217,11 +218,11 @@ public class ExchangeImpl extends HttpExchange {
 
 	@Override
 	public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
-		String headerLine = "HTTP/1.1 "+rCode+" "+statuses.get(rCode)+"\r\n";
-		out.write(headerLine.getBytes("ASCII"));
+		String headerLine = "HTTP/1.1 " + rCode + " " + statuses.get(rCode) + "\r\n";
+		out.write(headerLine.getBytes(StandardCharsets.US_ASCII));
 		responseHeaders.add("Content-Length", Long.toString(responseLength));
-		out.write(responseHeaders.toString().getBytes("ASCII"));
-		out.write("\r\n".getBytes("ASCII"));
+		String headers = responseHeaders.toString() + "\r\n";
+		out.write(headers.getBytes(StandardCharsets.US_ASCII));
 	}
 
 	@Override
