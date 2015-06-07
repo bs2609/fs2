@@ -6,9 +6,9 @@ import java.net.Inet6Address;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
 import common.FS2Constants;
+import common.HttpUtil;
 import common.Logger;
 
 /**
@@ -21,6 +21,7 @@ import common.Logger;
  * @author gary
  */
 public class AdvertListener extends Thread {
+	
 	private DatagramSocket socket;
 	private boolean mustShutdown = false;
 	private IndexNodeCommunicator indexcomms;
@@ -51,7 +52,7 @@ public class AdvertListener extends Thread {
 	
 	@Override
 	public void run() {
-		byte[] buf = new byte[100];
+		byte[] buf = new byte[128];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 		while (!mustShutdown) {
 			try {
@@ -60,7 +61,8 @@ public class AdvertListener extends Thread {
 					
 					if (mustShutdown) return;
 					
-					String[] splitAdvert = (new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8)).split(":");
+					String[] splitAdvert = HttpUtil.getText(packet).split(":");
+					
 					//Both types of advert have more than two fields:
 					if (splitAdvert.length < 2) {
 						continue;
@@ -113,7 +115,7 @@ public class AdvertListener extends Thread {
 			advertuid = Long.parseLong(splitAdvert[2]);
 		} catch (Exception e) {
 			Logger.warn("A supposedly compatible indexnode is providing no advert ID, ignoring.");
-			Logger.log("Advert: " + new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8));
+			Logger.log("Advert: " + HttpUtil.getText(packet));
 			return;
 		}
 		if (advertuid==0) {

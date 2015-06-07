@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -56,6 +57,13 @@ public abstract class HttpUtil {
 	 */
 	public static String pathBasename(String inPath) {
 		return new File(inPath).getName();
+	}
+	
+	/**
+	 * Interprets the packet data as text and returns it as a string.
+	 */
+	public static String getText(DatagramPacket packet) {
+		return new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8);
 	}
 	
 	/**
