@@ -29,7 +29,8 @@ public class SingleInstanceDetector {
 	Listener listener;
 	
 	private class Listener extends Thread {
-		boolean shutdown = false;
+		
+		volatile boolean shutdown = false;
 		
 		public Listener() {
 			setDaemon(true);
@@ -38,25 +39,26 @@ public class SingleInstanceDetector {
 		
 		@Override
 		public void run() {
-			super.run();
-				while (true) {
-					try {
-						if (shutdown) return;
-						Socket in = socket.accept();
-						in.close();
-						synchronized (interesteds) {
-							for (InstanceNotifiable n : interesteds) {
-								n.newInstanceStarted();
-							}
+			while (!shutdown) {
+				try (Socket in = socket.accept()) {
+					synchronized (interesteds) {
+						for (InstanceNotifiable n : interesteds) {
+							n.newInstanceStarted();
 						}
-					} catch (Exception e) {
-						if (!(e instanceof SocketException)) Logger.warn("Exception while listening for new instances: "+e);
-					} finally {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException dontcare) {}
 					}
+					
+				} catch (SocketException e) {
+					// ignore
+					
+				} catch (Exception e) {
+					Logger.warn("Exception while listening for new instances: " + e);
+					
+				} finally {
+					try {
+						Thread.sleep(1000L);
+					} catch (InterruptedException dontcare) {}
 				}
+			}
 		}
 	}
 	
@@ -65,16 +67,18 @@ public class SingleInstanceDetector {
 	 */
 	public SingleInstanceDetector() {
 		try {
-			socket = new ServerSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
+			socket = new ServerSocket(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1, 0, InetAddress.getLoopbackAddress());
 			listener = new Listener();
 			listener.start();
+			
 		} catch (IOException e) {
 			Logger.warn("FS2 is unable to detect if new instances are started by mistake! Check port " + (FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1) + " is free: " + e);
 		}
 	}
 	
 	public interface InstanceNotifiable {
-		public void newInstanceStarted();
+		
+		void newInstanceStarted();
 	}
 	
 	Set<InstanceNotifiable> interesteds = new HashSet<InstanceNotifiable>(4);
@@ -95,18 +99,19 @@ public class SingleInstanceDetector {
 		try {
 			listener.shutdown = true;
 			socket.close();
+			
 		} catch (IOException e) {
-			Logger.log("Shutting down SingleInstanceDetector: "+e);
+			Logger.log("Shutting down SingleInstanceDetector: " + e);
 			Logger.log(e);
 		}
 	}
 	
 	public static boolean notifyOtherInstance() {
-		try {
-			new Socket(InetAddress.getByAddress(new byte[] {127,0,0,1}), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT+1);
+		try (Socket s = new Socket(InetAddress.getLoopbackAddress(), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1)) {
 			return true;
+			
 		} catch (Exception e) {
-			Logger.warn("Unable to notify another instance: "+e);
+			Logger.warn("Unable to notify another instance: " + e);
 			return false;
 		}
 	}
