@@ -22,8 +22,8 @@ import common.Logger;
  */
 public class AdvertListener extends Thread {
 	
+	private volatile boolean mustShutdown = false;
 	private DatagramSocket socket;
-	private boolean mustShutdown = false;
 	private IndexNodeCommunicator indexcomms;
 	
 	private AdvertListener(IndexNodeCommunicator indexcomms) {
@@ -43,6 +43,7 @@ public class AdvertListener extends Thread {
 			n.start();
 			Logger.log("Now listening for indexnode adverts");
 			return n;
+			
 		} catch (SocketException e) {
 			Logger.warn("Advertisment reception couldn't be enabled.");
 			Logger.log(e);

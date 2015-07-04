@@ -23,9 +23,9 @@ import common.Logger;
  */
 public class IndexAdvertiser extends Thread {
 	
+	private volatile boolean shutdown = false;
 	private DatagramSocket socket;
 	private InetSocketAddress sock;
-	private volatile boolean shutdown = false;
 	private AdvertDataSource ads;
 	boolean warned = false;
 	
@@ -68,7 +68,8 @@ public class IndexAdvertiser extends Thread {
 
 	private void sendAdvert(String message) throws UnknownHostException {
 		byte[] advert = message.getBytes(StandardCharsets.UTF_8);
-		DatagramPacket packet = new DatagramPacket(advert, advert.length, (socket.getInetAddress() instanceof Inet6Address ? InetAddress.getByName("ff02::1") : InetAddress.getByName("255.255.255.255")), FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
+		InetAddress address = (socket.getInetAddress() instanceof Inet6Address) ? InetAddress.getByName("ff02::1") : InetAddress.getByName("255.255.255.255");
+		DatagramPacket packet = new DatagramPacket(advert, advert.length, address, FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
 		try {
 			socket.send(packet);
 			
