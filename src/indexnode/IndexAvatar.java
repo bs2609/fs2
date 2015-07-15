@@ -1,13 +1,11 @@
 package indexnode;
 
-import indexnode.IndexNode.Client;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 
-import common.Base64Coder;
 import common.FS2Constants;
 import common.HttpFileHandler;
 import common.HttpUtil;
@@ -17,6 +15,8 @@ import common.Util;
 import common.Util.ImageResizeType;
 import common.httpserver.HttpExchange;
 import common.httpserver.HttpHandler;
+
+import indexnode.IndexNode.Client;
 
 /**
  * An http handler that recieves new avatars from a client.
@@ -72,7 +72,7 @@ public class IndexAvatar implements HttpHandler {
 					File avFile = new File(avatarDir.getPath()+File.separator+avHash+".png");
 					
 					if (!avFile.isFile()) {
-						byte[] sanitised = Util.processImage(new ByteArrayInputStream(Base64Coder.decode(inAv)), "png", FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, ImageResizeType.NORATIO);
+						byte[] sanitised = Util.processImage(new ByteArrayInputStream(Base64.getDecoder().decode(inAv)), "png", FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, ImageResizeType.NORATIO);
 						Util.writeStreamToFile(new ByteArrayInputStream(sanitised), avFile);
 					}
 					

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,7 +32,6 @@ import client.shareserver.Share;
 import client.shareserver.ShareServer;
 import client.shareserver.Share.Status;
 
-import common.Base64Coder;
 import common.Config;
 import common.FS2Constants;
 import common.Logger;
@@ -93,19 +93,14 @@ public class IndexNodeCommunicator implements TableModel {
 	void setupAvatar() {
 		File avatarFile = getAvatarFile();
 		if (avatarFile.isFile() && avatarFile.canRead()) {
-			try {
-				InputStream is = new BufferedInputStream(new FileInputStream(avatarFile));
-				try {
-					encodedAvatar = new String(Base64Coder.encode(Util.processImage(is, "png", FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, ImageResizeType.NORATIO)));
-					encodedAvatarMD5 = Util.md5(encodedAvatar);
-					synchronized (nodes) {
-						for (IndexNode node : nodes) node.notifyIndexNode();
-					}
-				} finally {
-					is.close();
+			try (InputStream is = new BufferedInputStream(new FileInputStream(avatarFile))) {
+				encodedAvatar = Base64.getEncoder().encodeToString(Util.processImage(is, "png", FS2Constants.FS2_AVATAR_ICON_SIZE, FS2Constants.FS2_AVATAR_ICON_SIZE, ImageResizeType.NORATIO));
+				encodedAvatarMD5 = Util.md5(encodedAvatar);
+				synchronized (nodes) {
+					for (IndexNode node : nodes) node.notifyIndexNode();
 				}
-			} catch (IOException e ) {
-				Logger.warn("Avatar "+avatarFile.getPath()+" couldn't be loaded: "+e);
+			} catch (IOException e) {
+				Logger.warn("Avatar " + avatarFile.getPath() + " couldn't be loaded: " + e);
 			}
 		} else {
 			encodedAvatar = null;
