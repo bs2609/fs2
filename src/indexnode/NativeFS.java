@@ -171,7 +171,7 @@ public class NativeFS implements Filesystem {
 		public String getPath(boolean urlEncode, boolean includeOwner) {
 			Deque<String> pathBits = getPathBits(urlEncode);
 			if (!includeOwner) pathBits.remove();
-			return Util.join(pathBits.toArray(), "/");
+			return Util.join(pathBits, "/");
 		}
 		
 		/**

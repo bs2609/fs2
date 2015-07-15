@@ -299,7 +299,7 @@ public class AdvancedSettings extends SettingsPanel {
 			ports.add(iim.getPort());
 			ports.add(iim.getPort() + 1);
 		}
-		portNumberInfo.setText("<html>FS2 is currently using ports: <b>" + Util.join(ports.toArray(), ", ") + "</b><br>Open these ports on your firewall to use FS2.</html>");
+		portNumberInfo.setText("<html>FS2 is currently using ports: <b>" + Util.join(ports, ", ") + "</b><br>Open these ports on your firewall to use FS2.</html>");
 	}
 	
 	/**

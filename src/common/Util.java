@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
@@ -116,17 +117,26 @@ public abstract class Util {
 	}
 	
 	/**
-	 * Join the string representation of objects together with a delimiter between them.
+	 * Joins the string representation of objects together with a delimiter between them.
 	 * @param items The array of objects to join.
 	 * @param delim The separator/delimiter.
 	 * @return
 	 */
 	public static String join(Object[] items, String delim) {
-		if (items.length == 0) return "";
-		StringBuilder sb = new StringBuilder(String.valueOf(items[0]));
-		int i = 1;
-		while (i < items.length) sb.append(delim).append(items[i++]);
-		return sb.toString();
+		StringJoiner sj = new StringJoiner(delim);
+		for (Object item : items) {
+			sj.add(String.valueOf(item));
+		}
+		return sj.toString();
+	}
+	
+	/** Joins the string representation of objects together with a delimiter between them. */
+	public static String join(Iterable<?> items, String delim) {
+		StringJoiner sj = new StringJoiner(delim);
+		for (Object item : items) {
+			sj.add(String.valueOf(item));
+		}
+		return sj.toString();
 	}
 	
 	/**
