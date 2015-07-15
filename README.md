@@ -4,7 +4,7 @@ FS2
 FS2 is a sophisticated and mature file sharing system for LAN parties with a focus on fast accurate searching, easy browsing and fast transfers.
 
 FS2 uses centralised indexing to provide very fast browsing and searching. Usually one of the computers on your LAN will host the indexnode which will enable other clients to browse each other's files.
-Data transfer is peer to peer and automatically load balanced between available sources.
+Data transfer is peer-to-peer and automatically load-balanced between available sources.
 
 FS2 is not designed to be secure or facilitate internet piracy.
 It is to allow the easy transfer of files (such as Steam backups) at LAN parties where Windows file sharing and other programs like DC++ simply don't do searching and browsing well enough.
@@ -15,7 +15,7 @@ Indeed, FS2 was developed for the FragSoc (University of York LAN gaming society
 Getting Started
 ===============
 
-FS2 requires Java 1.7 or above and will run on Windows, Linux and OS X. Just double-click on the fs2client-X.X.X.jar, or run "java -jar fs2client-X.X.X.jar"
+FS2 requires Java 1.8 or above and will run on Windows, Linux and OS X. Just double-click on the fs2client-X.X.X.jar, or run "java -jar fs2client-X.X.X.jar"
 
 **The latest build can always be found at ftp://empty.org.uk/fs2/ and the FS2 client will automatically update to the latest version available.** If autoupdates are not your thing, then you can disable them in the advanced settings.
 
