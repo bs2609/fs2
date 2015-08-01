@@ -42,10 +42,10 @@ public interface Filesystem {
 	public abstract FilesystemEntry registerClient(Client client);
 
 	/**
-	 * Removes this client's top level directory
-	 * @param entry the client's alias directory.
+	 * Removes this client's top level directory.
+	 * @param client - The client.
 	 */
-	public abstract void deregisterClient(FilesystemEntry entry);
+	public abstract void deregisterClient(Client client);
 
 	/**
 	 * Performs a filesystem search for files with the specified hash.

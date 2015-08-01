@@ -324,10 +324,11 @@ public class NativeFS implements Filesystem {
 	}
 
 	@Override
-	public void deregisterClient(FilesystemEntry entry) {
-		root.adjustSize(-entry.getSize());
+	public void deregisterClient(Client client) {
+		FilesystemEntry clientRoot = client.getFilesystemRoot();
+		root.adjustSize(-clientRoot.getSize());
 		root.adjustLinkCount(-1);
-		entry.erase();
+		clientRoot.erase();
 	}
 
 	class FilePopularityComparator implements Comparator<Set<NativeEntry>> {
@@ -364,19 +365,21 @@ public class NativeFS implements Filesystem {
 
 	@Override
 	public void importShare(Element root, Share share) {
-		FilesystemEntry shareRoot = share.getOwner().getFilesystemRoot().createChildDirectory(share.getName(), share);
+		FilesystemEntry clientRoot = share.getOwner().getFilesystemRoot();
+		FilesystemEntry shareRoot = clientRoot.createChildDirectory(share.getName(), share);
 		importXMLIntoFilesystem(root, shareRoot, share);
-		share.getOwner().getFilesystemRoot().adjustLinkCount(1);
-		share.getOwner().getFilesystemRoot().adjustSize(shareRoot.getSize());
+		clientRoot.adjustLinkCount(1);
+		clientRoot.adjustSize(shareRoot.getSize());
 		this.root.adjustSize(shareRoot.getSize());
 	}
 
 	@Override
 	public void importShare(Item root, Share share) {
-		FilesystemEntry shareRoot = share.getOwner().getFilesystemRoot().createChildDirectory(share.getName(), share);
+		FilesystemEntry clientRoot = share.getOwner().getFilesystemRoot();
+		FilesystemEntry shareRoot = clientRoot.createChildDirectory(share.getName(), share);
 		importFileListIntoFilesystem(root, shareRoot, share);
-		share.getOwner().getFilesystemRoot().adjustLinkCount(1);
-		share.getOwner().getFilesystemRoot().adjustSize(shareRoot.getSize());
+		clientRoot.adjustLinkCount(1);
+		clientRoot.adjustSize(shareRoot.getSize());
 		this.root.adjustSize(shareRoot.getSize());
 	}
 	

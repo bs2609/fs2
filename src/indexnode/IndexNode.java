@@ -494,11 +494,11 @@ public class IndexNode {
 			for (Share share : sharesCopy) {
 				removeShare(share);
 			}
-			synchronized(clientAliases) {
+			synchronized (clientAliases) {
 				clientAliases.remove(alias);
 			}
-			fs.deregisterClient(filesystemRoot);
-			Logger.log("Client "+alias+" has been disconnected.");
+			fs.deregisterClient(this);
+			Logger.log("Client " + alias + " has been disconnected.");
 		}
 		
 		/**
