@@ -89,7 +89,7 @@ public class NativeFS implements Filesystem {
 			
 			// Now update the indices for this filesystem:
 			if (!newChild.isDirectory()) {
-				addHashIndex(newChild);
+				addToHashIndex(newChild);
 				count.incrementAndGet();
 			}
 			addToNameIndex(newChild);
@@ -236,7 +236,7 @@ public class NativeFS implements Filesystem {
 	/** Used to lookup files by hash quickly: */
 	private final Map<ByteArray, Set<NativeEntry>> hashIndex = new HashMap<ByteArray, Set<NativeEntry>>();
 	
-	private void addHashIndex(NativeEntry entry) {
+	private void addToHashIndex(NativeEntry entry) {
 		// Initialise this hash entry if it doesn't have a set yet:
 		synchronized (hashIndex) {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
