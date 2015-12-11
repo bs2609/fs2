@@ -585,6 +585,10 @@ public class ShareServer implements TableModel {
 		return shares;
 	}
 	
+	private String getShareConfigKey(String shareName) {
+		return CK.SHARES + "/s" + shareName.hashCode();
+	}
+	
 	/**
 	 * Permanently exports the given directory as the name given.
 	 * @param name
@@ -593,8 +597,9 @@ public class ShareServer implements TableModel {
 	public void addShare(String name, File location) {
 		if (name.equals("")) throw new IllegalArgumentException("Invalid name.");
 		if (shareNameExists(name)) throw new IllegalArgumentException("Share name already exists!");
-		conf.putString(CK.SHARES + "/s" + name.hashCode() + "/name", name);
-		conf.putString(CK.SHARES + "/s" + name.hashCode() + "/path", location.getPath());
+		String shareKey = getShareConfigKey(name);
+		conf.putString(shareKey + "/name", name);
+		conf.putString(shareKey + "/path", location.getPath());
 		listShare(name, location);
 		communicator.sharesChanged();
 		Logger.log("Share '" + name + "' sucessfully added.");
@@ -618,7 +623,7 @@ public class ShareServer implements TableModel {
 			final String shareName = conf.getString(shareKey + "/name");
 			final File sharePath = new File(conf.getString(shareKey + "/path"));
 			notify.incrementLaunchProgress("Loading share '" + shareName + "'....");
-			if (!shareKey.equals(CK.SHARES + "/s" + shareName.hashCode())) {
+			if (!shareKey.equals(getShareConfigKey(shareName))) {
 				Logger.log("Making config key canonical for share: " + shareName);
 				// Stored in the config with a non-canonical key, so erase it:
 				conf.deleteKey(shareKey);
@@ -672,7 +677,7 @@ public class ShareServer implements TableModel {
 			shares.remove(idx);
 		}
 		notifyShareRemoved(idx);
-		conf.deleteKey(CK.SHARES + "/s" + share.getName().hashCode());
+		conf.deleteKey(getShareConfigKey(share.getName()));
 		communicator.sharesChanged();
 	}
 	
@@ -691,10 +696,11 @@ public class ShareServer implements TableModel {
 	}
 	
 	public void defaultDownloadDirectoryChanged(File newDefaultDir) {
+		final String defaultName = FS2Constants.CLIENT_DEFAULT_SHARE_NAME;
 		synchronized (shares) {
 			for (Share s : shares) {
-				if (!s.getName().equals(FS2Constants.CLIENT_DEFAULT_SHARE_NAME)) continue;
-				conf.putString(CK.SHARES + "/s" + FS2Constants.CLIENT_DEFAULT_SHARE_NAME.hashCode() + "/path", newDefaultDir.getPath());
+				if (!s.getName().equals(defaultName)) continue;
+				conf.putString(getShareConfigKey(defaultName) + "/path", newDefaultDir.getPath());
 				try {
 					s.setPath(newDefaultDir);
 					

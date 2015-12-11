@@ -149,15 +149,16 @@ public class IndexNodeCommunicator implements TableModel {
 	 */
 	public void loadConfiguredNodes() {
 		for (String key : conf.getChildKeys(CK.INDEX_NODES)) {
+			String url = conf.getString(key + "/path");
+			if (url.equals("")) {
+				Logger.warn("Ignoring empty indexnode URL in config.");
+				continue;
+			}
 			try {
-				String url = conf.getString(key+"/path");
-				if (url.equals("")) {
-					Logger.warn("Ignoring empty indexnode URL in config.");
-					continue;
-				}
 				registerNewIndexNode(new URL(url), 0, key);
+				
 			} catch (MalformedURLException e) {
-				Logger.warn("IndexNode URL: '"+conf.getString(key+"/path")+"' specified in the configuration file is invalid.");
+				Logger.warn("IndexNode URL: '" + url + "' specified in the configuration file is invalid.");
 				Logger.log(e);
 			}
 		}
@@ -201,22 +202,26 @@ public class IndexNodeCommunicator implements TableModel {
 		node.shutdown();
 	}
 	
+	private String getIndexNodeConfigKey(URL nodeURL) {
+		return CK.INDEX_NODES + "/i" + nodeURL.toString().hashCode();
+	}
+	
 	/**
 	 * Registers a new indexnode, as specified by its URL.
 	 * Also places it into the configuration file.
 	 * @param nodeURL - The location of the new node.
 	 */
 	public void registerNewIndexNode(URL nodeURL) {
-		registerNewIndexNode(nodeURL, 0, CK.INDEX_NODES + "/i" + nodeURL.toString().hashCode());
+		registerNewIndexNode(nodeURL, 0, getIndexNodeConfigKey(nodeURL));
 	}
 
 	/**
 	 * Registers an indexnode.
-	 * @param nodeURL
+	 * @param nodeURL - The location of the new node.
 	 * @param advertuid - The advertisement ID of this indexnode, zero if it was manually/config added.
 	 */
 	private void registerNewIndexNode(URL nodeURL, long advertuid) {
-		registerNewIndexNode(nodeURL, advertuid, CK.INDEX_NODES + "/i" + nodeURL.toString().hashCode());
+		registerNewIndexNode(nodeURL, advertuid, getIndexNodeConfigKey(nodeURL));
 	}
 	
 	private void registerNewIndexNode(URL nodeURL, long advertuid, String configurationKey) {

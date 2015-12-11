@@ -69,7 +69,7 @@ public class IndexNodeStats {
 		
 		@Override
 		public boolean equals(Object obj) {
-			return alias.equals(((IndexNodeClient) obj).alias);
+			return obj == this || obj instanceof IndexNodeClient && alias.equals(((IndexNodeClient) obj).alias);
 		}
 		
 		@Override
