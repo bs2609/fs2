@@ -246,16 +246,17 @@ public class Config implements Savable {
 	}
 	
 	public int getInt(String key) {
-		return getLong(key).intValue();
+		return (int) getLong(key);
 	}
 	
-	public Long getLong(String key) {
+	public long getLong(String key) {
 		try {
 			String stored = getString(key);
 			if (stored.equals("")) return 0L;
 			return Long.parseLong(stored);
+			
 		} catch (NumberFormatException e) {
-			Logger.warn("Configuration item: '"+key+"' must be numeric, but it's not. Assuming zero.");
+			Logger.warn("Configuration item: '" + key + "' must be numeric, but it's not. Assuming zero.");
 			return 0L;
 		}
 	}
@@ -277,15 +278,16 @@ public class Config implements Savable {
 		}
 	}
 	
-	public void putBoolean(String key, Boolean value) {
-		putString(key, value.toString(), null);
+	public void putBoolean(String key, boolean value) {
+		putString(key, Boolean.toString(value), null);
 	}
 	
-	public void putInt(String key, Integer value) {
-		putString(key, value.toString(), null);
+	public void putInt(String key, int value) {
+		putString(key, Integer.toString(value), null);
 	}
-	public void putLong(String key, Long value) {
-		putString(key, value.toString(), null);
+	
+	public void putLong(String key, long value) {
+		putString(key, Long.toString(value), null);
 	}
 	
 	public void putString(String key, String value) {

@@ -264,11 +264,19 @@ public class AdvancedSettings extends SettingsPanel {
 		JPanel portPanel = new JPanel(new BorderLayout());
 		portPanel.setBorder(getTitledBoldBorder("Client port"));
 		
-		final JSpinner port = new JSpinner(new SpinnerNumberModel(frame.getGui().getConf().getInt(CK.PORT), 1, Integer.MAX_VALUE, 1));
+		int minPort = 1, maxPort = 65535;
+		int currentPort = frame.getGui().getConf().getInt(CK.PORT);
+		
+		final JSpinner port = new JSpinner(new SpinnerNumberModel(currentPort, minPort, maxPort, 1));
 		port.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				frame.getGui().getConf().putInt(CK.PORT, ((Integer) port.getValue()));
+				int value = (Integer) port.getValue();
+				if (value < minPort || value > maxPort) {
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "Port values should be between " + minPort + " and " + maxPort));
+					return;
+				}
+				frame.getGui().getConf().putInt(CK.PORT, value);
 				setPortNumberInfo();
 				restartNeeded();
 			}

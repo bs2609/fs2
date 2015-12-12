@@ -38,9 +38,12 @@ public class ChatTab extends TabItem implements TableModelListener {
 		add(createPreferencesPane(), BorderLayout.PAGE_START);
 		add(createChatPane());
 	}
+	
 	JCheckBox displayNotificationsCheck;
-	private Boolean displayNotifications = false;
-	public Boolean displayChatNotifications(){
+	
+	private boolean displayNotifications = false;
+	
+	public boolean displayChatNotifications() {
 		return displayNotifications;
 	}
 	
