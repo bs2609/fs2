@@ -335,7 +335,7 @@ public class ShareServer implements TableModel {
 		
 		int onPort = conf.getInt(CK.PORT);
 		// Check for valid port:
-		if (onPort < 1 || onPort > 65535) {
+		if (onPort < FS2Constants.CLIENT_PORT_MIN || onPort > FS2Constants.CLIENT_PORT_MAX) {
 			throw new IllegalArgumentException("Bad port number");
 		}
 		

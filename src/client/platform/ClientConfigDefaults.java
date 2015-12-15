@@ -8,7 +8,6 @@ import javax.swing.UIManager;
 import common.ConfigDefaults;
 import common.FS2Constants;
 
-
 /**
  * Provides the defaults for every configurable option key.
  * @author gary
@@ -16,10 +15,8 @@ import common.FS2Constants;
 public class ClientConfigDefaults implements ConfigDefaults {
 	
 	/**
-	 * Configurable option keys
-	 * 
-	 * Version numbers are used to enable changes to the defaults to override choices made by the user (in important cases)
-	 * 
+	 * Configurable option keys.
+	 * Version numbers are used to enable changes to the defaults to override choices made by the user (in important cases).
 	 * @author gary
 	 */
 	public static class CK {
@@ -47,7 +44,7 @@ public class ClientConfigDefaults implements ConfigDefaults {
 		public static final String DISPLAY_CHAT_NOTIFICATIONS = "display_notifications";
 		public static final String AVATAR_PATH = "avatar_path";
 		
-		//gui bits
+		// GUI bits:
 		public static final String MAIN_WINDOW_TOP = "gui/geometry/main_window_top";
 		public static final String MAIN_WINDOW_LEFT = "gui/geometry/main_window_left";
 		public static final String MAIN_WINDOW_WIDTH = "gui/geometry/main_window_width";
@@ -72,20 +69,20 @@ public class ClientConfigDefaults implements ConfigDefaults {
 		public static final String SETTINGS_DIVIDER_LOCATION = "gui/settings_divider_location";
 		public static final String SETTINGS_ACTIVE_PANEL = "gui/settings_active_page";
 		
-		//Internal indexnode:
+		// Internal indexnode:
 		public static final String INTERNAL_INDEXNODE_ROOTKEY = "internal_indexnode/";
 		public static final String AUTOMATIC_INDEXNODE = "internal_indexnode/autorun_2";
 		public static final String INTERNAL_INDEXNODE_ALWAYS_ON = "internal_indexnode/alwayson"; 
 	}
 	
 	protected final Map<String, String> defaults = new HashMap<String, String>();
-	//If a key is in this map then the value will be added to the default configuration file just
-	//after that key.
+	
+	/** If a key is in this map then the value will be added to the default configuration file just after that key. */
 	protected final Map<String, String> comments = new HashMap<String, String>();
 	
 	public ClientConfigDefaults() {
-		defaults.put(CK.HEAPSIZE, Integer.toString(256 << 20));
-		comments.put(CK.HEAPSIZE, "defines how much Java heap (in bytes) fs2 should use at minimum. If FS2 detects that you have less than 90% of this value it will attempt to relaunch the JVM with more heap.");
+		defaults.put(CK.HEAPSIZE, Integer.toString(FS2Constants.RECOMMENDED_HEAP_SIZE));
+		comments.put(CK.HEAPSIZE, "Defines how much Java heap (in bytes) FS2 should use at minimum. If FS2 detects that you have less than 90% of this value it will attempt to relaunch the JVM with more heap.");
 		
 		defaults.put(CK.PORT, "41234");
 		comments.put(CK.PORT, "Port specifies which port FS2 wil serve files on. This port must be open (inbound) on your firewall/router.");

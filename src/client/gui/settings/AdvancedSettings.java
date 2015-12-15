@@ -220,8 +220,8 @@ public class AdvancedSettings extends SettingsPanel {
 					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "FS2's heap size can't be set to '" + heapsize.getText() + "'."));
 					return;
 				}
-				if (nv < 32 << 20) {
-					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The heap must be at least 32MiB."));
+				if (nv < FS2Constants.MINIMUM_HEAP_SIZE) {
+					frame.setStatusHint(new StatusHint(SettingsTab.ERROR, "The heap must be at least " + Util.niceSize(FS2Constants.MINIMUM_HEAP_SIZE) + "."));
 					return;
 				}
 				frame.getGui().getConf().putLong(CK.HEAPSIZE, nv);
@@ -264,7 +264,7 @@ public class AdvancedSettings extends SettingsPanel {
 		JPanel portPanel = new JPanel(new BorderLayout());
 		portPanel.setBorder(getTitledBoldBorder("Client port"));
 		
-		int minPort = 1, maxPort = 65535;
+		int minPort = FS2Constants.CLIENT_PORT_MIN, maxPort = FS2Constants.CLIENT_PORT_MAX;
 		int currentPort = frame.getGui().getConf().getInt(CK.PORT);
 		
 		final JSpinner port = new JSpinner(new SpinnerNumberModel(currentPort, minPort, maxPort, 1));
@@ -299,13 +299,19 @@ public class AdvancedSettings extends SettingsPanel {
 	
 	private void setPortNumberInfo() {
 		List<Integer> ports = new ArrayList<Integer>();
-		ports.add(frame.getGui().getConf().getInt(CK.PORT));
-		ports.add(frame.getGui().getConf().getInt(CK.PORT) + 1);
-		ports.add(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT);
-		ports.add(FS2Constants.ADVERTISEMENT_DATAGRAM_PORT + 1);
+		
+		int clientPort = frame.getGui().getConf().getInt(CK.PORT);
+		ports.add(clientPort);
+		ports.add(clientPort + 1);
+		
+		int advertisementPort = FS2Constants.ADVERTISEMENT_DATAGRAM_PORT;
+		ports.add(advertisementPort);
+		ports.add(advertisementPort + 1);
+		
 		if (iim.isCurrentlyActive()) {
-			ports.add(iim.getPort());
-			ports.add(iim.getPort() + 1);
+			int indexnodePort = iim.getPort();
+			ports.add(indexnodePort);
+			ports.add(indexnodePort + 1);
 		}
 		portNumberInfo.setText("<html>FS2 is currently using ports: <b>" + Util.join(ports, ", ") + "</b><br>Open these ports on your firewall to use FS2.</html>");
 	}
@@ -322,28 +328,31 @@ public class AdvancedSettings extends SettingsPanel {
 		
 		final JComboBox<String> choice = new JComboBox<String>(options);
 		
-		if (frame.getGui().getConf().getString(CK.UPDATE_POLICY).equals("none")) {
+		String updatePolicy = frame.getGui().getConf().getString(CK.UPDATE_POLICY);
+		if (updatePolicy.equals("none")) {
 			choice.setSelectedIndex(2);
-		} else if (frame.getGui().getConf().getString(CK.UPDATE_POLICY).equals("ask")) {
+		} else if (updatePolicy.equals("ask")) {
 			choice.setSelectedIndex(1);
-		} else if (frame.getGui().getConf().getString(CK.UPDATE_POLICY).equals("auto")) { // Pointless test for completeness.
+		} else if (updatePolicy.equals("auto")) { // Pointless test for completeness.
 			choice.setSelectedIndex(0);
 		}
 		
 		choice.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				String newPolicy;
 				switch (choice.getSelectedIndex()) {
 				case 0:
-					frame.getGui().getConf().putString(CK.UPDATE_POLICY, "auto");
+					newPolicy = "auto";
 					break;
 				case 1:
-					frame.getGui().getConf().putString(CK.UPDATE_POLICY, "ask");
+					newPolicy = "ask";
 					break;
 				default:
-					frame.getGui().getConf().putString(CK.UPDATE_POLICY, "none");
+					newPolicy = "none";
 					break;
 				}
+				frame.getGui().getConf().putString(CK.UPDATE_POLICY, newPolicy);
 			}
 		});
 		

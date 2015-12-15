@@ -75,10 +75,10 @@ public class IndexNode {
 				return;
 			}
 
-			//Get a client info, and test for sanity:
+			// Get a client info, and test for sanity:
 			SimpleClientInfo clInfo = getSimpleClientInfo(exchange);
-			if (clInfo==null || clInfo.clientAddressID==null || clInfo.port<1 || clInfo.port>65535) {
-				Logger.log(exchange.getRemoteAddress().getAddress().getHostAddress()+" failed to supply the correct headers.");
+			if (clInfo == null || clInfo.clientAddressID == null || clInfo.port < FS2Constants.CLIENT_PORT_MIN || clInfo.port > FS2Constants.CLIENT_PORT_MAX) {
+				Logger.log(exchange.getRemoteAddress().getAddress().getHostAddress() + " failed to supply the correct headers.");
 				HttpUtil.simpleResponse(exchange, "Invalid registration", 400);
 				return;
 			}

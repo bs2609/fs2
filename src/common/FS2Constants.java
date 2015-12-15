@@ -2,6 +2,12 @@ package common;
 
 public abstract class FS2Constants {
 	
+	/** The minimum amount of memory FS2 requires to run well. (32MiB) */
+	public static final int MINIMUM_HEAP_SIZE = 32 << 20;
+	
+	/** It is recommended to allow FS2 this much memory. (256MiB) */
+	public static final int RECOMMENDED_HEAP_SIZE = 256 << 20;
+	
 	/** Timeout to wait for a connection on a client (10s) */
 	public static final int CLIENT_URL_CONNECTION_TIMEOUT_MS = 10*1000;
 	
@@ -88,6 +94,12 @@ public abstract class FS2Constants {
 	
 	/** The port that FS2 uses for advertisements. */
 	public static final int ADVERTISEMENT_DATAGRAM_PORT = 42444;
+	
+	/** Defines the range of ports FS2 should allow. */
+	public static final int CLIENT_PORT_MIN = 1;
+	
+	/** Defines the range of ports FS2 should allow. */
+	public static final int CLIENT_PORT_MAX = 65535;
 	
 	/** Name of the file used for configuration on the CLIENT. */
 	public static final String CONFIGURATION_FILE_NAME = "config.xml";
