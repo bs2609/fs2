@@ -38,6 +38,8 @@ public class AvatarRenderer extends JPanel implements TableCellRenderer {
 	JLabel status;
 	MainFrame frame;
 	
+	private static final String avatarDir = "avatars";
+	
 	public AvatarRenderer(MainFrame frame){
 		this.frame = frame;
 		setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -64,7 +66,7 @@ public class AvatarRenderer extends JPanel implements TableCellRenderer {
 		add(right);
 		
 		
-		Platform.getPlatformFile("avatars").mkdirs();
+		Platform.getPlatformFile(avatarDir).mkdirs();
 	}
 	
 	@Override
@@ -137,9 +139,8 @@ public class AvatarRenderer extends JPanel implements TableCellRenderer {
 		}
 	}
 
-	private File getIconOnDisk(String avatarhash) {
-		File onDiskIcon = Platform.getPlatformFile("avatars"+File.separator+avatarhash+".png");
-		return onDiskIcon;
+	private File getIconOnDisk(String avatarHash) {
+		return Platform.getPlatformFile(avatarDir + File.separator + avatarHash + ".png");
 	}
 	
 	private boolean loadFromIndexnode(IndexNodeClient client) {

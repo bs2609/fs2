@@ -52,6 +52,9 @@ public abstract class FS2Constants {
 	 */
 	public static final int CLIENT_SHUTDOWN_MAX_MILLIS = 10000;
 	
+	/** The file extension used for saving FileList type filelists. */
+	public static final String FS2_FILELIST_EXTENSION = ".FileList";
+	
 	/** What algorithm should be used for file hashes? */
 	public static final String FILE_DIGEST_ALGORITHM = "MD5";
 	// MD5 currently as it's implementation is polished on desktop platforms and we don't need cryptographically strong hashes.
@@ -112,6 +115,9 @@ public abstract class FS2Constants {
 	
 	/** The name of the directory (within the platform root) where logs are kept. */
 	public static final String CLIENT_LOGS_SUBDIRECTORY = "logs";
+	
+	/** The name of the directory (within the platform root) where filelists are kept. */
+	public static final String CLIENT_FILELISTS_SUBDIRECTORY = "filelists";
 	
 	/** This defines the minimum interval between saving statistics to disk. 1m currently. */
 	public static final int CLIENT_PEERSTATS_SAVE_MIN_INTERVAL = 60*1000;

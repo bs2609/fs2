@@ -340,7 +340,7 @@ public class ShareServer implements TableModel {
 		}
 		
 		// Prepare the filelist directory if needed:
-		File filelistDir = Platform.getPlatformFile("filelists");
+		File filelistDir = Platform.getPlatformFile(FS2Constants.CLIENT_FILELISTS_SUBDIRECTORY);
 		if (!filelistDir.isDirectory()) {
 			filelistDir.mkdir();
 		}

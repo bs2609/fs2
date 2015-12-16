@@ -98,6 +98,10 @@ public class Platform {
 		return new File(getPlatformRoot().getAbsolutePath()+File.separator+name);
 	}
 	
+	public static File getFilelistFile(String name) {
+		return getPlatformFile(FS2Constants.CLIENT_FILELISTS_SUBDIRECTORY + File.separator + name + FS2Constants.FS2_FILELIST_EXTENSION);
+	}
+	
 	static File updateDir;
 	/**
 	 * Locates the directory that will contain code updates to this product.

@@ -73,7 +73,7 @@ public class InternalIndexnodeManager {
 		this.comm = comm;
 		this.nodeConfig = comm.getConf().deriveConfig(new InternalIndexnodeConfigDefaults(comm.getConf()), CK.INTERNAL_INDEXNODE_ROOTKEY);
 		
-		indexnodeFilesPath = Platform.getPlatformFile("internalindexnode")+"/";
+		indexnodeFilesPath = Platform.getPlatformFile("internalindexnode") + File.separator;
 		(new File(indexnodeFilesPath)).mkdirs();
 		
 		//1) build the advertisers

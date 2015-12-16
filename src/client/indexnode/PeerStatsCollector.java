@@ -6,10 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -535,22 +533,21 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 		regenerateRanks();
 	}
 	
-	//Manage persistence:
+	private static final String statsFileName = "peerstats";
+	
+	// Manage persistence:
 	public static PeerStatsCollector getPeerStatsCollector() {
-		File stats = Platform.getPlatformFile("peerstats");
+		File stats = Platform.getPlatformFile(statsFileName);
 		if (!stats.exists()) {
 			return new PeerStatsCollector();
-		} else {
-			try {
-				InputStream sis = new BufferedInputStream(new FileInputStream(stats));
-				PeerStatsCollector s = (PeerStatsCollector)(new ObjectInputStream(sis)).readObject();
-				sis.close();
-				return s;
-			} catch (Exception e) {
-				Logger.warn("Stored peer statistics couldn't be loaded. Starting afresh...");
-				Logger.log(e);
-				return new PeerStatsCollector();
-			}
+		}
+		try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(stats)))) {
+			return (PeerStatsCollector) ois.readObject();
+			
+		} catch (Exception e) {
+			Logger.warn("Stored peer statistics couldn't be loaded. Starting afresh...");
+			Logger.log(e);
+			return new PeerStatsCollector();
 		}
 	}
 	
@@ -559,12 +556,10 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	}
 	
 	public synchronized void doSave() {
-		try {
-			File saveAs = Platform.getPlatformFile("peerstats");
-			File working = new File(saveAs.getPath()+".working");
-			OutputStream sos = new BufferedOutputStream(new FileOutputStream(working));
-			(new ObjectOutputStream(sos)).writeObject(this);
-			sos.close();
+		File saveAs = Platform.getPlatformFile(statsFileName);
+		File working = new File(saveAs.getPath() + ".working");
+		try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(working)))) {
+			oos.writeObject(this);
 			if (saveAs.exists()) saveAs.delete();
 			if (!working.renameTo(saveAs)) {
 				throw new IOException("Partial file could not be saved.");

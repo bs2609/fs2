@@ -330,7 +330,7 @@ public class Share {
 		this.ssvr = ssvr;
 		this.location = location;
 		canonicalLocation = location.toPath().toAbsolutePath();
-		listFile = Platform.getPlatformFile("filelists" + File.separator + name + ".FileList").toPath();
+		listFile = Platform.getFilelistFile(name).toPath();
 		
 		try {
 			canonicalLocation = canonicalLocation.toRealPath();

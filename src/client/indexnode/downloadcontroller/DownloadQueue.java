@@ -6,10 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1236,17 +1234,17 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 
 	transient DownloadController dc;
 	
+	private static final String queueFileName = "downloadqueue";
+	
 	public static DownloadQueue getDownloadQueue(IndexNodeCommunicator comm, DownloadController downloadController) {
-		File queue = Platform.getPlatformFile("downloadqueue");
+		File queue = Platform.getPlatformFile(queueFileName);
 		if (!queue.exists()) return new DownloadQueue(comm, downloadController);
 		
-		try {
-			InputStream sis = new BufferedInputStream(new FileInputStream(queue));
-			DownloadQueue s = (DownloadQueue) new ObjectInputStream(sis).readObject();
-			sis.close();
-			s.comm = comm;
-			s.dc = downloadController;
-			return s;
+		try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(queue)))) {
+			DownloadQueue dq = (DownloadQueue) ois.readObject();
+			dq.comm = comm;
+			dq.dc = downloadController;
+			return dq;
 			
 		} catch (Exception e) {
 			Logger.warn("The download queue couldn't be loaded. Starting afresh...");
@@ -1272,12 +1270,10 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 		saveWorker = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					File saveAs = Platform.getPlatformFile("downloadqueue");
-					File working = new File(saveAs.getPath() + ".working");
-					OutputStream sos = new BufferedOutputStream(new FileOutputStream(working));
-					new ObjectOutputStream(sos).writeObject(DownloadQueue.this);
-					sos.close();
+				File saveAs = Platform.getPlatformFile(queueFileName);
+				File working = new File(saveAs.getPath() + ".working");
+				try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(working)))) {
+					oos.writeObject(DownloadQueue.this);
 					if (saveAs.exists()) saveAs.delete();
 					if (!working.renameTo(saveAs)) {
 						throw new IOException("Partial download queue could not be saved.");

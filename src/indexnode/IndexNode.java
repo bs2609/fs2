@@ -367,18 +367,14 @@ public class IndexNode {
 		 * 
 		 * This should complete pretty quickly as the client is waiting for the response.
 		 * (The reference client waits 5 seconds for a response)
-		 * 
 		 */
 		private synchronized void updateFromClient() {
 			//Logger.log("Updating "+alias+"'s share lists...");
 			try {
-				//Get the sharelist.
-				InputStream pingXml = getClientPing();
+				// Get the sharelist:
 				Sxml clientShares;
-				try {
+				try (InputStream pingXml = getClientPing()) {
 					clientShares = new Sxml(pingXml);
-				} finally {
-					pingXml.close();
 				}
 				
 				//1) build a new list of all our shares
@@ -453,27 +449,24 @@ public class IndexNode {
 		}
 		
 		/**
-		 * Establish a connection to the client's ping URL and return the inputstream.
+		 * Establish a connection to the client's ping URL and return the InputStream.
 		 * Close the stream when done.
 		 */
 		private InputStream getClientPing() throws IOException {
-			URL toUse = pingURL;
-			if (isSecure()) toUse = FS2Filter.getFS2SecureURL(pingURL);
+			URL toUse = isSecure() ? FS2Filter.getFS2SecureURL(pingURL) : pingURL;
 			HttpURLConnection connection = (HttpURLConnection) toUse.openConnection();
 			fs2Filter.fs2FixupURLConnectionForIndexNode(connection, cltoken);
 			try {
-				//Update from the client's alias on each ping:
+				// Update from the client's alias on each ping:
 				String newAlias = connection.getHeaderField("fs2-alias");
-				
-				InputStream inS = connection.getInputStream();
 				if (newAlias != null) {
 					setAlias(newAlias);
 				}
-
-				return inS;
+				return connection.getInputStream();
+				
 			} finally {
 				InputStream es = connection.getErrorStream();
-				if (es!=null) es.close();
+				if (es != null) es.close();
 			}
 		}
 		
@@ -661,56 +654,53 @@ public class IndexNode {
 		}
 		
 		private void importFileList() throws IOException {
-			URL filelistURL = new URL("http://"+owner.getURLAddress()+"/filelists/"+HttpUtil.urlEncode(name)+".FileList");
-			if (owner.isSecure()) filelistURL = FS2Filter.getFS2SecureURL(filelistURL);
-			
-			HttpURLConnection conn = (HttpURLConnection) filelistURL.openConnection();
-			InputStream is = null;
-			try {
-				fs2Filter.fs2FixupURLConnectionForIndexNode(conn, owner.getCltoken());
-				is = new BufferedInputStream(conn.getInputStream());
+			HttpURLConnection conn = (HttpURLConnection) getFilelistURL().openConnection();
+			fs2Filter.fs2FixupURLConnectionForIndexNode(conn, owner.getCltoken());
+			try (InputStream is = new BufferedInputStream(conn.getInputStream())) {
 				FileList list = FileList.reconstruct(is);
 				//Logger.log("Rx'd filelist: "+list);
-				if (list==null) throw new IllegalArgumentException("A FileList object couldn't be reconstructed.");
+				if (list == null) throw new IllegalArgumentException("A FileList object couldn't be reconstructed.");
 				revision = list.revision;
 				if (revision > pendingRevision) pendingRevision = revision;
 				if (listed) fs.delistShare(this);
 				fs.importShare(list.root, this);
+				
 			} finally {
-				try {
-					if (is!=null) is.close();
-				} finally {
-					InputStream es = conn.getErrorStream();
-					if (es!=null) es.close();
-				}
+				InputStream es = conn.getErrorStream();
+				if (es != null) es.close();
 			}
 		}
 
 		private void importXML() throws SXMLException, IOException {
-			URL filelistURL = new URL("http://"+owner.getURLAddress()+"/filelists/"+HttpUtil.urlEncode(name)+".xml");
-			if (owner.isSecure())filelistURL = FS2Filter.getFS2SecureURL(filelistURL);
-			
-			HttpURLConnection conn = (HttpURLConnection) filelistURL.openConnection();
-			InputStream is = null;
+			HttpURLConnection conn = (HttpURLConnection) getFilelistURL().openConnection();
 			fs2Filter.fs2FixupURLConnectionForIndexNode(conn, owner.getCltoken());
-			try {
-				is = conn.getInputStream();
-				Sxml flXML = null;
-				flXML = new Sxml(is);
-				Element flElement = (Element)flXML.getDocument().getElementsByTagName("filelist").item(0);
+			try (InputStream is = conn.getInputStream()) {
+				Sxml flXML = new Sxml(is);
+				Element flElement = (Element) flXML.getDocument().getElementsByTagName("filelist").item(0);
 				revision = Integer.parseInt(flElement.getAttribute("revision"));
 				if (revision > pendingRevision) pendingRevision = revision;
-				//Mmmm it's easy now.
+				// Mmmm it's easy now.
 				if (listed) fs.delistShare(this);
 				fs.importShare(flElement, this);
+				
 			} finally {
-				try {
-					if (is!=null) is.close();
-				} finally {
-					InputStream es = conn.getErrorStream();
-					if (es!=null) es.close();
-				}
+				InputStream es = conn.getErrorStream();
+				if (es != null) es.close();
 			}
+		}
+		
+		private URL getFilelistURL() throws MalformedURLException {
+			String ext = "";
+			switch (type) {
+			case XML:
+				ext = ".xml";
+				break;
+			case FILELIST:
+				ext = FS2Constants.FS2_FILELIST_EXTENSION;
+				break;
+			}
+			URL url = new URL("http://" + owner.getURLAddress() + "/filelists/" + HttpUtil.urlEncode(name) + ext);
+			return owner.isSecure() ? FS2Filter.getFS2SecureURL(url) : url;
 		}
 		
 		/** Removes all trace of this share from the database. */

@@ -200,7 +200,7 @@ public class ShareSettings extends SettingsPanel implements ListSelectionListene
 			if (shareName.equals("") || frame.getGui().getShareServer().shareNameExists(shareName)) {
 				JOptionPane.showMessageDialog(null, "That name is empty or already exists, try again.");
 				continue;
-			} else if (!Util.isValidFileName(Platform.getPlatformFile("filelists" + File.separator + shareName + ".FileList"))) {
+			} else if (!Util.isValidFileName(Platform.getFilelistFile(shareName))) {
 				JOptionPane.showMessageDialog(null, "That share name is invalid, try again. (share names must be valid filenames!)");
 				continue;
 			} else break;
