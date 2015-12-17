@@ -3,6 +3,8 @@ package client.indexnode;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -20,6 +22,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.WeakHashMap;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -28,16 +31,17 @@ import client.gui.Utilities;
 import client.indexnode.IndexNodeStats.IndexNodeClient;
 import client.indexnode.downloadcontroller.DownloadSource;
 import client.shareserver.ShareServer;
-import common.Sxml.SXMLException;
-import common.httpserver.HttpExchange;
+
 import common.ChatMessage;
 import common.FS2Constants;
 import common.FS2Filter;
 import common.HttpUtil;
 import common.Logger;
 import common.Sxml;
+import common.Sxml.SXMLException;
 import common.Util;
 import common.Util.ByteArray;
+import common.httpserver.HttpExchange;
 
 /**
  * Abstracts communication with a single indexnode.
@@ -83,8 +87,12 @@ public class IndexNode {
 	private IndexNodeStats stats = new IndexNodeStats();
 	private StatsUpdateTask statsUpdater = new StatsUpdateTask();
 	private Date lastSeen = new Date(0L);
+	
+	private Map<String, Reference<String>> clientAliases = new WeakHashMap<String, Reference<String>>();
+	
 	/** cltoken is used to ensure that only indexnodes we have registered with may access our file list. */
 	private final long cltoken = (new Random()).nextLong();
+	
 	String confKey = "";
 	int lastId = -1;
 	long advertuid;
@@ -729,7 +737,7 @@ public class IndexNode {
 	}
 	
 	/**
-	 * A helper to acomplish the common task of getting some XML from the indexnode
+	 * A helper to accomplish the common task of getting some XML from the indexnode.
 	 * @param path
 	 * @return
 	 * @throws IOException 
@@ -737,12 +745,8 @@ public class IndexNode {
 	 * @throws NotChangedException 
 	 */
 	private synchronized Sxml getXmlFromIndexnode(URL path) throws IOException, SXMLException, NotChangedException {
-		InputStream is = null;
-		try {
-			is = getInputStreamFromIndexnode(path);
+		try (InputStream is = getInputStreamFromIndexnode(path)) {
 			return new Sxml(is);
-		} finally {
-			if (is!=null) is.close();
 		}
 	}
 	
@@ -781,19 +785,20 @@ public class IndexNode {
 					
 					boolean newPeers = false;
 					
-					for (Node onNode=clients.getFirstChild(); onNode!=null; onNode=onNode.getNextSibling()) {
-						if (onNode.getNodeType()!=Element.ELEMENT_NODE) continue;
-						Element elem = (Element)onNode;
+					for (Node onNode = clients.getFirstChild(); onNode != null; onNode = onNode.getNextSibling()) {
+						if (onNode.getNodeType() != Element.ELEMENT_NODE) continue;
+						Element elem = (Element) onNode;
 						if (!elem.getTagName().equals("span")) continue;
-						String alias = elem.getAttribute("fs2-clientalias");
+						String alias = getCanonicalAlias(elem.getAttribute("fs2-clientalias"));
 						long shareSize = Long.parseLong(elem.getAttribute("value"));
 						String avatarHash = elem.getAttribute("fs2-avatarhash");
-						if (knownAliases.remove(alias)) { //IndexNodeClients are hashed by their aliases.
+						// IndexNodeClients are hashed by their aliases.
+						if (knownAliases.remove(alias)) {
 							IndexNodeClient c = stats.peers.get(alias);
 							c.setAvatarhash(avatarHash);
 							c.setTotalShareSize(shareSize);
 						} else {
-							stats.peers.put(alias,new IndexNodeClient(elem.getAttribute("fs2-clientalias"), Long.parseLong(elem.getAttribute("value")), elem.getAttribute("avatarhash"), IndexNode.this));
+							stats.peers.put(alias, new IndexNodeClient(alias, shareSize, avatarHash, IndexNode.this));
 							newPeers = true;
 						}
 					}
@@ -891,7 +896,7 @@ public class IndexNode {
 						//Hash is essential for files.
 						if (!cFile.hasAttribute("fs2-hash")) continue;
 						hash = new ByteArray(Util.bytesFromHexString(cFile.getAttribute("fs2-hash")));
-						if (cFile.hasAttribute("fs2-clientalias")) clientAlias = cFile.getAttribute("fs2-clientalias");
+						if (cFile.hasAttribute("fs2-clientalias")) clientAlias = getCanonicalAlias(cFile.getAttribute("fs2-clientalias"));
 						if (cFile.hasAttribute("fs2-alternativescount")) alternativesCount = Integer.parseInt(cFile.getAttribute("fs2-alternativescount"));
 					} else {
 						//path is essential for directories:
@@ -939,7 +944,7 @@ public class IndexNode {
 					if (!cAlt.hasAttribute("href")) throw new IllegalArgumentException("No href in filelist item.");
 					if (!cAlt.hasAttribute("fs2-clientalias")) throw new IllegalArgumentException("No client alias in filelist item.");
 					
-					String cAlias = cAlt.getAttribute("fs2-clientalias");
+					String cAlias = getCanonicalAlias(cAlt.getAttribute("fs2-clientalias"));
 					sources.put(cAlias, new DownloadSource(cAlias, new URL(cAlt.getAttribute("href"))));
 					
 				} finally {
@@ -955,6 +960,15 @@ public class IndexNode {
 		}
 		
 		return sources;
+	}
+	
+	private String getCanonicalAlias(String alias) {
+		Reference<String> ref = clientAliases.get(alias);
+		if (ref == null || ref.get() == null) {
+			clientAliases.put(alias, new WeakReference<String>(alias));
+			return alias;
+		}
+		return ref.get();
 	}
 	
 	/**
