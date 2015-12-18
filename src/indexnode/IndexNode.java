@@ -582,7 +582,7 @@ public class IndexNode {
 			owner = inowner;
 			this.type = type;
 			shareUID = nextShareUID.getAndIncrement();
-			Logger.log("Share " + name + " on " + owner.alias + " has been created and now must be refreshed...");
+			Logger.log("Share '" + name + "' on " + owner.alias + " has been created and now must be refreshed...");
 		}
 		
 		public int getShareUID() {
@@ -639,16 +639,19 @@ public class IndexNode {
 					importFileList(); break;
 				}
 				listed = true;
-				Logger.log("Refresh complete (share "+name+" on "+owner.getAlias()+")");
+				Logger.log("Refresh complete (share '" + name + "' on " + owner.getAlias() + ")");
+				
 			} catch (FileNotFoundException e) {
-				Logger.warn("Filelist not found: "+e);
+				Logger.warn("Filelist not found: " + e);
 				pendingRevision = revision; // Rollback revision so we can retry again later.
+				
 			} catch (IOException e) {
-				Logger.warn("IOException refreshing share: "+name+"... "+e.toString());
+				Logger.warn("IOException refreshing share '" + name + "'... " + e);
 				pendingRevision = revision; // Rollback as it was probably just a network problem.
 				Logger.log(e);
+				
 			} catch (Exception e) {
-				Logger.warn("Exception refreshing share "+name+"... "+e.toString());
+				Logger.warn("Exception refreshing share '" + name + "'... " + e);
 				Logger.log(e); // Do not bother to rollback. Something more serious is wrong so retrying will just damage our QOS.
 			}
 		}
@@ -708,11 +711,12 @@ public class IndexNode {
 			delisted = true;
 			try {
 				if (listed) fs.delistShare(this);
+				
 			} catch (Exception e) {
-				Logger.warn("Exception delisting share: "+e.toString());
+				Logger.warn("Exception delisting share: " + e);
 				Logger.log(e);
 			}
-			Logger.log("Share "+name+" on "+owner.getAlias()+" has been delisted.");
+			Logger.log("Share '" + name + "' on " + owner.getAlias() + " has been delisted.");
 		}
 
 		public int getRevision() {
