@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
@@ -840,26 +841,30 @@ public class IndexNode {
 	 * @return The UNSORTED list of children for the given parent.
 	 */
 	Collection<FileSystemEntry> lookupChildren(FileSystemEntry parent) {
-		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
+		List<FileSystemEntry> ret = Collections.emptyList();
 		try {
-			//1) Generate a string to represent the query URL for the indexnode
+			// 1) Generate a string to represent the query URL for the indexnode:
 			URL query;
 			if (parent.isSearch()) {
 				query = getSearchURL(parent.getSearchTerms());
 			} else {
 				query = getBrowseURL(parent.getIndexNodePath());
 			}
+			
 			Sxml xml = getXmlFromIndexnode(query);
 			
-			//3) build and add fse objects
+			// 3) Build and add FSE objects:
+			ret = new ArrayList<FileSystemEntry>();
 			addFileListItemsToList(xml, ret, parent);
 			
 		} catch (FileNotFoundException e) {
-			//This is normal when we attempt to get children for a node that no longer exists.
-			//The empty list is returned and this is correct.
+			// This is normal when we attempt to get children for a node that no longer exists.
+			// The empty list is returned and this is correct.
+			
 		} catch (IOException e) {
 			Logger.warn("Couldn't get updated filelists from indexnode '"+getName()+"': "+e);
 			contactIndexNode();
+			
 		} catch (Exception e) {
 			Logger.warn("Couldn't get updated filelists from indexnode '"+getName()+"': "+e);
 			Logger.log(e);
@@ -922,25 +927,23 @@ public class IndexNode {
 	}
 	
 	/**
-	 * Get sources for this file from this indexnode
-	 * @param hash the hash of the file to get sources for.
-	 * @return a map of peer aliases-> download source objects.
+	 * Get sources for this file from this indexnode.
+	 * @param hash - The hash of the file to get sources for.
+	 * @return A map of peer aliases -> download source objects.
 	 */
 	public Map<String, DownloadSource> getSources(ByteArray hash) {
-		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
-		
+		Map<String, DownloadSource> sources = Collections.emptyMap();
 		try {
 			Sxml xml = getXmlFromIndexnode(getAlternativesURL(hash));
-			
-			//3) parse the result into the sources set:
+			// 3) Parse the result into the sources set:
+			sources = new HashMap<String, DownloadSource>(1);
 			Element altslist = xml.getElementById("fs2-filelist");
-			
 			Node onNode = altslist.getFirstChild();
-			while (onNode!=null) {
+			while (onNode != null) {
 				try {
-					if (onNode.getNodeType()!=Element.ELEMENT_NODE) continue;
-					Element cAlt = (Element)onNode;
-					if (!cAlt.hasAttribute("fs2-type")) continue; //ignore formatting elements
+					if (onNode.getNodeType() != Element.ELEMENT_NODE) continue;
+					Element cAlt = (Element) onNode;
+					if (!cAlt.hasAttribute("fs2-type")) continue; // ignore formatting elements
 					if (!cAlt.hasAttribute("href")) throw new IllegalArgumentException("No href in filelist item.");
 					if (!cAlt.hasAttribute("fs2-clientalias")) throw new IllegalArgumentException("No client alias in filelist item.");
 					
@@ -958,7 +961,7 @@ public class IndexNode {
 			Logger.warn("Couldn't get alternative download sources from indexnode '"+getName()+"': "+e);
 			Logger.log(e);
 		}
-		
+			
 		return sources;
 	}
 	

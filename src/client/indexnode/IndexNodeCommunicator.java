@@ -391,7 +391,7 @@ public class IndexNodeCommunicator implements TableModel {
 	 * @return a set of distinct download sources, indexed by their peer aliases.
 	 */
 	public Map<String, DownloadSource> getSourcesForFile(ByteArray hash) {
-		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>();
+		Map<String, DownloadSource> sources = new HashMap<String, DownloadSource>(1);
 		List<IndexNode> cachedNodeList;
 		// Don't hold the lock when doing such a long winded operation, but take a copy of the list with a lock:
 		synchronized (nodes) {
