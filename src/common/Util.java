@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -296,6 +297,18 @@ public abstract class Util {
 				os.write(buf, 0, bytesRead);
 				if (progress != null) progress.progress(soFar);
 			}
+		}
+		
+		Files.deleteIfExists(path);
+		Files.move(working, path);
+	}
+	
+	public static void writeObjectToFile(Serializable object, File file) throws IOException {
+		Path path = file.toPath();
+		Path working = path.resolveSibling(path.getFileName() + ".working");
+		
+		try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(working)))) {
+			oos.writeObject(object);
 		}
 		
 		Files.deleteIfExists(path);

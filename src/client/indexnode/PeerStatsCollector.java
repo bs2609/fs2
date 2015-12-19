@@ -1,13 +1,10 @@
 package client.indexnode;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,8 +28,8 @@ import client.platform.Platform;
 import common.FS2Constants;
 import common.Logger;
 import common.SafeSaver;
-import common.Util;
 import common.SafeSaver.Savable;
+import common.Util;
 import common.Util.Deferrable;
 import common.Util.FileSize;
 
@@ -557,19 +554,14 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	
 	public synchronized void doSave() {
 		File saveAs = Platform.getPlatformFile(statsFileName);
-		File working = new File(saveAs.getPath() + ".working");
-		try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(working)))) {
-			oos.writeObject(this);
-			if (saveAs.exists()) saveAs.delete();
-			if (!working.renameTo(saveAs)) {
-				throw new IOException("Partial file could not be saved.");
-			}
-		} catch (Exception e) {
-			Logger.warn("Couldn't save peer stats to a file.");
+		try {
+			Util.writeObjectToFile(this, saveAs);
+			
+		} catch (IOException e) {
+			Logger.warn("Couldn't save peer stats to a file. " + e);
 			Logger.log(e);
 		}
 	}
-	
 	
 	//==========================
 	// Table model stuff:

@@ -1,10 +1,8 @@
 package client.indexnode.downloadcontroller;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -1280,16 +1278,11 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 			@Override
 			public void run() {
 				File saveAs = Platform.getPlatformFile(queueFileName);
-				File working = new File(saveAs.getPath() + ".working");
-				try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(working)))) {
-					oos.writeObject(DownloadQueue.this);
-					if (saveAs.exists()) saveAs.delete();
-					if (!working.renameTo(saveAs)) {
-						throw new IOException("Partial download queue could not be saved.");
-					}
+				try {
+					Util.writeObjectToFile(DownloadQueue.this, saveAs);
 					
-				} catch (Exception e) {
-					Logger.warn("Couldn't save download queue to a file.");
+				} catch (IOException e) {
+					Logger.warn("Couldn't save download queue to a file. " + e);
 					Logger.log(e);
 					
 				} finally {
