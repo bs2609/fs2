@@ -294,6 +294,8 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 			
 			@Override
 			public void run() {
+				DownloadDirectory d;
+				int idx;
 				try (LockHolder lock = LockHolder.hold(getReadWriteLock().writeLock())) {
 					if (children.containsKey(name)) {
 						DownloadItem item = children.get(name);
@@ -304,14 +306,14 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 						}
 						return;
 					}
-					DownloadDirectory d = new DownloadDirectory(new File(path.getAbsolutePath() + File.separator + name), DownloadDirectory.this);
+					d = new DownloadDirectory(new File(path.getAbsolutePath() + File.separator + name), DownloadDirectory.this);
 					children.put(d.getName(), d);
 					treeModified = true;
 					modelChildren.add(d);
-					// TODO: Lock could be downgraded here...
-					fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {modelChildren.size()-1}, new Object[] {d}));
-					result = d;
+					idx = modelChildren.size() - 1;
 				}
+				fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {idx}, new Object[] {d}));
+				result = d;
 			}
 		}
 		
@@ -355,16 +357,18 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 						Utilities.edispatch(new Runnable() {
 							@Override
 							public void run() {
+								DownloadFile f;
+								int idx;
 								try (LockHolder lock = LockHolder.hold(getReadWriteLock().writeLock())) {
 									if (children.containsKey(entry.getName())) return; // Don't re-add pre-existing files.
-									DownloadFile f = new DownloadFile(entry.getName(), entry.getHash(), entry.getSize(), DownloadDirectory.this, dispatchId);
+									f = new DownloadFile(entry.getName(), entry.getHash(), entry.getSize(), DownloadDirectory.this, dispatchId);
 									dc.allDownload.expandTask(entry.getSize());
 									children.put(f.getName(), f);
 									treeModified = true;
 									modelChildren.add(f);
-									fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {modelChildren.size()-1}, new Object[] {f}));
-									
+									idx = modelChildren.size() - 1;
 								}
+								fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {idx}, new Object[] {f}));
 							}
 						});
 					} finally {
@@ -429,6 +433,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 						final List<Integer> ints = new ArrayList<Integer>();
 						final List<TreeNode> items = new ArrayList<TreeNode>();
 						final int[] indices;
+						
 						try (LockHolder lock = LockHolder.hold(getReadWriteLock().writeLock())) {
 							for (int i = 0; i < modelChildren.size(); i++) {
 								if (!children.containsKey(modelChildren.get(i).getName())) {
@@ -444,10 +449,10 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 							// 2) Rebuild model children:
 							modelChildren.clear();
 							modelChildren.addAll(children.values());
-							
-							// 3) Issue removal events:
-							fireTreeNodesRemoved(new TreeModelEvent(DownloadQueue.this, getPath(), indices, items.toArray()));
 						}
+						
+						// 3) Issue removal events:
+						fireTreeNodesRemoved(new TreeModelEvent(DownloadQueue.this, getPath(), indices, items.toArray()));
 					}
 				});
 			}
@@ -516,9 +521,8 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 						newChildren.put(file.getName(), file);
 						newChildren.putAll(children);
 						children = newChildren;
-						
-						fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {0}, new Object[] {file}));
 					}
+					fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, getPath(), new int[] {0}, new Object[] {file}));
 				}
 			});
 		}
@@ -748,17 +752,18 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 			Utilities.edispatch(new Runnable() {
 				@Override
 				public void run() {
+					final int dirI;
 					try (LockHolder lock = LockHolder.hold(getReadWriteLock().writeLock())) {
-						final int dirI = downloadDirs.indexOf(child);
-						if (dirI >= 0) {
-							downloadDirs.remove(dirI);
-							treeModified = true;
-							saver.requestSave();
-							fireTreeNodesRemoved(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {dirI}, new TreeNode[] {child}));
-						} else {
+						dirI = downloadDirs.indexOf(child);
+						if (dirI < 0) {
 							Logger.warn("Attempt to remove a queueroot child that doesn't exist...");
+							return;
 						}
+						downloadDirs.remove(dirI);
+						treeModified = true;
+						saver.requestSave();
 					}
+					fireTreeNodesRemoved(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {dirI}, new TreeNode[] {child}));
 				}
 			});
 		}
@@ -774,8 +779,8 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 				dir.parent = this;
 				newdlds.addAll(downloadDirs);
 				downloadDirs = newdlds;
-				fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {0}, new TreeNode[] {dir}));
 			}
+			fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {0}, new TreeNode[] {dir}));
 		}
 		
 		/**
@@ -823,6 +828,7 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 			
 			@Override
 			public void run() {
+				int idx = -1;
 				try (LockHolder lock = LockHolder.hold(getReadWriteLock().writeLock())) {
 					for (DownloadDirectory d : downloadDirs) {
 						if (d.path.equals(path)) {
@@ -834,13 +840,16 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 					// As we've not returned, we must need to create a new download directory:
 					result = new DownloadDirectory(path, QueueRoot.this);
 					if (mustBeFirst) {
-						addDirectoryFirst(result);
+						addDirectoryFirst(result); // Fires its own event
 					} else {
 						downloadDirs.add(result);
-						fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {downloadDirs.size()-1}, new TreeNode[] {result}));
+						idx = downloadDirs.size() - 1;
 					}
 					treeModified = true;
 					saver.requestSave();
+				}
+				if (!mustBeFirst) {
+					fireTreeNodesInserted(new TreeModelEvent(DownloadQueue.this, QueueRoot.this.getPath(), new int[] {idx}, new TreeNode[] {result}));
 				}
 			}
 		}
@@ -1337,11 +1346,9 @@ public class DownloadQueue implements Serializable, TreeModel, Savable, NewPeerL
 							for (DownloadItem i : copy) {
 								try {
 									DownloadItem parent = (DownloadItem) i.getParent();
-									try (LockHolder lock = LockHolder.hold(parent.getReadWriteLock().readLock())) {
-										int indexInParent = parent.getIndex(i);
-										if (indexInParent > -1) {
-											l.treeNodesChanged(new TreeModelEvent(DownloadQueue.this, parent.getPath(), new int[] {indexInParent}, new Object[] {this}));
-										}
+									int indexInParent = parent.getIndex(i);
+									if (indexInParent > -1) {
+										l.treeNodesChanged(new TreeModelEvent(DownloadQueue.this, parent.getPath(), new int[] {indexInParent}, new Object[] {this}));
 									}
 								} catch (Exception ex) {
 									Logger.log("Couldn't update download queue tree: " + ex);
