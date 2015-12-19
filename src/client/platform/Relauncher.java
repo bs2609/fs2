@@ -1,9 +1,6 @@
 package client.platform;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -72,79 +69,71 @@ public class Relauncher {
 	}
 	
 	/**
-	 * Attempts to relaunch the JVM and FS2 with the new heap-size in bytes specified.
+	 * Attempts to relaunch the JVM and FS2 with the specified new heap size.
 	 * 
-	 * the returns of this method are subtle:
+	 * The returns of this method are subtle:
 	 * 
 	 * false for outright instant failure: such as trying to relaunch not from a jar, or if the JVM is missing.
-	 * true if the execution started and ended without exception.
+	 * true if the execution started without exception.
 	 * 
-	 * @param pipeThrough if true then this process will wait in a minimal state passing through stderr and stdout. Otherwise these get disgarded. On os x you'll get a load of dock icons for the semi-active processes if piping is enabled.
+	 * @param newHeapSize - The new heap size, in bytes.
+	 * @param inheritIO - If true then the new process will inherit this process's IO streams. Otherwise these get discarded.
 	 * 
-	 * @return 
 	 */
-	public static boolean increaseHeap(long newHeapSize, boolean pipeThrough) {
+	public static boolean increaseHeap(long newHeapSize, boolean inheritIO) {
 		try {
 			String jvmPath = Platform.getCurrentPlatformOS().getJVMExecutablePath(); 
 			
-			//determine which jar we are executing within:
+			// Determine which jar we are executing within:
 			String thisJarPath = new File(Relauncher.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getAbsolutePath();
 			
-			//ensure running in a jar and not a debug environment.
+			// Ensure running in a jar and not a debug environment.:
 			if (!thisJarPath.toLowerCase().endsWith(".jar")) {
 				return false;
 			}
 			
-			Logger.log("Attempting to relaunch JVM with more heap... "+Util.niceSize(newHeapSize));
+			long oldHeapSize = Runtime.getRuntime().maxMemory();
+			
+			Logger.log("Attempting to relaunch JVM with more heap...");
+			Logger.log("( " + Util.niceSize(oldHeapSize) + " -> " + Util.niceSize(newHeapSize) + " )");
+			
 			ClientExecutor.shutdown();
 			
 			List<String> args = new ArrayList<String>();
-			args.add(jvmPath);
-			args.add("-Xmx"+newHeapSize);
 			
-			//copy java properties to new jvm:
+			args.add(jvmPath);
+			args.add("-Xmx" + newHeapSize);
+			
+			// Copy Java properties to new JVM:
 			for (String property : FS2Constants.CLIENT_IMPORTANT_SYSTEM_PROPERTIES) {
-				if (System.getProperty(property)!=null) args.add("-D"+property+"="+System.getProperty(property));
+				String propertyValue = System.getProperty(property);
+				if (propertyValue != null) {
+					args.add("-D" + property + "=" + propertyValue);
+				}
 			}
 			
-			if (pipeThrough) args.add("-Dincreasedheap"); //when piping through add a new system property to prevent looping restarts.
+			// Add a new system property to prevent looping restarts:
+			if (inheritIO) {
+				args.add("-Dincreasedheap");
+			}
 			
 			args.add("-jar");
 			args.add(thisJarPath);
 			
-			Process newJVM = Runtime.getRuntime().exec(args.toArray(new String[0]));
-			
-			if (pipeThrough) {
-				pipeOutput(newJVM);
-				newJVM.waitFor();
+			ProcessBuilder newJVM = new ProcessBuilder(args);
+			if (inheritIO) {
+				newJVM.inheritIO();
 			}
+			newJVM.start();
 			
-			return true; //at this point the subprocess has ended. Hopefully well...
+			return true;
+			
 		} catch (Exception e) {
 			Logger.severe("Couldn't relaunch the JVM to increase the heapsize.");
 			Logger.log("This version of FS2 will continue to execute.");
 			Logger.log(e);
 			return false;
 		}
-	}
-	
-	// From: http://stackoverflow.com/questions/60302/starting-a-process-with-inherited-stdin-stdout-stderr-in-java-6
-	private static void pipeOutput(Process process) {
-		pipe(process.getErrorStream(), System.err);
-		pipe(process.getInputStream(), System.out);
-	}
-	
-	private static void pipe(final InputStream src, final PrintStream dest) {
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					byte[] buffer = new byte[FS2Constants.SMALL_BUFFER_SIZE];
-					for (int n = 0; n != -1; n = src.read(buffer)) {
-						dest.write(buffer, 0, n);
-					}
-				} catch (IOException e) {} // just exit
-			}
-		}).start();
 	}
 
 }
