@@ -285,7 +285,7 @@ public abstract class Util {
 	
 	public static void writeStreamToFile(InputStream stream, File file, SimpleDownloadProgress progress) throws IOException {
 		Path path = file.toPath();
-		Path working = path.resolveSibling(path.getFileName() + ".working");
+		Path working = getWorkingCopy(path);
 		
 		try (InputStream is = stream; OutputStream os = new BufferedOutputStream(Files.newOutputStream(working))) {
 			int bytesRead = 0;
@@ -305,7 +305,7 @@ public abstract class Util {
 	
 	public static void writeObjectToFile(Serializable object, File file) throws IOException {
 		Path path = file.toPath();
-		Path working = path.resolveSibling(path.getFileName() + ".working");
+		Path working = getWorkingCopy(path);
 		
 		try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(working)))) {
 			oos.writeObject(object);
@@ -313,6 +313,11 @@ public abstract class Util {
 		
 		Files.deleteIfExists(path);
 		Files.move(working, path);
+	}
+	
+	/** Returns a new location that can be written to without affecting the original. */
+	public static Path getWorkingCopy(Path path) {
+		return path.resolveSibling(path.getFileName() + ".working");
 	}
 	
 	public static final String[] sizeSuffix = {" B"," KiB"," MiB"," GiB"," TiB"," PiB"," EiB"};

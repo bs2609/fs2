@@ -5,12 +5,14 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -186,39 +188,40 @@ public class Sxml {
 	
 	/**
 	 * Serialises this document to an output stream. 
-	 * @param outStream the destination stream.
-	 * @param indent Pretty-print?
+	 * @param stream - The destination stream.
+	 * @param indent - Pretty-print?
 	 * @throws SXMLException
 	 */
-	public void save(OutputStream outStream, boolean indent) throws SXMLException {
-		outputXML(null, outStream, indent);
+	public void save(OutputStream stream, boolean indent) throws SXMLException {
+		outputXML(stream, indent);
 	}
 	
 	/**
 	 * Saves this document to a file other than the hardcopy.
-	 * @param tofile the destination file.
-	 * @param indent Pretty-print?
+	 * @param file - The destination file.
+	 * @param indent - Pretty-print?
 	 * @throws SXMLException
 	 */
-	public void save(File tofile, boolean indent) throws SXMLException {
-		outputXML(tofile, null, indent);
+	public void save(File file, boolean indent) throws SXMLException {
+		try {
+			Path path = file.toPath();
+			Path working = Util.getWorkingCopy(path);
+			
+			try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(working))) {
+				outputXML(stream, indent);
+			}
+			
+			Files.deleteIfExists(path);
+			Files.move(working, path);
+			
+		} catch (IOException e) {
+			throw new SXMLException(e);
+		}
 	}
 	
-	private synchronized void outputXML(File file, OutputStream stream, boolean indent) throws SXMLException {
+	private synchronized void outputXML(OutputStream stream, boolean indent) throws SXMLException {
 		try {
-			File workingFile = null;
-	        if (file != null) {
-	        	workingFile = new File(file.getCanonicalPath()+".working");
-	        	stream = new BufferedOutputStream(new FileOutputStream(workingFile));
-	        }
 	        stream.write(generateString(indent).getBytes(StandardCharsets.UTF_8));
-	        if (file != null) {
-	        	//by using a temporary file then moving it to a target
-	        	//we hope to get as close to atomicity as possible in a cross platform way.
-	        	stream.close();
-	        	file.delete();
-	        	workingFile.renameTo(file);
-	        }
 		} catch (Exception e) {
 			throw new SXMLException(e);
 		}

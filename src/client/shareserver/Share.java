@@ -488,15 +488,14 @@ public class Share {
 	private boolean saveList() {
 		try {
 			setStatus(Status.SAVING);
-			Path partial = listFile.resolveSibling(listFile.getFileName() + ".working");
-			Files.deleteIfExists(partial);
+			Path working = Util.getWorkingCopy(listFile);
 			
-			OutputStream os = new BufferedOutputStream(Files.newOutputStream(partial));
-			list.deconstruct(os);
-			os.close();
+			try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(working))) {
+				list.deconstruct(os);
+			}
 			
 			Files.deleteIfExists(listFile);
-			Files.move(partial, listFile);
+			Files.move(working, listFile);
 			return true;
 			
 		} catch (IOException e) {
