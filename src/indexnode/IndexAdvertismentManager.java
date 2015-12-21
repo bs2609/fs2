@@ -14,12 +14,10 @@ import common.Config;
 import common.Logger;
 
 /**
- * Manages advertisments on many interfaces and addresses.
- * 
+ * Manages advertisements on many interfaces and addresses.
  * Handles both active and prospective adverts.
  * 
  * @author gp
- *
  */
 public class IndexAdvertismentManager {
 
@@ -28,24 +26,24 @@ public class IndexAdvertismentManager {
 	
 	/**
 	 * 
-	 * @param conf The indexnode config with parameters useful for this manager.
+	 * @param conf - The indexnode config with parameters useful for this manager.
 	 * @throws UnknownHostException 
 	 * @throws SocketException 
 	 */
 	public IndexAdvertismentManager(Config conf, AdvertDataSource ads) throws UnknownHostException, SocketException {
 		this.ads = ads;
 		
-		//create an advertiser for each address on each interface:
-		startAdvertisers(conf);
+		String bindTo = conf.getString(IK.BIND_INTERFACE);
+		String advertiseOn = conf.getString(IK.ADVERTISE_ADDRESS);
 		
+		// Create an advertiser for each address on each interface:
+		startAdvertisers(bindTo, advertiseOn);
 	}
 
-	private void startAdvertisers(Config conf) throws UnknownHostException, SocketException {
-		String bindTo = conf.getString(IK.BIND_INTERFACE);
-		String aos = conf.getString(IK.ADVERTISE_ADDRESS);
-		
+	private void startAdvertisers(String bindTo, String aos) throws UnknownHostException, SocketException {
 		InetAddress advertiseOn = null;
-		if (aos!=null && !aos.equals("all")) {
+		
+		if (aos != null && !aos.equals("all")) {
 			advertiseOn = InetAddress.getByName(aos);
 		}
 		
@@ -54,31 +52,31 @@ public class IndexAdvertismentManager {
 			while (ifs.hasMoreElements()) {
 				advertiseOnInterface(ifs.nextElement(), advertiseOn);
 			}
+			
+		} else if (bindTo.equals("")) {
+			Logger.warn("You must specify a bind-interface (or \"all\") in your configuration!\nExiting...");
+			
 		} else {
-			if (bindTo.equals("")) {
-				Logger.log("You must specify a bind-interface (or \"all\") in your configuation!\nExiting...");
-				return;
-			}
 			advertiseOnInterface(NetworkInterface.getByName(bindTo), advertiseOn);
 		}
 	}
 	
 	private void advertiseOnInterface(NetworkInterface if0, InetAddress advertiseOn) throws SocketException {
-		InetSocketAddress addr;
+		if (!if0.isUp()) return;
 		Enumeration<InetAddress> addrs = if0.getInetAddresses();
-		if (addrs.hasMoreElements()) {
-			while (addrs.hasMoreElements()) {
-				addr = new InetSocketAddress(addrs.nextElement(), ads.getPort());
-				if (advertiseOn==null || advertiseOn.equals(addr.getAddress())) {
-					advertisers.add(new IndexAdvertiser(addr, ads));
-				}
-			}
-		} else {
-			Logger.warn("Not listening on "+if0.getDisplayName()+" it has no addresses.");
+		if (!addrs.hasMoreElements()) {
+			Logger.warn("Not advertising on (" + if0.getName() + ") " + if0.getDisplayName() + ", it has no addresses.");
 			return;
 		}
-		
+		Logger.log("Advertising on (" + if0.getName() + ") " + if0.getDisplayName());
+		while (addrs.hasMoreElements()) {
+			InetSocketAddress addr = new InetSocketAddress(addrs.nextElement(), ads.getPort());
+			if (advertiseOn == null || advertiseOn.equals(addr.getAddress())) {
+				advertisers.add(new IndexAdvertiser(addr, ads));
+			}
+		}
 	}
+	
 	public void shutdown() {
 		for (IndexAdvertiser ia : advertisers) {
 			ia.shutdown();

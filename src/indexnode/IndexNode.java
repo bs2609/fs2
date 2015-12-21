@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -851,8 +852,8 @@ public class IndexNode {
 		} else {
 			Logger.severe("Running in INSECURE mode. Plain-text sockets without authentication will be accepted!");
 		}
-		fs2Filter = new FS2Filter();
 		
+		fs2Filter = new FS2Filter();
 		fs2Filter.setAlias(conf.getString(IK.ALIAS));
 		fs2Filter.setPort(onPort);
 		
@@ -866,58 +867,11 @@ public class IndexNode {
 		alts = new IndexAlternatives(fs);
 		avatar = new IndexAvatar(new File(pathPrefix + conf.getString(IK.AVATAR_CACHE_PATH)), this);
 		
-		String bindTo = conf.getString(IK.BIND_INTERFACE);
-		
-		if (bindTo.equals("all")) {
-			Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
-			while (ifs.hasMoreElements()) {
-				listenOnInterface(ifs.nextElement());
-			}
-		} else {
-			if (bindTo.equals("")) {
-				Logger.log("You must specify a bind-interface (or \"all\") in your configuation!\nExiting...");
-				return;
-			}
-			listenOnInterface(NetworkInterface.getByName(bindTo));
-		}
+		startListeners(conf.getString(IK.BIND_INTERFACE));
 		
 		// Internal indexnodes do not advertise themselves.
 		if (!internal && conf.getBoolean(IK.ADVERTISE)) {
-			final long advertuid = conf.getLong(IK.ADVERTUID);
-			final long capability = generateCapabilityValue();
-			advertManager = new IndexAdvertismentManager(conf, new AdvertDataSource() {
-				
-				/**
-				 * Real, standalone indexnodes are always prospective. (because they always run, and want to inhibit worse autoindexnodes)
-				 */
-				@Override
-				public boolean isProspectiveIndexnode() {
-					return true;
-				}
-				
-				@Override
-				public int getPort() {
-					return onPort;
-				}
-				
-				/**
-				 * Return our capability.
-				 */
-				@Override
-				public long getIndexValue() {
-					return capability;
-				}
-				
-				@Override
-				public long getAdvertUID() {
-					return advertuid;
-				}
-	
-				@Override
-				public boolean isActive() {
-					return true; // A standalone indexnode can't be inactive.
-				}
-			});
+			advertManager = createAdvertManager(conf);
 		}
 	}
 	
@@ -926,6 +880,46 @@ public class IndexNode {
 		long c = Util.roundTo(Runtime.getRuntime().maxMemory(), 100000L, true);
 		// Add noise to the end of the number.
 		return c + new Random().nextInt(100000);
+	}
+	
+	private IndexAdvertismentManager createAdvertManager(Config conf) throws UnknownHostException, SocketException {
+		final long advertuid = conf.getLong(IK.ADVERTUID);
+		final long capability = generateCapabilityValue();
+		
+		AdvertDataSource ads = new AdvertDataSource() {
+			/**
+			 * Real, standalone indexnodes are always prospective.
+			 * (because they always run, and want to inhibit worse autoindexnodes)
+			 */
+			@Override
+			public boolean isProspectiveIndexnode() {
+				return true;
+			}
+			
+			@Override
+			public int getPort() {
+				return onPort;
+			}
+			
+			/** Return our capability. */
+			@Override
+			public long getIndexValue() {
+				return capability;
+			}
+			
+			@Override
+			public long getAdvertUID() {
+				return advertuid;
+			}
+			
+			/** A standalone indexnode can't be inactive. */
+			@Override
+			public boolean isActive() {
+				return true; 
+			}
+		};
+		
+		return new IndexAdvertismentManager(conf, ads);
 	}
 	
 	public IndexAdvertismentManager getAdvertManager() {
@@ -945,17 +939,32 @@ public class IndexNode {
 		clientLivenessTimer.cancel();
 	}
 	
-	private void listenOnInterface(NetworkInterface if0) {
-		InetSocketAddress addr;
-		Enumeration<InetAddress> addrs = if0.getInetAddresses();
-		if (addrs.hasMoreElements()) {
-			while (addrs.hasMoreElements()) {
-				addr = new InetSocketAddress(addrs.nextElement(), onPort);
-				bindToAddress(addr);
+	private void startListeners(String bindTo) throws SocketException {
+		if (bindTo.equals("all")) {
+			Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
+			while (ifs.hasMoreElements()) {
+				listenOnInterface(ifs.nextElement());
 			}
+			
+		} else if (bindTo.equals("")) {
+			Logger.warn("You must specify a bind-interface (or \"all\") in your configuration!\nExiting...");
+			
 		} else {
-			Logger.warn("Not listening on "+if0.getDisplayName()+" it has no addresses.");
+			listenOnInterface(NetworkInterface.getByName(bindTo));
+		}
+	}
+	
+	private void listenOnInterface(NetworkInterface if0) throws SocketException {
+		if (!if0.isUp()) return;
+		Enumeration<InetAddress> addrs = if0.getInetAddresses();
+		if (!addrs.hasMoreElements()) {
+			Logger.warn("Not listening on (" + if0.getName() + ") " + if0.getDisplayName() + ", it has no addresses.");
 			return;
+		}
+		Logger.log("Listening on (" + if0.getName() + ") " + if0.getDisplayName());
+		while (addrs.hasMoreElements()) {
+			InetSocketAddress addr = new InetSocketAddress(addrs.nextElement(), onPort);
+			bindToAddress(addr);
 		}
 	}
 
