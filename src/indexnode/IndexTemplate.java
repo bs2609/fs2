@@ -221,7 +221,8 @@ public class IndexTemplate {
 		Element fl = doc.createElement("div");
 		inSection.appendChild(fl);
 		fl.setAttribute("id", "fs2-filelist");
-		if (collection.size() == 0) {
+		fl.setAttribute("fs2-itemcount", Integer.toString(collection.size()));
+		if (collection.isEmpty()) {
 			fl.setTextContent("There is nothing to list.");
 			return;
 		}
