@@ -2,6 +2,8 @@ package indexnode;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import common.httpserver.HttpExchange;
@@ -42,10 +44,12 @@ public class IndexBrowser implements HttpHandler {
 			template.setFileHeader(requestedEntry);
 			
 			Map<String, ? extends FilesystemEntry> children = requestedEntry.getChildren();
+			List<FilesystemEntry> files;
 			synchronized (children) {
-				template.generateFilelist(children.values(), false, false);
+				files = new ArrayList<FilesystemEntry>(children.values());
 			}
 			
+			template.generateFilelist(files, false, false);
 			template.sendToClient(exchange);
 			
 		} catch (IOException e) {
