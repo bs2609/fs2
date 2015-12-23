@@ -125,14 +125,12 @@ public class NativeFS implements Filesystem {
 
 		@Override
 		public Collection<NativeEntry> getAlternatives() {
-			synchronized (hashIndex) {
-				return hashIndex.get(hash);
-			}
+			return searchForHash(hash);
 		}
 
 		@Override
 		public Map<String, NativeEntry> getChildren() {
-			return children;
+			return Collections.unmodifiableMap(children);
 		}
 
 		@Override
@@ -237,9 +235,9 @@ public class NativeFS implements Filesystem {
 	private final Map<ByteArray, Set<NativeEntry>> hashIndex = new HashMap<ByteArray, Set<NativeEntry>>();
 	
 	private void addToHashIndex(NativeEntry entry) {
-		// Initialise this hash entry if it doesn't have a set yet:
 		synchronized (hashIndex) {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
+			// Initialise this hash entry if it doesn't have a set yet:
 			if (set == null) {
 				set = new HashSet<NativeEntry>(1);
 				hashIndex.put(entry.hash, set);
@@ -251,6 +249,7 @@ public class NativeFS implements Filesystem {
 	private void removeFromHashIndex(NativeEntry entry) {
 		synchronized (hashIndex) {
 			Set<NativeEntry> set = hashIndex.get(entry.hash);
+			if (set == null) return;
 			set.remove(entry);
 			// Remove empty sets so that they may be garbage collected later:
 			if (set.isEmpty()) hashIndex.remove(entry.hash);
@@ -296,10 +295,9 @@ public class NativeFS implements Filesystem {
 		synchronized (nameIndex) {
 			for (String keyword : getKeywords(entry.getName())) {
 				Set<NativeEntry> set = nameIndex.get(keyword);
-				if (set != null) {
-					set.remove(entry);
-					if (set.isEmpty()) nameIndex.remove(keyword);
-				}
+				if (set == null) continue;
+				set.remove(entry);
+				if (set.isEmpty()) nameIndex.remove(keyword);
 			}
 		}
 	}
@@ -477,17 +475,16 @@ public class NativeFS implements Filesystem {
 
 	@Override
 	public Collection<NativeEntry> searchForHash(ByteArray hash) {
-		Collection<NativeEntry> res;
+		Set<NativeEntry> res;
 		synchronized (hashIndex) {
 			res = hashIndex.get(hash);
 		}
-		if (res == null) res = Collections.emptyList();
-		return res;
+		return (res == null) ? Collections.emptySet() : Collections.unmodifiableSet(res);
 	}
 
 	@Override
 	public Collection<NativeEntry> searchForName(String query) {
-		Set<NativeEntry> results = new HashSet<NativeEntry>(0);
+		Set<NativeEntry> results = Collections.emptySet();
 		boolean firstKeyword = true;
 		for (String keyword : getKeywords(query)) {
 			Set<NativeEntry> itemResults;
@@ -496,8 +493,7 @@ public class NativeFS implements Filesystem {
 			}
 			// Null indicates this keyword matched nothing at all.
 			if (itemResults == null) {
-				results.clear();
-				return results;
+				return Collections.emptySet();
 			}
 			if (firstKeyword) {
 				results = new HashSet<NativeEntry>(itemResults);
