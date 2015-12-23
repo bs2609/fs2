@@ -130,7 +130,7 @@ public class NativeFS implements Filesystem {
 
 		@Override
 		public Map<String, NativeEntry> getChildren() {
-			return Collections.unmodifiableMap(children);
+			return children;
 		}
 
 		@Override
