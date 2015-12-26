@@ -2,6 +2,7 @@ package client.indexnode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -424,6 +425,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 * This method generates a '(loading)' child node and schedules a refresh from the indexnode.
 	 */
 	void initialiseNode() {
+		if (!directory) throw new IllegalStateException("This operation is only defined for directories");
 		if (initialised) return;
 		childrenMutex = new Object();
 		synchronized (childrenMutex) {
@@ -468,6 +470,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 */
 	@Override
 	public FileSystemEntry getFromAllChildren(int index) {
+		if (!directory) return null;
 		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
 			if (index < 0) throw new IndexOutOfBoundsException("Request: " + index + ", have: " + (childDirectories.size() + childFiles.size()));
@@ -487,12 +490,12 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 */
 	@Override
 	public List<FileSystemEntry> getAllChildren() {
+		if (!directory) return Collections.emptyList();
+		if (!initialised) initialiseNode();
 		List<FileSystemEntry> ret = new ArrayList<FileSystemEntry>();
-		if (initialised) {
-			synchronized (childrenMutex) {
-				ret.addAll(childDirectories);
-				ret.addAll(childFiles);
-			}
+		synchronized (childrenMutex) {
+			ret.addAll(childDirectories);
+			ret.addAll(childFiles);
 		}
 		return ret;
 	}
@@ -519,6 +522,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 	 */
 	@Override
 	public int getAllChildrenCount() {
+		if (!directory) return 0;
 		if (!initialised) initialiseNode();
 		synchronized (childrenMutex) {
 			return childDirectories.size() + childFiles.size();
