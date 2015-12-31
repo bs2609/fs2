@@ -58,9 +58,10 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 		@Override
 		public void run() {
 			try {
-				// Shouldn't take the mutex whilst looking up children. If childDirectories is null then it means this node is no longer needed.
+				// If childDirectories is null then it means this node is no longer needed.
 				if (!initialised) return;
 				
+				// Shouldn't take the mutex whilst looking up children.
 				// Get the new list: (this might take a while!)
 				final List<FileSystemEntry> newChildren = fs.comm.lookupChildren(FileSystemEntry.this);
 				
@@ -75,7 +76,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 						// Rather than do this a clever, efficient one-pass way, I'm going to do it a brain-lazy but simple way with hash tables.
 						// Why do something in one pass when you can do it in five...
 						
-						// Test again as the fetch may have taken a clock cycle ;)
+						// Test again, just in case ;)
 						if (!initialised) return;
 						
 						// We're gonna hold this lock for a long while!
@@ -109,17 +110,13 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 								}
 							}
 							
-							Boolean reloadTable = false;
+							boolean reloadTable = false;
 							if (!childFiles.equals(newFiles)) {
 								reloadTable = true;
 								childFiles = newFiles;
 							}
 							
-							// Generate arrays needed for treenode removal event, and table removal event:
-							TreeNode[] deadDirs = new TreeNode[toDeleteDirs.size()];
-							int[] deadDirIndices = new int[toDeleteDirs.size()];
-							
-							generateTreeNodeRemovalEvent(toDeleteDirs, deadDirs, deadDirIndices);
+							generateTreeNodeRemovalEvent(toDeleteDirs);
 							
 							// Now find the insertions:
 							LinkedHashMap<FileSystemEntry, Integer> insertedDirs = new LinkedHashMap<FileSystemEntry, Integer>();
@@ -127,11 +124,7 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 								if (!childDirectoryIndices.containsKey(newDirs.get(i))) insertedDirs.put(newDirs.get(i), i);
 							}
 							
-							// Generate arrays needed for the event:
-							TreeNode[] insDirs = new TreeNode[insertedDirs.size()];
-							int[] insDirIndices = new int[insertedDirs.size()];
-							
-							generateTreeNodeInsertionEvent(newDirs, insertedDirs, insDirs, insDirIndices);
+							generateTreeNodeInsertionEvent(newDirs, insertedDirs);
 							
 							if (reloadTable || !toDeleteDirs.isEmpty() || !insertedDirs.isEmpty()) {
 								if (fs.selected == FileSystemEntry.this) fs.tableChanged(new TableModelEvent(fs));
@@ -149,68 +142,73 @@ public class FileSystemEntry implements TreeNode, Comparable<FileSystemEntry>, L
 					/**
 					 * Creates arrays of child directories inserted and then issues the events.
 					 * @param newDirs
-					 * @param inserted
-					 * @param insDirs
-					 * @param insDirIndices
+					 * @param insertedDirs
 					 */
-					private void generateTreeNodeInsertionEvent(final List<FileSystemEntry> newDirs,
-						LinkedHashMap<FileSystemEntry, Integer> inserted, TreeNode[] insDirs, int[] insDirIndices)
-					{
-						if (!inserted.isEmpty()) {
-							int counter = 0;
-							for (Entry<FileSystemEntry, Integer> e : inserted.entrySet()) {
-								insDirs[counter] = e.getKey();
-								insDirIndices[counter++] = e.getValue();
-							}
-							
-							// Make the structures consistent:
-							childDirectoryIndices.clear();
-							for (int i = 0; i < newDirs.size(); i++) {
-								childDirectoryIndices.put(newDirs.get(i), i);
-							}
-							childDirectories.clear();
-							childDirectories.addAll(newDirs);
-							
-							// Trigger the insertion event:
-							fs.treeNodesInserted(new TreeModelEvent(FileSystemEntry.this, getPath(), insDirIndices, insDirs));
+					private void generateTreeNodeInsertionEvent(final List<FileSystemEntry> newDirs, LinkedHashMap<FileSystemEntry, Integer> insertedDirs) {
+						if (insertedDirs.isEmpty()) return;
+						
+						// Generate arrays needed for the event:
+						TreeNode[] insDirs = new TreeNode[insertedDirs.size()];
+						int[] insDirIndices = new int[insertedDirs.size()];
+						
+						int counter = 0;
+						for (Entry<FileSystemEntry, Integer> e : insertedDirs.entrySet()) {
+							insDirs[counter] = e.getKey();
+							insDirIndices[counter++] = e.getValue();
 						}
+						
+						// Make the structures consistent:
+						childDirectoryIndices.clear();
+						for (int i = 0; i < newDirs.size(); i++) {
+							childDirectoryIndices.put(newDirs.get(i), i);
+						}
+						childDirectories.clear();
+						childDirectories.addAll(newDirs);
+						
+						// Trigger the insertion event:
+						fs.treeNodesInserted(new TreeModelEvent(FileSystemEntry.this, getPath(), insDirIndices, insDirs));
 					}
 					
 					/**
 					 * Creates arrays of directories that are going to go, issues the events and updates the childDirectories structures.
 					 */
-					private void generateTreeNodeRemovalEvent
-						(LinkedHashMap<FileSystemEntry, Integer> toDeleteDirs, TreeNode[] deadDirs, int[] deadDirIndices)
-					{
-						if (!toDeleteDirs.isEmpty()) {
-							int counter = 0;
-							for (Entry<FileSystemEntry, Integer> e : toDeleteDirs.entrySet()) {
-								deadDirs[counter] = e.getKey();
-								deadDirIndices[counter++] = e.getValue();
+					private void generateTreeNodeRemovalEvent(LinkedHashMap<FileSystemEntry, Integer> toDeleteDirs) {
+						if (toDeleteDirs.isEmpty()) return;
+						
+						// Generate arrays needed for the event:
+						TreeNode[] deadDirs = new TreeNode[toDeleteDirs.size()];
+						int[] deadDirIndices = new int[toDeleteDirs.size()];
+						
+						int counter = 0;
+						for (Entry<FileSystemEntry, Integer> e : toDeleteDirs.entrySet()) {
+							deadDirs[counter] = e.getKey();
+							deadDirIndices[counter++] = e.getValue();
+						}
+						
+						// Re-assemble the childDirectories but without the deleted nodes... 
+						List<FileSystemEntry> cdp = new ArrayList<FileSystemEntry>();
+						counter = 0;
+						childDirectoryIndices.clear();
+						for (FileSystemEntry f : childDirectories) {
+							if (!toDeleteDirs.containsKey(f)) {
+								cdp.add(f);
+								childDirectoryIndices.put(f, counter++);
 							}
-							
-							// Re-assemble the childDirectories but without the deleted nodes... 
-							List<FileSystemEntry> cdp = new ArrayList<FileSystemEntry>();
-							counter = 0;
-							childDirectoryIndices.clear();
-							for (FileSystemEntry f : childDirectories) {
-								if (!toDeleteDirs.containsKey(f)) {
-									cdp.add(f);
-									childDirectoryIndices.put(f, counter++);
-								}
-							}
-							// Now re-fill childDirectories with cdp:
-							childDirectories.clear();
-							childDirectories.addAll(cdp);
-							
-							// Trigger the nodes removed event...
-							fs.treeNodesRemoved(new TreeModelEvent(FileSystemEntry.this, getPath(), deadDirIndices, deadDirs));
-							for (FileSystemEntry f : toDeleteDirs.keySet()) {
-								f.purge(); // Prevent them from performing future updates.
-							}
+						}
+						
+						// Now re-fill childDirectories with cdp:
+						childDirectories.clear();
+						childDirectories.addAll(cdp);
+						
+						// Trigger the nodes removed event...
+						fs.treeNodesRemoved(new TreeModelEvent(FileSystemEntry.this, getPath(), deadDirIndices, deadDirs));
+						
+						for (FileSystemEntry f : toDeleteDirs.keySet()) {
+							f.purge(); // Prevent them from performing future updates.
 						}
 					}
 				});
+				
 			} catch (Exception e) {
 				Logger.warn("Exception caught in indexnode query thread: " + e);
 				Logger.log(e);
