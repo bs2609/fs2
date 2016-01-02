@@ -28,13 +28,13 @@ import indexnode.IndexNode.Share;
 public class IndexStatistics implements HttpHandler {
 	
 	private final IndexNode onNode;
-	private volatile long lastGenerated = 0;
-	private String cachedStatsPage = "";
+	private volatile long lastGenerated = 0L;
+	private volatile String cachedStatsPage = "";
 	private Document doc;
 	private Element body;
 	private IndexTemplate template;
 	private volatile boolean generating = false;
-	private Object genMutex = new Object();
+	private final Object genMutex = new Object();
 	
 	public IndexStatistics(IndexNode indexNode) {
 		onNode = indexNode;
@@ -114,6 +114,8 @@ public class IndexStatistics implements HttpHandler {
 			}
 		});
 		worker.setName("Statistics generation");
+		worker.setDaemon(true);
+		worker.setPriority(Thread.NORM_PRIORITY - 1);
 		worker.start();
 	}
 	
