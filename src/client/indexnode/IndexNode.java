@@ -130,12 +130,16 @@ public class IndexNode {
 		
 		this.location = nodeURL;
 		this.secureLocation = FS2Filter.getFS2SecureURL(location);
-		int idx=-1;
-		synchronized (ssvr.getIndexNodeCommunicator().getRegisteredIndexNodes()) {
-			ssvr.getIndexNodeCommunicator().getRegisteredIndexNodes().add(this);
-			idx=ssvr.getIndexNodeCommunicator().getRegisteredIndexNodes().size()-1;
+		
+		int idx = -1;
+		IndexNodeCommunicator comm = ssvr.getIndexNodeCommunicator();
+		List<IndexNode> nodes = comm.getRegisteredIndexNodes();
+		
+		synchronized (nodes) {
+			nodes.add(this);
+			idx = nodes.size() - 1;
 		}
-		ssvr.getIndexNodeCommunicator().notifyIndexNodeInserted(idx);
+		comm.notifyIndexNodeInserted(idx);
 		
 		if (wasAdvertised()) {
 			Logger.log("An indexnode at '"+getLocation()+"' was just autodetected...");
@@ -151,20 +155,21 @@ public class IndexNode {
 		contactIndexNode();
 	}
 	
+	final ChatPoll chatPoll = new ChatPoll();
+	
 	/**
 	 * Checks for new messages on the indexnode.
 	 * @author gary
 	 */
-	ChatPoll chatPoll = new ChatPoll();
 	class ChatPoll extends TimerTask {
 		@Override
 		public void run() {
 			synchronized (chatListeners) {
-				if (chatListeners.size()==0) {
+				if (chatListeners.isEmpty()) {
 					return;
 				}
 			}
-			//If we're here then start a new chat poll task.
+			// If we're here then start a new chat poll task.
 			scheduleMessageAction(null);
 		}
 	}
@@ -177,12 +182,11 @@ public class IndexNode {
 		ssvr.getIndexNodeCommunicator().chatRequestPool.submit(new ChatAction(message));
 	}
 	
-	Object chatActionMutex = new Object();
+	final Object chatActionMutex = new Object();
 	
 	/**
 	 * Retrieves messages from the indexnode and sends one if needed.
 	 * @author gary
-	 *
 	 */
 	class ChatAction implements Runnable {
 		
@@ -287,14 +291,17 @@ public class IndexNode {
 		}
 	}
 	
-	private Set<ChatListener> chatListeners = new HashSet<ChatListener>();
-	private boolean isAutomaticNode; //true iff this node was automatically started.
+	private final Set<ChatListener> chatListeners = new HashSet<ChatListener>();
+	
+	/** true iff this node was automatically started. */
+	private boolean isAutomaticNode;
 	
 	public void registerChatListener(ChatListener l) {
 		synchronized (chatListeners) {
 			chatListeners.add(l);
 		}
-		//Attempt to retrieve messages right now, for the benifit of the new listener. (this is pretty pointles but helps to make the gui appear more responsive on startup)
+		// Attempt to retrieve messages right now, for the benefit of the new listener.
+		// (this is pretty pointless but helps to make the GUI appear more responsive on startup)
 		scheduleMessageAction(null);
 	}
 	
@@ -664,16 +671,16 @@ public class IndexNode {
 	}
 
 	/**
-	 * Get the statistics and list of connected peers from this indexnode.
+	 * Gets the statistics and list of connected peers from this indexnode.
 	 */
 	public IndexNodeStats getStats() {
 		return stats;
 	}
 	
-	Set<StatsListener> statsListeners = new HashSet<StatsListener>();
+	final Set<StatsListener> statsListeners = new HashSet<StatsListener>();
 	
 	/**
-	 * Register a new stats listener with this indexnode.
+	 * Registers a new stats listener with this indexnode.
 	 * @param l
 	 */
 	public void addStatsListener(StatsListener l) {
@@ -1053,7 +1060,6 @@ public class IndexNode {
 		}
 	}
 	
-
 	/**
 	 * Get the url that submits our avatar to the indexnode.
 	 * @return
@@ -1067,7 +1073,6 @@ public class IndexNode {
 			return null;
 		}
 	}
-
 	
 	public InputStream getClientAvatarStream(String iconhash) throws IOException {
 		return getInputStreamFromIndexnode(getAvatarIconURL(iconhash));
@@ -1076,6 +1081,5 @@ public class IndexNode {
 	public boolean isActive() {
 		return status==Status.ACTIVE;
 	}
-
 	
 }
