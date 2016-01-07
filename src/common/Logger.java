@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -22,7 +23,8 @@ import java.util.logging.Level;
 public abstract class Logger {
 	
 	private static boolean loggingEnabled = false;
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	private static Date cachedDate = new Date();
 	private static File logFile;
 	private static File accessFile; // the access log
 	private static PrintStream logFileStream;
@@ -88,7 +90,7 @@ public abstract class Logger {
 	// Records to the access log file (if logging to disk is enabled) with the message specified.
 	public synchronized static void access(Object message) {
 		if (accessFileStream != null) {
-			accessFileStream.println(dateFormat.format(new Date()) + " " + message);
+			accessFileStream.println(dateFormat.format(getCurrentDate()) + " " + message);
 		}
 	}
 	
@@ -158,13 +160,18 @@ public abstract class Logger {
 	private static void appendLog (Level level, Object message) {
 		// Use STDERR if the message indicates something catastrophic.
 		boolean severe = level.intValue() >= Level.SEVERE.intValue();
-		(severe ? System.err : System.out).println(dateFormat.format(new Date()) + " " + level.getName() + ": " + message);
+		(severe ? System.err : System.out).println(dateFormat.format(getCurrentDate()) + " " + level.getName() + ": " + message);
 	}
 	
 	private static void appendFileLog (Level level, Object message) {
 		if (logFileStream != null) {
-			logFileStream.println(dateFormat.format(new Date()) + " " + level.getName() + ": " + message);
+			logFileStream.println(dateFormat.format(getCurrentDate()) + " " + level.getName() + ": " + message);
 		}
+	}
+	
+	private static Date getCurrentDate() {
+		cachedDate.setTime(System.currentTimeMillis());
+		return cachedDate;
 	}
 	
 	public interface LogListener {
