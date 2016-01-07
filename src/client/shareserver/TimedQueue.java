@@ -1,6 +1,5 @@
 package client.shareserver;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,13 +24,15 @@ import java.util.Map;
  *
  */
 public class TimedQueue<E> {
-	private Map<E, Date> tokenExpiries = new HashMap<E, Date>();
+	
+	private Map<E, Long> tokenExpiries = new HashMap<E, Long>();
 	private LinkedList<E> queue = new LinkedList<E>();
 	private Map<E, Integer> resourceUsage = new HashMap<E, Integer>();
-	/** the number of allowed resources*/
+	
+	/** The number of allowed resources. */
 	private int resourceCount = 2;
 	
-	/** the number of resources per client */
+	/** The number of resources per client. */
 	private int clientLimit = 1;
 	
 	/** The number of milliseconds before a client's token is removed. */
@@ -90,21 +91,20 @@ public class TimedQueue<E> {
 	}
 	
 	/**
-	 * allocates a resource to this token if it can. This token must be on the queue.
+	 * Allocates a resource to this token if it can. This token must be on the queue.
 	 * @param token
 	 * @return
 	 */
 	private boolean canQueuedHaveResource(E token) {
-		//We've just seen this client, so update their expiry.
-		tokenExpiries.put(token, new Date());
+		// We've just seen this client, so update their expiry.
+		tokenExpiries.put(token, System.currentTimeMillis());
 		removeExpiredTokensAheadOf(token);
-		//If there are more free resources than us and all the clients ahead of us, then we can go!
-		if (getFreeResourceCount() > queue.indexOf(token) && getUsedCount(token)<clientLimit) {
+		// If there are more free resources than us and all the clients ahead of us, then we can go!
+		if (getFreeResourceCount() > queue.indexOf(token) && getUsedCount(token) < clientLimit) {
 			incrementUsed(token);
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 	
 	private void removeExpiredTokensAheadOf(E token) {
@@ -149,7 +149,7 @@ public class TimedQueue<E> {
 	}
 	
 	private boolean hasExpired(E token) {
-		return (System.currentTimeMillis() - tokenExpiries.get(token).getTime()) > queueTimeoutMS;
+		return (System.currentTimeMillis() - tokenExpiries.get(token)) > queueTimeoutMS;
 	}
 	
 	public synchronized int getFreeResourceCount() {
