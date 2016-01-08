@@ -6,6 +6,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -15,11 +16,13 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -154,7 +157,7 @@ public abstract class Util {
 		return quoted.substring(1, quoted.length() - 1).replaceAll("\\\\\"", Matcher.quoteReplacement("\"")).replaceAll("\\\\\\\\", Matcher.quoteReplacement("\\"));
 	}
 	
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static String formatDate(Date date) {
 		synchronized (dateFormat) {
@@ -215,8 +218,6 @@ public abstract class Util {
 		}
 	}
 	
-	public static final Pattern hexStrPattern = Pattern.compile("[0-9a-fA-F]*");
-	
 	public static String bytesToHexString(byte[] bytes) {
 		CharBuffer cb = CharBuffer.allocate(bytes.length * 2);
 		
@@ -230,10 +231,7 @@ public abstract class Util {
 	}
 	
 	public static byte[] bytesFromHexString(String str) {
-		if (!hexStrPattern.matcher(str).matches()) {
-			throw new IllegalArgumentException("Not a valid hexadecimal string");
-		}
-		if (str.length() % 2 != 0) return bytesFromHexString("0" + str);
+		if ((str.length() & 1) != 0) return bytesFromHexString("0" + str);
 		
 		ByteBuffer buf = ByteBuffer.allocate(str.length() / 2);
 		
@@ -277,6 +275,11 @@ public abstract class Util {
 	public static void copyFile(File src, File dst) throws IOException {
 		InputStream is = new BufferedInputStream(Files.newInputStream(src.toPath()));
 		writeStreamToFile(is, dst);
+	}
+	
+	public static void writeStringToFile(String str, File file) throws IOException {
+		InputStream is = new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
+		writeStreamToFile(is, file);
 	}
 	
 	/**
