@@ -1,6 +1,7 @@
 package indexnode;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -33,8 +34,9 @@ public class IndexTemplate {
 	private Element footer;
 	private String linkBase;
 	private Element generationTime;
-	private Date startedGeneration = new Date();
-	private SimpleDateFormat dateFormat = new SimpleDateFormat("s.SSS");
+	
+	private final DateFormat dateFormat = new SimpleDateFormat("s.SSS");
+	private final long startedGeneration = System.currentTimeMillis();
 	
 	public IndexTemplate(HttpExchange exchange) throws SXMLException {
 		this();
@@ -268,8 +270,9 @@ public class IndexTemplate {
 		HttpUtil.simpleResponse(exchange, this.toString(), 200);
 	}
 	
+	@Override
 	public String toString() {
-		String generationTime = ", generation time: " + dateFormat.format(new Date((new Date()).getTime() - startedGeneration.getTime())) + "s";
+		String generationTime = ", generation time: " + dateFormat.format(new Date(System.currentTimeMillis() - startedGeneration)) + "s";
 		this.generationTime.setTextContent(generationTime);
 		try {
 			return xml.generateString(true);
@@ -280,6 +283,6 @@ public class IndexTemplate {
 	}
 	
 	public String describeEntry(FilesystemEntry entry) {
-			return "("+Util.niceSize(entry.getSize())+")";
+		return "(" + Util.niceSize(entry.getSize()) + ")";
 	}
 }
