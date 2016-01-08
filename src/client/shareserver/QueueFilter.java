@@ -19,7 +19,7 @@ import common.Util;
 /**
  * Facilitates queueing of uploads in a way that both browsers and FS2 clients will understand.
  * 
- * It acheives queuing by allocating a token to a client that can be used to reserve a slot.
+ * It achieves queueing by allocating a token to a client that can be used to reserve a slot.
  * If a client does not supply a token-cookie it will be allocated one, This will only be used however if they re-request
  * using this token. This is so that non-cookie clients do not fill the queue with useless tokens.
  * Non-cookie clients may only
@@ -108,14 +108,12 @@ public class QueueFilter extends Filter {
 			Element body = doc.createElement("div");
 			body.setAttribute("id", "fs2-queued");
 			html.appendChild(body);
-			int positionInQueue = tq.positionInQueue(token)+1;
+			int positionInQueue = tq.positionInQueue(token) + 1, queueSize = tq.queueSize();
 			body.setAttribute("fs2-queueindex", Integer.toString(positionInQueue));
-			body.setAttribute("fs2-queuesize", Integer.toString(tq.queueSize()));
-			if (positionInQueue == -1) {
-				body.setTextContent("(This page refreshes every "+refreshInterval+" seconds) There are no free slots to download. You are not in the queue yet. Try enabling cookies if you repeatedly see this message.");
-			} else {
-				body.setTextContent("(This page refreshes every "+refreshInterval+" seconds) You're in the queue at position "+Integer.toString(positionInQueue)+" of "+Integer.toString(tq.queueSize()));
-			}
+			body.setAttribute("fs2-queuesize", Integer.toString(queueSize));
+			String inQueue = "You're in the queue at position " + positionInQueue + " of " + queueSize;
+			String notInQueue = "There are no free slots to download. You are not in the queue yet. Try enabling cookies if you repeatedly see this message.";
+			body.setTextContent("(This page refreshes every " + refreshInterval + " seconds) " + (positionInQueue == 0 ? notInQueue : inQueue));
 			Element footer = doc.createElement("div");
 			html.appendChild(footer);
 			footer.setAttribute("id", "fs2-footer");
