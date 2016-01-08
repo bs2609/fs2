@@ -1,7 +1,6 @@
 package client;
 
 import java.io.File;
-import java.util.Date;
 
 import client.gui.Gui;
 import client.gui.Notifications;
@@ -136,7 +135,7 @@ public class ClientExecutor {
 	
 	private static void setupLogging() {
 		if (conf.getBoolean(CK.LOG_MESSAGES_TO_DISK)) {
-			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath() + File.separator + Util.formatDate(new Date(), "yyyy-MM-dd_HHmmss"));
+			Logger.setLogFileName(Platform.getLogsDirectory().getAbsolutePath() + File.separator + Util.formatCurrentDate("yyyy-MM-dd_HHmmss"));
 			Logger.log("Log messages are now being saved to: " + Logger.getLogFile());
 		}
 	}

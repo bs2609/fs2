@@ -41,7 +41,7 @@ public class IndexTemplate {
 	public IndexTemplate(HttpExchange exchange) throws SXMLException {
 		this();
 		linkBase = HttpUtil.getClientURLToServerRoot(exchange);
-		footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " at " + linkBase + " on " + Util.formatDate(new Date())));
+		footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " at " + linkBase + " on " + Util.formatCurrentDate()));
 	}
 	
 	public IndexTemplate() throws SXMLException {

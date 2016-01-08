@@ -157,11 +157,21 @@ public abstract class Util {
 	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static String formatDate(Date date) {
-		return dateFormat.format(date);
+		synchronized (dateFormat) {
+			return dateFormat.format(date);
+		}
 	}
 	
 	public static String formatDate(Date date, String format) {
 		return new SimpleDateFormat(format).format(date);
+	}
+	
+	public static String formatCurrentDate() {
+		return formatDate(new Date());
+	}
+	
+	public static String formatCurrentDate(String format) {
+		return formatDate(new Date(), format);
 	}
 	
 	/**

@@ -2,7 +2,6 @@ package client.shareserver;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Date;
 import java.util.Random;
 
 import org.w3c.dom.Document;
@@ -121,7 +120,7 @@ public class QueueFilter extends Filter {
 			html.appendChild(footer);
 			footer.setAttribute("id", "fs2-footer");
 			footer.appendChild(doc.createElement("hr"));
-			footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " client at " + InetAddress.getLocalHost() + " on " + Util.formatDate(new Date())));
+			footer.appendChild(doc.createTextNode(FS2Constants.FS2_PROTOCOL_VERSION + " client at " + InetAddress.getLocalHost() + " on " + Util.formatCurrentDate()));
 			
 			HttpUtil.simpleResponse(exchange, xml.toString(), 503);
 			
