@@ -99,7 +99,7 @@ public abstract class HttpUtil {
 	 * @throws IOException
 	 */
 	public static void simpleResponse(HttpExchange exchange, String msg, int statusCode) throws IOException {
-		simpleBinaryResponse(exchange, msg.getBytes(StandardCharsets.UTF_8), statusCode);
+		simpleBinaryResponse(exchange, msg.getBytes(StandardCharsets.UTF_8), "text/html", statusCode);
 	}
 	
 	/**
@@ -111,8 +111,12 @@ public abstract class HttpUtil {
 	 * @throws IOException
 	 */
 	public static void simpleBinaryResponse(HttpExchange exchange, byte[] msg, int statusCode) throws IOException {
+		simpleBinaryResponse(exchange, msg, "application/octet-stream", statusCode);
+	}
+	
+	public static void simpleBinaryResponse(HttpExchange exchange, byte[] msg, String type, int statusCode) throws IOException {
 		try {
-			exchange.getResponseHeaders().add("Content-Type", "text/html");
+			exchange.getResponseHeaders().add("Content-Type", type);
 			exchange.sendResponseHeaders(statusCode, msg.length);
 			OutputStream response = exchange.getResponseBody();
 			response.write(msg);
