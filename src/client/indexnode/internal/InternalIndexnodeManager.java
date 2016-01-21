@@ -12,6 +12,7 @@ import client.indexnode.IndexNodeCommunicator;
 import client.indexnode.internal.InternalIndexnodeConfigDefaults.IIK;
 import client.platform.Platform;
 import client.platform.ClientConfigDefaults.CK;
+
 import indexnode.AdvertDataSource;
 import indexnode.IndexAdvertismentManager;
 import indexnode.IndexNode;
@@ -61,10 +62,10 @@ public class InternalIndexnodeManager {
 		}
 	}
 	
-	private IndexNode executingNode;
+	private volatile IndexNode executingNode;
 	private final IndexNodeCommunicator comm;
 	private final Config nodeConfig;
-	private IndexAdvertismentManager advertManager;
+	private volatile IndexAdvertismentManager advertManager;
 	private final CapabilityRecorder cr;
 	private final String indexnodeFilesPath;
 	private Timer considerationTimer;
@@ -150,11 +151,13 @@ public class InternalIndexnodeManager {
 	}
 	
 	private final long capability;
+	
 	public long getCapability() {
 		return capability;
 	}
 	
 	private volatile boolean inhibitCached;
+	
 	/**
 	 * Returns true if this internal indexnode wont run because the client is already connected to a non-detected indexnode.
 	 * 
@@ -173,26 +176,32 @@ public class InternalIndexnodeManager {
 	 * Ensures an indexnode is running, or starts one.
 	 */
 	private void ensureIndexnode() {
-		if (executingNode!=null) return;
-		try {
-			Logger.warn("Internal indexnode started!");
-			executingNode = new IndexNode(nodeConfig, true, indexnodeFilesPath);
-		} catch (Exception e) {
-			Logger.severe("Internal indexnode couldn't be started: "+e);
-			Logger.log(e);
-		}
+		if (executingNode != null) return;
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					executingNode = new IndexNode(nodeConfig, true, indexnodeFilesPath);
+					Logger.warn("Internal indexnode started!");
+					
+				} catch (Exception e) {
+					Logger.severe("Internal indexnode couldn't be started: " + e);
+					Logger.log(e);
+				}
+			}
+		};
+		new Thread(new ThreadGroup("Internal indexnode threads"), r).start();
 	}
 	
 	/**
 	 * Stops a running indexnode if needed.
 	 */
 	private void stopIndexnode() {
-		if (executingNode!=null) {
-			executingNode.shutdown();
-			executingNode=null;
-			comm.notifyInternalIndexnodeShutdown();
-			Logger.warn("Internal indexnode stopped.");
-		}
+		if (executingNode == null) return;
+		executingNode.shutdown();
+		executingNode = null;
+		comm.notifyInternalIndexnodeShutdown();
+		Logger.warn("Internal indexnode stopped.");
 	}
 	
 	public boolean isAlwaysOn() {
@@ -264,7 +273,6 @@ public class InternalIndexnodeManager {
 		}
 	}
 	
-	
 	/**
 	 * Updates the alias of the internal indexnode, immediately if it is currently active.
 	 * @param newAlias
@@ -282,7 +290,6 @@ public class InternalIndexnodeManager {
 	public void clientAliasChanged() {
 		setAlias(comm.getShareServer().getAlias());
 	}
-
 	
 	public void shutdown() {
 		considerationTimer.cancel();
