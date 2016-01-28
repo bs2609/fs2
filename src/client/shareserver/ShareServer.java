@@ -20,6 +20,8 @@ import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,6 +39,7 @@ import client.indexnode.IndexNodeCommunicator;
 import client.indexnode.PeerStatsCollector;
 import client.platform.ClientConfigDefaults.CK;
 import client.platform.Platform;
+import client.shareserver.DynamicResourcePoolExecutor.ResourceProvider;
 import client.shareserver.Share.Status;
 
 import common.Config;
@@ -70,6 +73,7 @@ import common.httpserver.HttpServer;
  * 
  * @author Gary
  */
+@SuppressWarnings("restriction")
 public class ShareServer implements TableModel {
 
 	private class RefreshSignalHandler implements SignalHandler {
@@ -388,7 +392,7 @@ public class ShareServer implements TableModel {
 			@Override
 			public void run() {
 				try (LockHolder lock = LockHolder.hold(shareRefreshPoolLock)) {
-					shareRefreshPool = new ResourcePoolExecutor<FileStore>(FileSystems.getDefault().getFileStores(), new NamedThreadFactory(true, "Share refresh thread"));
+					shareRefreshPool = createShareRefreshPool();
 				}
 			}
 		}, "Share refresh pool initialiser");
@@ -415,6 +419,19 @@ public class ShareServer implements TableModel {
 		}
 		
 		Logger.log("Now exporting shares on port " + onPort);
+	}
+	
+	private ExecutorService createShareRefreshPool() {
+		ResourceProvider<FileStore> provider = new ResourceProvider<FileStore>() {
+			@Override
+			public Iterable<FileStore> pollResources() {
+				return FileSystems.getDefault().getFileStores();
+			}
+		};
+		ThreadFactory factory = new NamedThreadFactory(true, "Share refresh thread");
+		long interval = FS2Constants.CLIENT_FILESYSTEM_POLL_MIN_INTERVAL;
+		
+		return new DynamicResourcePoolExecutor<FileStore>(provider, factory, interval, TimeUnit.MILLISECONDS);
 	}
 	
 	private class ConsiderRefreshingSharesTask extends TimerTask {

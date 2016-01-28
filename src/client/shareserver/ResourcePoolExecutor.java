@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * 
@@ -26,17 +27,43 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 		T getResource();
 	}
 	
-	private final ConcurrentMap<T, ExecutorService> resourceMap = new ConcurrentHashMap<T, ExecutorService>();
+	public interface ResourceAllocator<T> extends Function<T, ExecutorService> {
+		
+		default ExecutorService apply(T t) {
+			return getAllocation(t);
+		}
+		
+		/** Returns the ExcecutorService allocated to this resource. */
+		ExecutorService getAllocation(T resource);
+	}
 	
-	public ResourcePoolExecutor(Iterable<T> resources) {
-		for (T resource : resources) {
-			resourceMap.put(resource, Executors.newFixedThreadPool(1));
+	public static class DefaultAllocator<T> implements ResourceAllocator<T> {
+		
+		private final ThreadFactory factory;
+		
+		public DefaultAllocator(ThreadFactory factory) {
+			this.factory = factory;
+		}
+		
+		@Override
+		public ExecutorService getAllocation(T resource) {
+			return Executors.newFixedThreadPool(1, factory);
 		}
 	}
 	
+	protected final ConcurrentMap<T, ExecutorService> resourceMap = new ConcurrentHashMap<T, ExecutorService>();
+	
+	public ResourcePoolExecutor(Iterable<T> resources) {
+		this(resources, Executors.defaultThreadFactory());
+	}
+	
 	public ResourcePoolExecutor(Iterable<T> resources, ThreadFactory factory) {
+		this(resources, new DefaultAllocator<T>(factory));
+	}
+	
+	public ResourcePoolExecutor(Iterable<T> resources, ResourceAllocator<T> allocator) {
 		for (T resource : resources) {
-			resourceMap.put(resource, Executors.newFixedThreadPool(1, factory));
+			resourceMap.computeIfAbsent(resource, allocator);
 		}
 	}
 	
@@ -92,11 +119,13 @@ public class ResourcePoolExecutor<T> extends AbstractExecutorService {
 		if (command instanceof ResourceUser<?>) {
 			ResourceUser<?> user = (ResourceUser<?>) command;
 			Object resource = user.getResource();
-			if (resourceMap.containsKey(resource)) {
-				resourceMap.get(resource).execute(user);
+			ExecutorService service = resourceMap.get(resource);
+			if (service != null) {
+				service.execute(user);
 				return;
 			}
 		}
-		throw new RejectedExecutionException("Resource not found or undefined");
+		throw new RejectedExecutionException("Resource not found or unspecified");
 	}
+	
 }

@@ -146,6 +146,9 @@ public abstract class FS2Constants {
 	/** The client autorefreshes shares that have new items downloaded into them, but not more often than this: */
 	public static final int CLIENT_DOWNLOADED_TO_SHARE_REFRESH_MIN_INTERVAL = 60*1000;
 	
+	/** The number of milliseconds before it is acceptable to poll the filesystem again. */
+	public static final int CLIENT_FILESYSTEM_POLL_MIN_INTERVAL = 10*1000;
+	
 	/** The number of milliseconds between considering if shares need refreshing: 10s */
 	public static final int CLIENT_SHARE_REFRESH_POLL_INTERVAL = 10*1000;
 	
