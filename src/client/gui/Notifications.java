@@ -1,5 +1,7 @@
 package client.gui;
 
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
 import java.awt.SplashScreen;
 import java.awt.Toolkit;
@@ -59,7 +61,9 @@ public class Notifications {
 		if (GraphicsEnvironment.isHeadless()) return null;
 		updatePm = new ProgressMonitor(null, "Downloading FS2 update...", "nomming bytes...(opening connection to download server)", 0, 0);
 		fixupPM(updatePm, true);
+		
 		return new SimpleDownloadProgress() {
+			
 			ProgressTracker tracker = new ProgressTracker();
 			
 			@Override
@@ -116,6 +120,7 @@ public class Notifications {
 	}
 	
 	ProgressMonitor shutdownPm;
+	
 	public void shutdownProgress(String description) {
 		if (GraphicsEnvironment.isHeadless() || (System.getProperty("headless")!=null)) return;
 		if (ClientExecutor.endGame) return; //don't trigger in a shutdown hook
@@ -152,17 +157,24 @@ public class Notifications {
 			diafield.setAccessible(true);
 			JDialog d = (JDialog) diafield.get(pm);
 			
-			if (!cancellable) 
-			{
-				((JOptionPane)d.getContentPane().getComponent(0)).setOptions(new Object[]{});
+			if (!cancellable) {
+				Container c = d.getContentPane();
+				synchronized (c.getTreeLock()) {
+					((JOptionPane) c.getComponent(0)).setOptions(new Object[0]);
+				}
 			}
 			
+			Dimension ss = Toolkit.getDefaultToolkit().getScreenSize();
+			
 			int nx, ny, w, h;
+			
 			w = 640;
 			h = d.getSize().height;
-			nx = (Toolkit.getDefaultToolkit().getScreenSize().width-w)/2;
-			ny = (Toolkit.getDefaultToolkit().getScreenSize().height-h)/2;
+			nx = (ss.width - w) / 2;
+			ny = (ss.height - h) / 2;
+			
 			d.setBounds(nx, ny, w, h);
+			
 		} catch (Exception e) {
 			Logger.warn("Unable to runtime-bork ProgressMonitor.class: "+e);
 			Logger.log("This is not a problem!");
