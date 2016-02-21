@@ -203,10 +203,9 @@ public class ShareServer implements TableModel {
 				oldidx = currentTransfers.indexOf(info);
 				currentTransfers.remove(oldidx);
 			}
-			if (Thread.currentThread().isInterrupted()) {
-				try {
-					Thread.sleep(1); // Try to sleep (which will fail due to interruption), and will clear the interrupt flag so then we may dispatch safely.
-				} catch (InterruptedException cleared) {}
+			// Clear the interrupt flag so we may dispatch safely.
+			if (Thread.interrupted()) {
+				Logger.log("Suppressing interrupt for '" + Thread.currentThread().getName() + "' during dispatch");
 			}
 			try {
 				Utilities.dispatch(new Runnable() {
