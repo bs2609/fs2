@@ -10,6 +10,7 @@ import java.net.URL;
 import common.FS2Constants;
 import common.HttpUtil;
 import common.Logger;
+import common.Util;
 
 /**
  * Listens out for adverts sent by indexnodes.
@@ -86,10 +87,11 @@ public class AdvertListener extends Thread {
 				} finally {
 					if (mustShutdown) return;
 				}
-			} catch (Exception e){
-				try { Thread.sleep(FS2Constants.INDEXNODE_ADVERTISE_INTERVAL_MS); } catch (InterruptedException dontcare) {}
-				Logger.warn("Advertisment reception failed: "+e.toString());
+				
+			} catch (Exception e) {
+				Logger.warn("Advertisment reception failed: " + e);
 				Logger.log(e);
+				Util.sleep(FS2Constants.INDEXNODE_ADVERTISE_INTERVAL_MS);
 			}
 		}
 	}

@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 import common.FS2Constants;
 import common.Logger;
+import common.Util;
 
 /**
  * Advertises this indexnode via UDP broadcast.
@@ -40,26 +41,25 @@ public class IndexAdvertiser extends Thread {
 		start();
 	}
 	
+	@Override
 	public void run() {
 		try {
 			while (!shutdown) {
-				
-				//If this is an active indexnode, send that advert.
+				// If this is an active indexnode, send that advert:
 				if (ads.isActive()) {
 					String activeMessage = FS2Constants.FS2_PROTOCOL_VERSION+":"+Integer.toString(ads.getPort())+":"+Long.toString(ads.getAdvertUID());
 					sendAdvert(activeMessage);
 				}
 				
-				//if this is a potential (not mutually exlusive from active!) indexnode then send that message:
+				// If this is a potential (not mutually exclusive from active!) indexnode then send that message:
 				if (ads.isProspectiveIndexnode()) {
 					String prospectiveMessage = FS2Constants.FS2_PROTOCOL_VERSION+":autoindexnode:"+Long.toString(ads.getIndexValue())+":"+Long.toString(ads.getAdvertUID());
 					sendAdvert(prospectiveMessage);
 				}
 				
-				try {
-					sleep(FS2Constants.INDEXNODE_ADVERTISE_INTERVAL_MS);
-				} catch (Exception dontCare) {};
+				Util.sleep(FS2Constants.INDEXNODE_ADVERTISE_INTERVAL_MS);
 			}
+			
 		} catch (Exception e) {
 			Logger.warn("IndexAdvertiser: "+e.toString()+ ", No longer advertising on: "+sock.getAddress().getHostAddress());
 			//e.printStackTrace();

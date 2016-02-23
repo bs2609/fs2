@@ -521,6 +521,20 @@ public abstract class Util {
 		void run();
 	}
 	
+	/** 
+	 * Like {@link Thread#sleep(long)}, but uses a return value instead of throwing an exception.
+	 * @return {@code true} if thread slept for the duration, {@code false} if it was interrupted.
+	 */
+	public static boolean sleep(long duration) {
+		try {
+			Thread.sleep(duration);
+			return true;
+			
+		} catch (InterruptedException e) {
+			return false;
+		}
+	}
+	
 	private static final String[] timeOrders = { "s", "m", "h", "d", "w", "y", "c" };
 	private static final int[] orderValues = { 60, 60, 24, 7, 52, 100 };
 	private static final int[] remainderRounds = { 5, 5, 1, 1, 1, 1 };

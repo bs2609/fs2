@@ -158,6 +158,9 @@ public abstract class FS2Constants {
 	/** The number of milliseconds an idle leaf in the browse tree should remain open for. This is also the number of seconds an idle search will remain open for. */
 	public static final int CLIENT_BROWSETREE_COLLAPSE_INTERVAL = 60*1000;
 	
+	/** The number of milliseconds between checking for other instances of FS2. */
+	public static final int CLIENT_INSTANCE_DETECTION_INTERVAL = 1000;
+	
 	/** The anonymous Diffie-Hellman cipher suite used for encrypting communication between clients and clients-indexnodes. */
 	public static final String DH_ANON_CIPHER_SUITE_USED = "TLS_DH_anon_WITH_AES_128_CBC_SHA";
 	

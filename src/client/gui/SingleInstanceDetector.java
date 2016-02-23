@@ -10,6 +10,7 @@ import java.util.Set;
 
 import common.FS2Constants;
 import common.Logger;
+import common.Util;
 
 /**
  * Allows FS2 to notify a potential second instance that the user wanted to start FS2.
@@ -54,9 +55,7 @@ public class SingleInstanceDetector {
 					Logger.warn("Exception while listening for new instances: " + e);
 					
 				} finally {
-					try {
-						Thread.sleep(1000L);
-					} catch (InterruptedException dontcare) {}
+					Util.sleep(FS2Constants.CLIENT_INSTANCE_DETECTION_INTERVAL);
 				}
 			}
 		}
