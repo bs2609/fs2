@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -123,17 +124,18 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	private transient SafeSaver saver;
 	private transient Set<String> toUpdate;
 	private transient UpdateTask updater;
+	
 	/**
 	 * Records the number of currently active downloads from each user.
 	 * This is used to make more educated decisions about which users to download from.
 	 */
-	private transient Map<String, Integer> dlUsed;
+	private transient Map<String, AtomicInteger> dlUsed;
 	
 	/**
 	 * Records the remote peers that we are currently remotely queued by.
-	 * again, used to make more educated download decisions when there are multiple souces.
+	 * Again, used to make more educated download decisions when there are multiple sources.
 	 */
-	private transient Map<String, Integer> remoteQueued;
+	private transient Map<String, AtomicInteger> remoteQueued;
 	
 	/**
 	 * A sorted list of peers from most attractive to download from to least attractive.
@@ -166,15 +168,13 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	}
 	
 	/**
-	 * Notify the stats collector that a download has started from the alias given.
+	 * Notifies the collector that a download has started from the alias given.
 	 */
 	public synchronized void downloadStarted(String alias) {
-		int count = 0;
 		addPeerIfNeeded(alias);
-		if (dlUsed.containsKey(alias)) count = dlUsed.get(alias);
-		count++;
-		dlUsed.put(alias, count);
+		dlUsed.computeIfAbsent(alias, k -> new AtomicInteger()).incrementAndGet();
 		regenerateRanks();
+		notifyAndSave(alias);
 	}
 	
 	/**
@@ -200,48 +200,45 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	}
 	
 	/**
-	 * Notify this collector that a download has finished from a peer
+	 * Notifies this collector that a download has finished from a peer.
 	 * @param alias
 	 */
 	public synchronized void downloadComplete(String alias) {
 		addPeerIfNeeded(alias);
 		peers.get(peerIndices.get(alias)).downFiles++;
 		totalDownFiles++;
-		dlUsed.put(alias, dlUsed.get(alias)-1);
+		int dlCount = dlUsed.get(alias).decrementAndGet();
+		if (dlCount == 0) {
+			dlUsed.remove(alias);
+		}
 		dlHappened = true;
-		notifyAndSave(alias);
 		regenerateRanks();
+		notifyAndSave(alias);
 	}
 	
 	/**
 	 * Notifies this collector that we have been queued by a peer.
-	 * This may be safely called many times for a single peer, but the opposite peerUnqueuedUs(string) should
-	 * be called as many times too!
+	 * This may be safely called many times for a single peer,
+	 * but the opposite peerUnqueuedUs(string) should be called as many times too!
 	 * @param alias
 	 */
 	public synchronized void peerQueuedUs(String alias) {
-		int count = 0;
 		addPeerIfNeeded(alias);
-		if (remoteQueued.containsKey(alias)) count = remoteQueued.get(alias);
-		count++;
-		remoteQueued.put(alias, count);
+		remoteQueued.computeIfAbsent(alias, k -> new AtomicInteger()).incrementAndGet();
 		regenerateRanks();
 		notifyAndSave(alias);
 	}
 	
 	/**
-	 * Notify this collector that we are no longer remotely queued by the peer specified.
+	 * Notifies this collector that we are no longer remotely queued by the peer specified.
 	 * This could be for any reason (such as now downloading, or given up), but importantly we are no longer queued.
 	 * @param alias
 	 */
 	public synchronized void peerUnqueuedUs(String alias) {
 		addPeerIfNeeded(alias);
-		int qCount = remoteQueued.get(alias);
-		qCount--;
-		if (qCount==0) {
-			remoteQueued.remove(qCount);
-		} else {
-			remoteQueued.put(alias, qCount);
+		int qCount = remoteQueued.get(alias).decrementAndGet();
+		if (qCount == 0) {
+			remoteQueued.remove(alias);
 		}
 		regenerateRanks();
 		notifyAndSave(alias);
@@ -270,41 +267,30 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	}
 	
 	private class DownloadAttractivenessComparator implements Comparator<PeerStats> {
+		
 		/**
 		 * Peers that have remotely queued us are indistinguishably terrible,
 		 * then a favourite peer is always preferred,
-		 * then, a peer is more attractive than another if:
-		 * 1) Its (average download speed)/(number of current active downloads from them + 1) is greater than the other.
-		 * 
+		 * then a peer is more attractive if it has fewer current downloads.
 		 */
 		@Override
 		public int compare(PeerStats o1, PeerStats o2) {
-			if (remoteQueued.containsKey(o1.alias) && !remoteQueued.containsKey(o2.alias)) return 1;
+			if (remoteQueued.containsKey(o1.alias) && !remoteQueued.containsKey(o2.alias)) return  1;
 			if (remoteQueued.containsKey(o2.alias) && !remoteQueued.containsKey(o1.alias)) return -1;
-			//continue if they are equal...
 			
+			// Continue if they are equal...
 			if (o1.favourite && !o2.favourite) return -1;
-			if (o2.favourite && !o1.favourite) return 1;
-			//by this point, remQ1==remQ2 and fav1==fav2, so do the complex check:
+			if (o2.favourite && !o1.favourite) return  1;
 			
-			
-			//-----this method only works if both parties have sensible and similar download speeds, which in practise doesn't happen.
-//			int o1cdls = (dlUsed.containsKey(o1.alias) ? dlUsed.get(o1.alias) : 0);
-//			Long dlWo1 = o1.getAllTimeAverageDLSpeed()/(o1cdls+1);
-//			
-//			int o2cdls = (dlUsed.containsKey(o2.alias) ? dlUsed.get(o2.alias) : 0);
-//			Long dlWo2 = o2.getAllTimeAverageDLSpeed()/(o2cdls+1);
-			
-//			return dlWo2.compareTo(dlWo1);
-			
-			//----new apprach is just to prefer the client with the fewer current downloads: (this works pretty well)
-			Integer o1cdls = (dlUsed.containsKey(o1.alias) ? dlUsed.get(o1.alias) : 0);
-			Integer o2cdls = (dlUsed.containsKey(o2.alias) ? dlUsed.get(o2.alias) : 0);
-			return o1cdls.compareTo(o2cdls);
+			// By this point, remQ1 == remQ2 and fav1 == fav2, so do the complex check:
+			// Current approach is just to prefer the client with the fewer current downloads: (this works pretty well)
+			int o1cdls = dlUsed.containsKey(o1.alias) ? dlUsed.get(o1.alias).get() : 0;
+			int o2cdls = dlUsed.containsKey(o2.alias) ? dlUsed.get(o2.alias).get() : 0;
+			return Integer.compare(o1cdls, o2cdls);
 		}
 	}
 	
-	private static Random generator = new Random();
+	private static final Random generator = new Random();
 	
 	/**
 	 * Given a set of download sources this will return the most promising client of the lot.
@@ -523,10 +509,10 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 		saver = new SafeSaver(this, FS2Constants.CLIENT_PEERSTATS_SAVE_MIN_INTERVAL);
 		toUpdate = new HashSet<String>();
 		updater = new UpdateTask();
-		dlUsed = new HashMap<String, Integer>();
+		dlUsed = new HashMap<String, AtomicInteger>();
 		dlRank = new ArrayList<Integer>();
 		rankedPeers = new ArrayList<PeerStats>();
-		remoteQueued = new HashMap<String, Integer>();
+		remoteQueued = new HashMap<String, AtomicInteger>();
 		regenerateRanks();
 	}
 	
@@ -667,9 +653,9 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 					}
 				}
 			}, false);
-		} catch (Exception e1) {
-			Logger.warn("Couldn't notify peer stats table listeners: "+e1);
-			Logger.log(e);
+		} catch (Exception ex) {
+			Logger.warn("Couldn't notify peer stats table listeners: " + ex);
+			Logger.log(ex);
 		}
 	}
 	
