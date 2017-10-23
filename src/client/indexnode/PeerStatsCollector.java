@@ -208,7 +208,7 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 		peers.get(peerIndices.get(alias)).downFiles++;
 		totalDownFiles++;
 		int dlCount = dlUsed.get(alias).decrementAndGet();
-		if (dlCount == 0) {
+		if (dlCount <= 0) {
 			dlUsed.remove(alias);
 		}
 		dlHappened = true;
@@ -219,7 +219,7 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	/**
 	 * Notifies this collector that we have been queued by a peer.
 	 * This may be safely called many times for a single peer,
-	 * but the opposite peerUnqueuedUs(string) should be called as many times too!
+	 * but the opposite ({@link #peerUnqueuedUs(String)}) should be called as many times too!
 	 * @param alias
 	 */
 	public synchronized void peerQueuedUs(String alias) {
@@ -237,7 +237,7 @@ public class PeerStatsCollector implements Serializable, TableModel, Savable {
 	public synchronized void peerUnqueuedUs(String alias) {
 		addPeerIfNeeded(alias);
 		int qCount = remoteQueued.get(alias).decrementAndGet();
-		if (qCount == 0) {
+		if (qCount <= 0) {
 			remoteQueued.remove(alias);
 		}
 		regenerateRanks();
